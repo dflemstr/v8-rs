@@ -36,12 +36,12 @@ before_script:
 
 script:
   - |
-      travis-cargo build -- --manifest-path=v8-sys/Cargo.toml &&
-      travis-cargo test -- --manifest-path=v8-sys/Cargo.toml &&
-      travis-cargo bench -- --manifest-path=v8-sys/Cargo.toml &&
-      travis-cargo build &&
-      travis-cargo test &&
-      travis-cargo bench
+      travis-cargo build -- $FEATURES --manifest-path=v8-sys/Cargo.toml &&
+      travis-cargo test -- $FEATURES --manifest-path=v8-sys/Cargo.toml &&
+      travis-cargo bench -- $FEATURES --manifest-path=v8-sys/Cargo.toml &&
+      travis-cargo build -- $FEATURES &&
+      travis-cargo test -- $FEATURES &&
+      travis-cargo bench -- $FEATURES
 
 after_success:
   - travis-cargo coveralls --no-sudo --verify
