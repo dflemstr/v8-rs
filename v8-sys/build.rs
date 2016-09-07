@@ -106,7 +106,7 @@ fn link_v8() {
             println!("cargo:rustc-link-lib=static={}", lib);
         }
         if fs::metadata("/usr/lib/x86_64-linux-gnu/libicudata.a").map(|m| m.is_file()).unwrap_or(false) {
-            println!("cargo:rustc-link-search=native=icudata");
+            println!("cargo:rustc-link-lib=static=icudata");
         }
     }
 }
