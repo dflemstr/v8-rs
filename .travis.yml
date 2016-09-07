@@ -18,6 +18,11 @@ addons:
       - libdw-dev
       - binutils-dev
 
+env:
+  global:
+    - CC=gcc-6
+    - CXX=g++-6
+
 before_script:
   - |
       pip install 'travis-cargo<0.2' --user &&
