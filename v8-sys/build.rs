@@ -90,6 +90,9 @@ fn link_v8() {
         println!("V8_BUILD not set, searching system paths");
         maybe_search("/usr/lib");
         maybe_search("/usr/local/lib");
+        // TODO: hack: lazy way to fix the Travis build
+        maybe_search("/usr/lib/x86_64-linux-gnu");
+        maybe_search("/usr/local/lib/x86_64-linux-gnu");
         maybe_search("/usr/lib/v8");
         maybe_search("/usr/local/lib/v8");
     }
