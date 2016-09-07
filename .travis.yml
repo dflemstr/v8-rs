@@ -19,9 +19,9 @@ before_script:
 
 script:
   - |
-      travis-cargo build --manifest-path=v8-sys &&
-      travis-cargo test --manifest-path=v8-sys &&
-      travis-cargo bench --manifest-path=v8-sys &&
+      travis-cargo build -- --manifest-path=v8-sys/Cargo.toml &&
+      travis-cargo test -- --manifest-path=v8-sys/Cargo.toml &&
+      travis-cargo bench -- --manifest-path=v8-sys/Cargo.toml &&
       travis-cargo build &&
       travis-cargo test &&
       travis-cargo bench
