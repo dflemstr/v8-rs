@@ -11,7 +11,7 @@ addons:
       - gcc-6
       - g++-6
       # The V8 version that we want to bind
-      - libv8-dev
+      - libv8-5.4-dev
       # Dependencies for travis-cargo and for coverage
       - libcurl4-openssl-dev
       - libelf-dev
