@@ -24,6 +24,11 @@ env:
     - CC=gcc-6
     - CXX=g++-6
 
+matrix:
+  include:
+    - env: FEATURES=""
+    - env: FEATURES="--features=shared"
+
 before_script:
   - |
       pip install 'travis-cargo<0.2' --user &&

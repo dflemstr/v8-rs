@@ -3,4 +3,8 @@ name = "v8"
 version = "0.1.0"
 authors = ["David Flemström <dflemstr@spotify.com>"]
 
-[dependencies]
+[dependencies.v8-sys]
+path = "v8-sys"
+
+[features]
+shared = ["v8-sys/shared"]
