@@ -5,8 +5,16 @@ addons:
   apt:
     sources:
       - sourceline: 'ppa:pinepain/libv8-5.4'
+      - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-3.9 main'
+      - ubuntu-toolchain-r-test
     packages:
+      # Modern compilers
+      - gcc-6
+      - g++-6
+      - clang-3.9
+      # The V8 version that we want to bind
       - libv8-dev
+      # Dependencies for travis-cargo and for coverage
       - libcurl4-openssl-dev
       - libelf-dev
       - libdw-dev
@@ -28,4 +36,3 @@ script:
 
 after_success:
   - travis-cargo coveralls --no-sudo --verify
-
