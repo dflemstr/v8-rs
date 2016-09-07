@@ -1,0 +1,16 @@
+[package]
+authors = ["David Flemström <dflemstr@spotify.com>"]
+build = "build.rs"
+name = "v8-sys"
+version = "0.1.0"
+
+[build-dependencies]
+bindgen = "0.19.0"
+gcc = "0.3.35"
+
+[dev-dependencies]
+lazy_static = "0.2.1"
+
+[features]
+default = ["shared"]
+shared = []
