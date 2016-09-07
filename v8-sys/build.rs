@@ -288,8 +288,6 @@ const API: &'static [Class] =
       Class("StackTrace", &[]),
       Class("StackFrame", &[]),
       Class("JSON", &[]),
-      Class("ValueSerializer", &[]),
-      Class("ValueDeserializer", &[]),
       Class("NativeWeakMap", &[]),
       // Values
       Class("Value",
