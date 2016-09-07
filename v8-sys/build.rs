@@ -88,6 +88,8 @@ fn link_v8() {
         // produces static archives; maybe run ar here?
     } else {
         println!("V8_BUILD not set, searching system paths");
+        maybe_search("/usr/lib");
+        maybe_search("/usr/local/lib");
         maybe_search("/usr/lib/v8");
         maybe_search("/usr/local/lib/v8");
     }
