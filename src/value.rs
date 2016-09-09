@@ -296,7 +296,6 @@ impl<'a> Value<'a> {
     type_predicate!(is_int32_array, v8::Value_IsInt32Array);
     type_predicate!(is_float32_array, v8::Value_IsFloat32Array);
     type_predicate!(is_float64_array, v8::Value_IsFloat64Array);
-    type_predicate!(is_float_32x4, v8::Value_IsFloat32x4);
     type_predicate!(is_data_view, v8::Value_IsDataView);
     type_predicate!(is_shared_array_buffer, v8::Value_IsSharedArrayBuffer);
     type_predicate!(is_proxy, v8::Value_IsProxy);
