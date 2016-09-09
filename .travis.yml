@@ -58,7 +58,7 @@ after_success:
     rm -rf kcov-master &&
     cargo clean &&
     RUSTFLAGS="-C link-dead-code" cargo test $FEATURES --no-run &&
-    for file in target/debug/v8-* target/debug/lib-*
+    for file in target/debug/v8-*
     do
         kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov" "$file"
     done &&
