@@ -4,6 +4,7 @@ use isolate;
 use std::mem;
 use std::ops;
 use std::os;
+use std::ptr;
 
 /// The superclass of all JavaScript values and objects.
 pub struct Value<'a>(&'a isolate::Isolate, *mut v8::Value);
@@ -426,6 +427,30 @@ impl<'a> Object<'a> {
         // pointer.
         unsafe {
             let ptr = v8::Object_Get(self.0.as_raw(), self.1, context.as_raw(), key.as_raw());
+            map_nullable(ptr, |p| Value(self.0, p))
+        }
+    }
+
+    pub fn call(&self, context: &context::Context, args: &[&Value]) -> Option<Value> {
+        let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
+        unsafe {
+            let ptr = v8::Object_CallAsFunction(self.0.as_raw(), self.1, context.as_raw(), ptr::null_mut(), arg_ptrs.len() as i32, arg_ptrs.as_mut_ptr());
+            map_nullable(ptr, |p| Value(self.0, p))
+        }
+    }
+
+    pub fn call_with_this(&self, context: &context::Context, this: &Value, args: &[&Value]) -> Option<Value> {
+        let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
+        unsafe {
+            let ptr = v8::Object_CallAsFunction(self.0.as_raw(), self.1, context.as_raw(), this.as_raw(), arg_ptrs.len() as i32, arg_ptrs.as_mut_ptr());
+            map_nullable(ptr, |p| Value(self.0, p))
+        }
+    }
+
+    pub fn call_as_constructor(&self, context: &context::Context, args: &[&Value]) -> Option<Value> {
+        let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
+        unsafe {
+            let ptr = v8::Object_CallAsConstructor(self.0.as_raw(), self.1, context.as_raw(), arg_ptrs.len() as i32, arg_ptrs.as_mut_ptr());
             map_nullable(ptr, |p| Value(self.0, p))
         }
     }
