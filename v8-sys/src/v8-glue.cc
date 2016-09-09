@@ -199,8 +199,8 @@ void v8_Context_Enter(Isolate *isolate, Context *context) {
 }
 
 void v8_Context_Exit(Isolate *isolate, Context *context) {
-    v8::Context::Scope context_scope(wrap(isolate, context));
     v8::HandleScope scope(isolate);
+    v8::Context::Scope context_scope(wrap(isolate, context));
     wrap(isolate, context)->Exit();
 }
 
