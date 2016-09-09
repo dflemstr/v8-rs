@@ -398,7 +398,6 @@ const API: &'static [Class] =
               Method("IsInt32Array", &[], RetType::Direct(Type::ValBool)),
               Method("IsFloat32Array", &[], RetType::Direct(Type::ValBool)),
               Method("IsFloat64Array", &[], RetType::Direct(Type::ValBool)),
-              Method("IsFloat32x4", &[], RetType::Direct(Type::ValBool)),
               Method("IsDataView", &[], RetType::Direct(Type::ValBool)),
               Method("IsSharedArrayBuffer", &[], RetType::Direct(Type::ValBool)),
               Method("IsProxy", &[], RetType::Direct(Type::ValBool)),
