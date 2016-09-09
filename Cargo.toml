@@ -1,7 +1,10 @@
 [package]
+authors = ["David Flemström <dflemstr@spotify.com>"]
 name = "v8"
 version = "0.1.0"
-authors = ["David Flemström <dflemstr@spotify.com>"]
+
+[dependencies]
+lazy_static = "0.2.1"
 
 [dependencies.v8-sys]
 path = "v8-sys"

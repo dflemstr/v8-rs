@@ -25,19 +25,10 @@ enum Type {
     ValF64,
     ValU32,
     ValI32,
+    ValU64,
+    ValI64,
 
-    Value,
-    Boolean,
-    Number,
-    String,
-    DetailString,
-    Object,
-    Integer,
-    Uint32,
-    Int32,
-    Context,
-    Script,
-    UnboundScript,
+    Ptr(&'static str)
 }
 
 const NS: &'static str = "v8";
@@ -219,8 +210,12 @@ fn write_cc_file<W>(mut out: W) -> io::Result<()>
             }
             try!(writeln!(out, ") {{"));
             try!(writeln!(out, "  v8::HandleScope scope(isolate);"));
+            if let Some(&Arg(ctx, Type::Ptr("Context"))) = method.1.iter().next() {
+                try!(writeln!(out, "  v8::Context::Scope {ctx}_scope(wrap(isolate, {ctx}));", ctx=ctx));
+            }
             try!(write!(out,
-                        "  return unwrap(isolate, self->Get(isolate)->{method}(",
+                        "  return {retunwrap}(isolate, self->Get(isolate)->{method}(",
+                        retunwrap = method.2.unwrap_fun(),
                         method = method.0));
             let mut needs_sep = false;
             for arg in method.1.iter() {
@@ -252,11 +247,34 @@ impl fmt::Display for Arg {
     }
 }
 
+impl RetType {
+    fn unwrap_fun(&self) -> &'static str {
+            match *self {
+                RetType::Direct(_) => "unwrap",
+                RetType::Maybe(Type::ValBool) =>"unwrap_bool",
+                RetType::Maybe(Type::ValF64) => "unwrap_double",
+                RetType::Maybe(Type::ValU32) => "unwrap_uint32_t",
+                RetType::Maybe(Type::ValI32) => "unwrap_int32_t",
+                RetType::Maybe(Type::ValU64) => "unwrap_uint64_t",
+                RetType::Maybe(Type::ValI64) => "unwrap_int64_t",
+                RetType::Maybe(Type::ValInt) => "unwrap_int",
+                RetType::Maybe(Type::Ptr(_)) => "unwrap",
+            }
+    }
+}
+
 impl fmt::Display for RetType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             RetType::Direct(ref t) => t.fmt(f),
-            RetType::Maybe(ref t) => t.fmt(f),
+            RetType::Maybe(Type::ValBool) => write!(f, "struct MaybeBool"),
+            RetType::Maybe(Type::ValF64) => write!(f, "struct MaybeF64"),
+            RetType::Maybe(Type::ValU32) => write!(f, "struct MaybeU32"),
+            RetType::Maybe(Type::ValI32) => write!(f, "struct MaybeI32"),
+            RetType::Maybe(Type::ValU64) => write!(f, "struct MaybeU64"),
+            RetType::Maybe(Type::ValI64) => write!(f, "struct MaybeI64"),
+            RetType::Maybe(Type::ValInt) => write!(f, "struct MaybeInt"),
+            RetType::Maybe(Type::Ptr(target)) => write!(f, "{} *", target),
         }
     }
 }
@@ -268,35 +286,72 @@ impl fmt::Display for Type {
             Type::ValF64 => write!(f, "double"),
             Type::ValU32 => write!(f, "uint32_t"),
             Type::ValI32 => write!(f, "int32_t"),
+            Type::ValU64 => write!(f, "uint64_t"),
+            Type::ValI64 => write!(f, "int64_t"),
             Type::ValInt => write!(f, "int"),
-            ref r => write!(f, "{:?} *", r),
+            Type::Ptr(target) => write!(f, "{} *", target),
         }
     }
 }
 
 const API: &'static [Class] =
     &[Class("ScriptOrigin",
-            &[Method("ResourceName", &[], RetType::Direct(Type::Value)),
-              Method("ResourceLineOffset", &[], RetType::Direct(Type::Integer)),
-              Method("ResourceColumnOffset", &[], RetType::Direct(Type::Integer)),
-              Method("ScriptID", &[], RetType::Direct(Type::Integer)),
-              Method("SourceMapUrl", &[], RetType::Direct(Type::Value))]),
+            &[Method("ResourceName", &[], RetType::Direct(Type::Ptr("Value"))),
+              Method("ResourceLineOffset", &[], RetType::Direct(Type::Ptr("Integer"))),
+              Method("ResourceColumnOffset", &[], RetType::Direct(Type::Ptr("Integer"))),
+              Method("ScriptID", &[], RetType::Direct(Type::Ptr("Integer"))),
+              Method("SourceMapUrl", &[], RetType::Direct(Type::Ptr("Value")))
+              // TODO: add Options
+            ]),
       Class("UnboundScript",
             &[Method("GetId", &[], RetType::Direct(Type::ValInt)),
-              Method("GetScriptName", &[], RetType::Direct(Type::Value)),
-              Method("GetSourceURL", &[], RetType::Direct(Type::Value)),
-              Method("GetSourceMappingURL", &[], RetType::Direct(Type::Value))]),
+              Method("GetScriptName", &[], RetType::Direct(Type::Ptr("Value"))),
+              Method("GetSourceURL", &[], RetType::Direct(Type::Ptr("Value"))),
+              Method("GetSourceMappingURL", &[], RetType::Direct(Type::Ptr("Value"))),
+            Method("GetLineNumber", &[Arg("code_pos", Type::ValInt)], RetType::Direct(Type::ValInt))]),
       Class("Script",
             &[Method("Run",
-                     &[Arg("context", Type::Context)],
-                     RetType::Maybe(Type::Value)),
-              Method("GetUnboundScript", &[], RetType::Maybe(Type::UnboundScript))]),
-      Class("ScriptCompiler", &[]),
-      Class("Message", &[]),
-      Class("StackTrace", &[]),
-      Class("StackFrame", &[]),
-      Class("JSON", &[]),
-      Class("NativeWeakMap", &[]),
+                     &[Arg("context", Type::Ptr("Context"))],
+                     RetType::Maybe(Type::Ptr("Value"))),
+              Method("GetUnboundScript", &[], RetType::Maybe(Type::Ptr("UnboundScript")))]),
+      Class("ScriptCompiler", &[
+          // TODO: methods
+      ]),
+      Class("Message", &[
+          Method("GetSourceLine", &[Arg("context", Type::Ptr("Context"))], RetType::Maybe(Type::Ptr("String"))),
+          // Method("GetScriptOrigin", &[], RetType::Direct(Type::Ptr("ScriptOrigin"))),
+          Method("GetScriptResourceName", &[], RetType::Direct(Type::Ptr("Value"))),
+          Method("GetStackTrace", &[], RetType::Direct(Type::Ptr("StackTrace"))),
+          Method("GetLineNumber", &[Arg("context", Type::Ptr("Context"))], RetType::Maybe(Type::ValInt)),
+          Method("GetStartPosition", &[], RetType::Direct(Type::ValInt)),
+          Method("GetEndPosition", &[], RetType::Direct(Type::ValInt)),
+          Method("GetStartColumn", &[Arg("context", Type::Ptr("Context"))], RetType::Maybe(Type::ValInt)),
+          Method("GetEndColumn", &[Arg("context", Type::Ptr("Context"))], RetType::Maybe(Type::ValInt)),
+          Method("IsSharedCrossOrigin", &[], RetType::Direct(Type::ValBool)),
+          Method("IsOpaque", &[], RetType::Direct(Type::ValBool)),
+      ]),
+      Class("StackTrace", &[
+          Method("GetFrame", &[Arg("index", Type::ValU32)], RetType::Direct(Type::Ptr("StackFrame"))),
+          Method("GetFrameCount", &[], RetType::Direct(Type::ValInt)),
+          Method("AsArray", &[], RetType::Direct(Type::Ptr("Array"))),
+      ]),
+      Class("StackFrame", &[
+          Method("GetLineNumber", &[], RetType::Direct(Type::ValInt)),
+          Method("GetColumn", &[], RetType::Direct(Type::ValInt)),
+          Method("GetScriptId", &[], RetType::Direct(Type::ValInt)),
+          Method("GetScriptName", &[], RetType::Direct(Type::Ptr("String"))),
+          Method("GetScriptNameOrSourceURL", &[], RetType::Direct(Type::Ptr("String"))),
+          Method("GetFunctionName", &[], RetType::Direct(Type::Ptr("String"))),
+          Method("IsEval", &[], RetType::Direct(Type::ValBool)),
+          Method("IsConstructor", &[], RetType::Direct(Type::ValBool)),
+      ]),
+      Class("JSON", &[
+          Method("Parse", &[Arg("context", Type::Ptr("Context")), Arg("json_string", Type::Ptr("String"))], RetType::Maybe(Type::Ptr("Value"))),
+          Method("Stringify", &[Arg("context", Type::Ptr("Context")), Arg("json_object", Type::Ptr("Object"))], RetType::Maybe(Type::Ptr("String"))),
+      ]),
+      Class("NativeWeakMap", &[
+          // TODO: methods
+      ]),
       // Values
       Class("Value",
             &[Method("IsUndefined", &[], RetType::Direct(Type::ValBool)),
@@ -314,6 +369,7 @@ const API: &'static [Class] =
               Method("IsExternal", &[], RetType::Direct(Type::ValBool)),
               Method("IsInt32", &[], RetType::Direct(Type::ValBool)),
               Method("IsUint32", &[], RetType::Direct(Type::ValBool)),
+              Method("IsDate", &[], RetType::Direct(Type::ValBool)),
               Method("IsArgumentsObject", &[], RetType::Direct(Type::ValBool)),
               Method("IsBooleanObject", &[], RetType::Direct(Type::ValBool)),
               Method("IsNumberObject", &[], RetType::Direct(Type::ValBool)),
@@ -350,24 +406,128 @@ const API: &'static [Class] =
                      &[],
                      RetType::Direct(Type::ValBool)),
               Method("ToBoolean",
-                     &[Arg("context", Type::Context)],
-                     RetType::Maybe(Type::Boolean)),
+                     &[Arg("context", Type::Ptr("Context"))],
+                     RetType::Maybe(Type::Ptr("Boolean"))),
+              Method("ToNumber",
+                     &[Arg("context", Type::Ptr("Context"))],
+                     RetType::Maybe(Type::Ptr("Number"))),
               Method("ToString",
-                     &[Arg("context", Type::Context)],
-                     RetType::Maybe(Type::String))]),
-      Class("Boolean", &[]),
-      Class("Name", &[]),
+                     &[Arg("context", Type::Ptr("Context"))],
+                     RetType::Maybe(Type::Ptr("String"))),
+              Method("ToDetailString",
+                     &[Arg("context", Type::Ptr("Context"))],
+                     RetType::Maybe(Type::Ptr("String"))),
+              Method("ToObject",
+                     &[Arg("context", Type::Ptr("Context"))],
+                     RetType::Maybe(Type::Ptr("Object"))),
+              Method("ToInteger",
+                     &[Arg("context", Type::Ptr("Context"))],
+                     RetType::Maybe(Type::Ptr("Integer"))),
+              Method("ToUint32",
+                     &[Arg("context", Type::Ptr("Context"))],
+                     RetType::Maybe(Type::Ptr("Uint32"))),
+              Method("ToInt32",
+                     &[Arg("context", Type::Ptr("Context"))],
+                     RetType::Maybe(Type::Ptr("Int32"))),
+              Method("ToArrayIndex",
+                     &[Arg("context", Type::Ptr("Context"))],
+                     RetType::Maybe(Type::Ptr("Uint32"))),
+              Method("BooleanValue",
+                     &[Arg("context", Type::Ptr("Context"))],
+                     RetType::Maybe(Type::ValBool)),
+              Method("NumberValue",
+                     &[Arg("context", Type::Ptr("Context"))],
+                     RetType::Maybe(Type::ValF64)),
+              Method("IntegerValue",
+                     &[Arg("context", Type::Ptr("Context"))],
+                     RetType::Maybe(Type::ValI64)),
+              Method("Uint32Value",
+                     &[Arg("context", Type::Ptr("Context"))],
+                     RetType::Maybe(Type::ValU32)),
+              Method("Int32Value",
+                     &[Arg("context", Type::Ptr("Context"))],
+                     RetType::Maybe(Type::ValI32)),
+              Method("Equals",
+                     &[Arg("context", Type::Ptr("Context")), Arg("that", Type::Ptr("Value"))],
+                     RetType::Maybe(Type::ValBool)),
+              Method("StrictEquals",
+                     &[Arg("that", Type::Ptr("Value"))],
+                     RetType::Direct(Type::ValBool)),
+              Method("SameValue",
+                     &[Arg("that", Type::Ptr("Value"))],
+                     RetType::Direct(Type::ValBool)),
+            ]),
+      Class("Primitive", &[]),
+      Class("Boolean", &[
+          Method("Value", &[], RetType::Direct(Type::ValBool))
+      ]),
+      Class("Name", &[
+          Method("GetIdentityHash", &[], RetType::Direct(Type::ValInt))
+      ]),
       Class("String", &[
           Method("Length", &[], RetType::Direct(Type::ValInt)),
-          Method("Utf8Length", &[], RetType::Direct(Type::ValInt))]),
-      Class("Symbol", &[]),
-      Class("Private", &[]),
-      Class("Number", &[]),
-      Class("Integer", &[]),
-      Class("Int32", &[]),
-      Class("Uint32", &[]),
-      Class("Object", &[]),
-      Class("Array", &[]),
+          Method("Utf8Length", &[], RetType::Direct(Type::ValInt)),
+          Method("IsOneByte", &[], RetType::Direct(Type::ValBool)),
+          Method("ContainsOnlyOneByte", &[], RetType::Direct(Type::ValBool)),
+          Method("IsExternal", &[], RetType::Direct(Type::ValBool)),
+          Method("IsExternalOneByte", &[], RetType::Direct(Type::ValBool)),
+          Method("Concat", &[Arg("left", Type::Ptr("String")), Arg("right", Type::Ptr("String"))], RetType::Direct(Type::Ptr("String"))),
+      ]),
+      Class("Symbol", &[
+      ]),
+      Class("Private", &[
+          Method("Name", &[], RetType::Direct(Type::Ptr("Value")))
+      ]),
+      Class("Number", &[
+          Method("Value", &[], RetType::Direct(Type::ValF64))
+      ]),
+      Class("Integer", &[
+          Method("Value", &[], RetType::Direct(Type::ValI64))
+      ]),
+      Class("Int32", &[
+          Method("Value", &[], RetType::Direct(Type::ValI32))
+      ]),
+      Class("Uint32", &[
+          Method("Value", &[], RetType::Direct(Type::ValU32))
+      ]),
+      Class("Object", &[
+          // TODO: add index things
+          Method("Set", &[Arg("context", Type::Ptr("Context")),
+                          Arg("key", Type::Ptr("Value")),
+                          Arg("value", Type::Ptr("Value"))], RetType::Maybe(Type::ValBool)),
+          Method("CreateDataProperty", &[Arg("context", Type::Ptr("Context")),
+                                         Arg("key", Type::Ptr("Name")),
+                                         Arg("value", Type::Ptr("Value"))], RetType::Maybe(Type::ValBool)),
+          Method("Get", &[Arg("context", Type::Ptr("Context")),
+                          Arg("key", Type::Ptr("Value"))], RetType::Maybe(Type::Ptr("Value"))),
+          Method("GetOwnPropertyDescriptor", &[Arg("context", Type::Ptr("Context")),
+                                               Arg("key", Type::Ptr("String"))], RetType::Maybe(Type::Ptr("Value"))),
+          Method("Has", &[Arg("context", Type::Ptr("Context")),
+                          Arg("key", Type::Ptr("Value"))], RetType::Maybe(Type::ValBool)),
+          Method("Delete", &[Arg("context", Type::Ptr("Context")),
+                             Arg("key", Type::Ptr("Value"))], RetType::Maybe(Type::ValBool)),
+          Method("GetPropertyNames", &[Arg("context", Type::Ptr("Context"))], RetType::Maybe(Type::Ptr("Array"))),
+          Method("GetOwnPropertyNames", &[Arg("context", Type::Ptr("Context"))], RetType::Maybe(Type::Ptr("Array"))),
+          Method("GetPrototype", &[], RetType::Direct(Type::Ptr("Value"))),
+          Method("SetPrototype", &[Arg("context", Type::Ptr("Context")),
+                                   Arg("value", Type::Ptr("Value"))], RetType::Maybe(Type::ValBool)),
+          Method("ObjectProtoToString", &[Arg("context", Type::Ptr("Context"))], RetType::Maybe(Type::Ptr("String"))),
+          Method("GetConstructorName", &[], RetType::Direct(Type::Ptr("String"))),
+          Method("HasOwnProperty", &[Arg("context", Type::Ptr("Context")),
+                                     Arg("key", Type::Ptr("Name"))], RetType::Maybe(Type::ValBool)),
+          Method("HasRealNamedProperty", &[Arg("context", Type::Ptr("Context")),
+                                           Arg("key", Type::Ptr("Name"))], RetType::Maybe(Type::ValBool)),
+          Method("HasRealIndexedProperty", &[Arg("context", Type::Ptr("Context")),
+                                             Arg("key", Type::ValU32)], RetType::Maybe(Type::ValBool)),
+          Method("GetIdentityHash", &[], RetType::Direct(Type::ValInt)),
+          Method("Clone", &[], RetType::Direct(Type::Ptr("Object"))),
+          Method("CreationContext", &[], RetType::Direct(Type::Ptr("Context"))),
+          Method("IsCallable", &[], RetType::Direct(Type::ValBool)),
+          Method("IsConstructor", &[], RetType::Direct(Type::ValBool)),
+      ]),
+      Class("Array", &[
+          Method("Length", &[], RetType::Direct(Type::ValU32))
+      ]),
       Class("Map", &[]),
       Class("Set", &[]),
       Class("Function", &[]),
