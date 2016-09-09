@@ -27,6 +27,41 @@ typedef void String_Utf8Value;
 
 #endif /* defined __cplusplus */
 
+struct MaybeBool {
+    bool is_set;
+    bool value;
+};
+
+struct MaybeF64 {
+    bool is_set;
+    double value;
+};
+
+struct MaybeU32 {
+    bool is_set;
+    uint32_t value;
+};
+
+struct MaybeI32 {
+    bool is_set;
+    int32_t value;
+};
+
+struct MaybeU64 {
+    bool is_set;
+    uint64_t value;
+};
+
+struct MaybeI64 {
+    bool is_set;
+    int64_t value;
+};
+
+struct MaybeInt {
+    bool is_set;
+    int value;
+};
+
 struct v8_AllocatorFunctions {
     void *(*Allocate)(size_t length);
     void *(*AllocateUninitialized)(size_t length);
@@ -83,6 +118,10 @@ String *v8_String_NewFromUtf8_Internalized(Isolate *isolate, const char *data, i
 int v8_String_WriteUtf8(Isolate *isolate, String *string, char *buffer, int length);
 
 Script *v8_Script_Compile(Isolate *isolate, Context *context, String *source);
+
+Value *v8_Object_CallAsFunction(Isolate *isolate, Object *self, Context *context, Value *recv, int argc, Value *argv[]);
+
+Value *v8_Object_CallAsConstructor(Isolate *isolate, Object *self, Context *context, Value *recv, int argc, Value *argv[]);
 
 #if defined __cplusplus
 } /* extern "C" */

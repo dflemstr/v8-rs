@@ -12,4 +12,5 @@ gcc = "0.3.35"
 lazy_static = "0.2.1"
 
 [features]
+default = ["shared"]
 shared = []

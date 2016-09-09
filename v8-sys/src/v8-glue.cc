@@ -5,15 +5,13 @@
 
 #include "libplatform/libplatform.h"
 
-template<typename A> v8::Persistent<A> *unwrap(
-                                               v8::Isolate *isolate,
+template<typename A> v8::Persistent<A> *unwrap(v8::Isolate *isolate,
                                                v8::Local<A> value)
 {
     return new v8::Persistent<A>(isolate, value);
 }
 
-template<typename A> v8::Persistent<A> *unwrap(
-                                               v8::Isolate *isolate,
+template<typename A> v8::Persistent<A> *unwrap(v8::Isolate *isolate,
                                                v8::MaybeLocal<A> value)
 {
     v8::Local<A> local;
@@ -24,6 +22,24 @@ template<typename A> v8::Persistent<A> *unwrap(
         return nullptr;
     }
 }
+
+#define UNWRAP_PRIMITIVE(PRIM, MAYBE) MAYBE unwrap_##PRIM(              \
+        v8::Isolate *isolate,                                           \
+        v8::Maybe<PRIM> maybe_value)                                    \
+    {                                                                   \
+        PRIM value;                                                     \
+        bool is_set = maybe_value.To(&value);                           \
+                                                                        \
+        return MAYBE { is_set, value };                                 \
+    }
+
+UNWRAP_PRIMITIVE(bool, MaybeBool)
+UNWRAP_PRIMITIVE(double, MaybeF64)
+UNWRAP_PRIMITIVE(uint32_t, MaybeU32)
+UNWRAP_PRIMITIVE(int32_t, MaybeI32)
+UNWRAP_PRIMITIVE(uint64_t, MaybeU64)
+UNWRAP_PRIMITIVE(int64_t, MaybeI64)
+UNWRAP_PRIMITIVE(int, MaybeInt)
 
 template<typename A> A unwrap(v8::Isolate *isolate, A value) {
     return value;
@@ -183,6 +199,7 @@ void v8_Context_Enter(Isolate *isolate, Context *context) {
 }
 
 void v8_Context_Exit(Isolate *isolate, Context *context) {
+    v8::Context::Scope context_scope(wrap(isolate, context));
     v8::HandleScope scope(isolate);
     wrap(isolate, context)->Exit();
 }
@@ -204,7 +221,32 @@ int v8_String_WriteUtf8(Isolate *isolate, String *string, char *buffer, int leng
 
 Script *v8_Script_Compile(Isolate *isolate, Context *context, String *source) {
     v8::HandleScope scope(isolate);
+    v8::Context::Scope context_scope(wrap(isolate, context));
     return unwrap(isolate, v8::Script::Compile(wrap(isolate, context), wrap(isolate, source)));
+}
+
+Value *v8_Object_CallAsFunction(Isolate *isolate, Object *self, Context *context, Value *recv, int argc, Value *argv[]) {
+    v8::HandleScope scope(isolate);
+    v8::Context::Scope context_scope(wrap(isolate, context));
+    v8::Local<v8::Value> argv_wrapped[argc];
+
+    for (int i = 0; i < argc; i++) {
+        argv_wrapped[i] = wrap(isolate, argv[i]);
+    }
+
+    return unwrap(isolate, wrap(isolate, self)->CallAsFunction(wrap(isolate, context), wrap(isolate, recv), argc, argv_wrapped));
+}
+
+Value *v8_Object_CallAsConstructor(Isolate *isolate, Object *self, Context *context, Value *recv, int argc, Value *argv[]) {
+    v8::HandleScope scope(isolate);
+    v8::Context::Scope context_scope(wrap(isolate, context));
+    v8::Local<v8::Value> argv_wrapped[argc];
+
+    for (int i = 0; i < argc; i++) {
+        argv_wrapped[i] = wrap(isolate, argv[i]);
+    }
+
+    return unwrap(isolate, wrap(isolate, self)->CallAsConstructor(wrap(isolate, context), argc, argv_wrapped));
 }
 
 #include "v8-glue-generated.cc"
