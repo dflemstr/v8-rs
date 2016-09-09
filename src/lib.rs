@@ -124,7 +124,49 @@ mod tests {
     fn eval_function() {
         eval("(function() {})", |_, _, v| {
             assert!(v.is_function());
-            // TODO: Try calling the function?
+        });
+    }
+
+    #[test]
+    fn eval_function_then_call() {
+        eval("(function(a) { return a + a; })", |i, c, v| {
+            assert!(v.is_function());
+            let f = v.to_object(c).unwrap();
+            let s = value::String::from_str(i, "123");
+            let r = f.call(c, &[&s]).unwrap();
+            assert!(r.is_string());
+            let r = r.to_string(c).unwrap();
+            assert_eq!("123123", r.to_string());
+        });
+    }
+
+    #[test]
+    fn eval_function_then_call_with_this() {
+        eval("(function() { return this.length; })", |i, c, v| {
+            assert!(v.is_function());
+            let f = v.to_object(c).unwrap();
+            let s = value::String::from_str(i, "123");
+            let r = f.call_with_this(c, &s, &[]).unwrap();
+            assert!(r.is_int32());
+            let r = r.int32_value(c).unwrap();
+            assert_eq!(3, r);
+        });
+    }
+
+    #[test]
+    fn eval_function_then_construct() {
+        eval("(function ctor(a) { this.a = a; })", |i, c, v| {
+            assert!(v.is_function());
+            let f = v.to_object(c).unwrap();
+            let a_key = value::String::from_str(i, "a");
+            let s = value::String::from_str(i, "123");
+            let r = f.call_as_constructor(c, &[&s]).unwrap();
+            assert!(r.is_object());
+            let r = r.to_object(c).unwrap();
+            let r = r.get(c, &a_key).unwrap();
+            assert!(r.is_string());
+            let r = r.to_string(c).unwrap();
+            assert_eq!("123", r.to_string());
         });
     }
 

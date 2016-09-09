@@ -121,7 +121,7 @@ Script *v8_Script_Compile(Isolate *isolate, Context *context, String *source);
 
 Value *v8_Object_CallAsFunction(Isolate *isolate, Object *self, Context *context, Value *recv, int argc, Value *argv[]);
 
-Value *v8_Object_CallAsConstructor(Isolate *isolate, Object *self, Context *context, Value *recv, int argc, Value *argv[]);
+Value *v8_Object_CallAsConstructor(Isolate *isolate, Object *self, Context *context, int argc, Value *argv[]);
 
 #if defined __cplusplus
 } /* extern "C" */

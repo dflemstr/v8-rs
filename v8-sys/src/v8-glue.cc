@@ -45,8 +45,7 @@ template<typename A> A unwrap(v8::Isolate *isolate, A value) {
     return value;
 }
 
-template<typename A> v8::Local<A> wrap(
-                                       v8::Isolate *isolate,
+template<typename A> v8::Local<A> wrap(v8::Isolate *isolate,
                                        v8::Persistent<A> *value)
 {
     return value->Get(isolate);
@@ -229,15 +228,22 @@ Value *v8_Object_CallAsFunction(Isolate *isolate, Object *self, Context *context
     v8::HandleScope scope(isolate);
     v8::Context::Scope context_scope(wrap(isolate, context));
     v8::Local<v8::Value> argv_wrapped[argc];
+    v8::Local<v8::Value> recv_wrapped;
 
     for (int i = 0; i < argc; i++) {
         argv_wrapped[i] = wrap(isolate, argv[i]);
     }
 
-    return unwrap(isolate, wrap(isolate, self)->CallAsFunction(wrap(isolate, context), wrap(isolate, recv), argc, argv_wrapped));
+    if (recv == nullptr) {
+        recv_wrapped = v8::Undefined(isolate);
+    } else {
+        recv_wrapped = wrap(isolate, recv);
+    }
+
+    return unwrap(isolate, wrap(isolate, self)->CallAsFunction(wrap(isolate, context), recv_wrapped, argc, argv_wrapped));
 }
 
-Value *v8_Object_CallAsConstructor(Isolate *isolate, Object *self, Context *context, Value *recv, int argc, Value *argv[]) {
+Value *v8_Object_CallAsConstructor(Isolate *isolate, Object *self, Context *context, int argc, Value *argv[]) {
     v8::HandleScope scope(isolate);
     v8::Context::Scope context_scope(wrap(isolate, context));
     v8::Local<v8::Value> argv_wrapped[argc];
