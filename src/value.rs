@@ -1,6 +1,8 @@
 use v8_sys as v8;
 use context;
+use error;
 use isolate;
+use util;
 use std::mem;
 use std::ops;
 use std::os;
@@ -190,40 +192,24 @@ macro_rules! inherit {
     }
 }
 
-macro_rules! drop {
-    ($typ:ident, $dtor:expr) => {
-        impl<'a> Drop for $typ<'a> {
-            fn drop(&mut self) {
-                // SAFETY: This is unsafe because it calls a native method with two void pointers.
-                // It's safe because the macro is only used with a type and its corresponding
-                // destructor.
-                unsafe {
-                    $dtor(self.0.as_raw(), self.1)
-                }
-            }
-        }
-    }
-}
-
 macro_rules! type_predicate {
     ($name:ident, $wrapped:expr) => {
         pub fn $name(&self) -> bool {
             // SAFETY: This is unsafe because it calls a native method with two void pointers.  It's
             // safe because the macro is only used with the Value class and one of its methods.
-            unsafe { 0 != $wrapped(self.0.as_raw(), self.1) }
+            unsafe { util::invoke(self.0, |i| $wrapped(i, self.1)).map(|r| 0 != r).unwrap_or(false) }
         }
     }
 }
 
 macro_rules! partial_conversion {
     ($name:ident, $wrapped:expr, $target:ident) => {
-        pub fn $name(&self, context: &context::Context) -> Option<$target> {
+        pub fn $name(&self, context: &context::Context) -> error::Result<Option<$target>> {
             // SAFETY: This is unsafe because it calls a native method with two void pointers that
             // returns a pointer.  It's safe because the method belongs to the class of the second
             // pointer, and a null check is made on the returned pointer.
             unsafe {
-                map_nullable($wrapped(self.0.as_raw(), self.1, context.as_raw()),
-                             |p| $target(self.0, p))
+                Ok(try!(util::invoke_nullable(self.0, |i| $wrapped(i, self.1, context.as_raw()))).map(|p| $target(self.0, p)))
             }
         }
     }
@@ -231,17 +217,17 @@ macro_rules! partial_conversion {
 
 macro_rules! partial_get {
     ($name:ident, $wrapped:expr, $target:ident) => {
-        pub fn $name(&self, context: &context::Context) -> Option<$target> {
+        pub fn $name(&self, context: &context::Context) -> error::Result<Option<$target>> {
             // SAFETY: This is unsafe because it calls a native method with two void pointers that
             // returns partially uninitialized memory.  It is safe because the pointers are of the
             // right types, and the `is_set` flag specifies whether the rest of the returned
             // `struct` is initialized.
             unsafe {
-                let maybe = $wrapped(self.0.as_raw(), self.1, context.as_raw());
+                let maybe = try!(util::invoke(self.0, |c| $wrapped(c, self.1, context.as_raw())));
                 if 0 != maybe.is_set {
-                    Some(maybe.value)
+                    Ok(Some(maybe.value))
                 } else {
-                    None
+                    Ok(None)
                 }
             }
         }
@@ -312,15 +298,16 @@ impl<'a> Value<'a> {
     partial_conversion!(to_int32, v8::Value_ToInt32, Int32);
     partial_conversion!(to_array_index, v8::Value_ToNumber, Uint32);
 
-    pub fn boolean_value(&self, context: &context::Context) -> Option<bool> {
+    pub fn boolean_value(&self, context: &context::Context) -> error::Result<Option<bool>> {
         // SAFETY: This is unsafe for the same reason as `partial_conversion!`.  The only difference
         // is that extra `0 != ` checks have been added.
         unsafe {
-            let maybe = v8::Value_BooleanValue(self.0.as_raw(), self.1, context.as_raw());
-            if 0 != maybe.is_set {
-                Some(0 != maybe.value)
+            let m = try!(util::invoke(self.0, |i| v8::Value_BooleanValue(i, self.1, context.as_raw())));
+
+            if 0 != m.is_set {
+                Ok(Some(0 != m.value))
             } else {
-                None
+                Ok(None)
             }
         }
     }
@@ -330,29 +317,34 @@ impl<'a> Value<'a> {
     partial_get!(uint32_value, v8::Value_Uint32Value, u32);
     partial_get!(int32_value, v8::Value_Int32Value, i32);
 
-    pub fn equals(&self, context: &context::Context, that: &Value) -> Option<bool> {
+    pub fn equals(&self, context: &context::Context, that: &Value) -> error::Result<Option<bool>> {
         // SAFETY: This is unsafe for the same reason as `boolean_value`.  The only difference is
         // that an additional pointer is involved.
         unsafe {
-            let maybe = v8::Value_Equals(self.0.as_raw(), self.1, context.as_raw(), that.as_raw());
-            if 0 != maybe.is_set {
-                Some(0 != maybe.value)
+            let m = try!(util::invoke(self.0, |c| v8::Value_Equals(c, self.1, context.as_raw(), that.as_raw())));
+
+            if 0 != m.is_set {
+                Ok(Some(0 != m.value))
             } else {
-                None
+                Ok(None)
             }
         }
     }
 
-    pub fn strict_equals(&self, that: &Value) -> bool {
+    pub fn strict_equals(&self, that: &Value) -> error::Result<bool> {
         // SAFETY: This is unsafe for the same reason as `boolean_value`.  The only difference is
         // that an additional pointer is involved.
-        unsafe { 0 != v8::Value_StrictEquals(self.0.as_raw(), self.1, that.as_raw()) }
+        unsafe {
+            Ok(0 != try!(util::invoke(self.0, |c| v8::Value_StrictEquals(c, self.1, that.as_raw()))))
+        }
     }
 
-    pub fn same_value(&self, that: &Value) -> bool {
+    pub fn same_value(&self, that: &Value) -> error::Result<bool> {
         // SAFETY: This is unsafe for the same reason as `boolean_value`.  The only difference is
         // that an additional pointer is involved.
-        unsafe { 0 != v8::Value_SameValue(self.0.as_raw(), self.1, that.as_raw()) }
+        unsafe {
+            Ok(0 != try!(util::invoke(self.0, |c| v8::Value_SameValue(c, self.1, that.as_raw()))))
+        }
     }
 
     /// Creates a value from a set of raw pointers
@@ -370,48 +362,50 @@ impl<'a> Value<'a> {
 
 impl<'a> PartialEq for Value<'a> {
     fn eq(&self, other: &Value) -> bool {
-        self.strict_equals(other)
+        self.strict_equals(other).unwrap_or(false)
     }
 }
 
 impl<'a> String<'a> {
-    pub fn from_str(isolate: &'a isolate::Isolate, str: &str) -> String<'a> {
+    pub fn from_str(isolate: &'a isolate::Isolate, str: &str) -> error::Result<String<'a>> {
         // SAFETY: This is unsafe because a native method is called that reads from memory.  It is
         // safe because the method only reads from the sent-in pointer up to the sent-in length.
         unsafe {
-            String(isolate,
-                   v8::String_NewFromUtf8_Normal(isolate.as_raw(),
-                                                 str.as_ptr() as *const i8,
-                                                 str.len() as os::raw::c_int))
+            Ok(String(isolate, try!(util::invoke(isolate, |c| v8::String_NewFromUtf8_Normal(c,
+                                                                    str.as_ptr() as *const i8,
+                                                                    str.len() as os::raw::c_int)))))
         }
     }
 
-    pub fn internalized_from_str(isolate: &'a isolate::Isolate, str: &str) -> String<'a> {
+    pub fn internalized_from_str(isolate: &'a isolate::Isolate, str: &str) -> error::Result<String<'a>> {
         // SAFETY: This is unsafe for the same reasons as `from_str`.
         unsafe {
-            String(isolate,
-                   v8::String_NewFromUtf8_Internalized(isolate.as_raw(),
-                                                       str.as_ptr() as *const i8,
-                                                       str.len() as os::raw::c_int))
+            Ok(String(isolate, try!(util::invoke(isolate, |c| v8::String_NewFromUtf8_Internalized(c,
+                                                                            str.as_ptr() as *const i8,
+                                                                            str.len() as os::raw::c_int)))))
         }
     }
 
-    pub fn to_string(&self) -> ::std::string::String {
+    pub fn to_string(&self) -> error::Result<::std::string::String> {
         // SAFETY: This is unsafe because native code is getting called.  It is safe because the
         // method is a member of the String class.
-        let len = unsafe { v8::String_Utf8Length(self.0.as_raw(), self.1) } as usize;
+        let len = unsafe { try!(util::invoke(self.0, |c| v8::String_Utf8Length(c, self.1))) } as usize;
         let mut buf = vec![0u8; len];
 
         // SAFETY: This is unsafe because native code writes to managed memory, and it might not be
         // valid UTF-8.  It is safe because the underlying method should only write up to the
         // specified length and valid UTF-8.
         unsafe {
-            v8::String_WriteUtf8(self.0.as_raw(),
+            try!(util::invoke(self.0, |c| v8::String_WriteUtf8(c,
                                  self.1,
                                  buf.as_mut_ptr() as *mut i8,
-                                 len as i32);
-            ::std::string::String::from_utf8_unchecked(buf)
+                                 len as i32)));
+            Ok(::std::string::String::from_utf8_unchecked(buf))
         }
+    }
+
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: *mut v8::String) -> String<'a> {
+        String(isolate, raw)
     }
 
     pub fn as_raw(&self) -> *mut v8::String {
@@ -420,37 +414,33 @@ impl<'a> String<'a> {
 }
 
 impl<'a> Object<'a> {
-    pub fn get(&self, context: &context::Context, key: &Value) -> Option<Value> {
+    pub fn get(&self, context: &context::Context, key: &Value) -> error::Result<Option<Value>> {
         // SAFETY: This is unsafe because a native method is being called.  It is safe because the
         // method is a member of the Object class, and a null check is performed on the returned
         // pointer.
         unsafe {
-            let ptr = v8::Object_Get(self.0.as_raw(), self.1, context.as_raw(), key.as_raw());
-            map_nullable(ptr, |p| Value(self.0, p))
+            Ok(try!(util::invoke_nullable(self.0, |c| v8::Object_Get(c, self.1, context.as_raw(), key.as_raw()))).map(|p| Value(self.0, p)))
         }
     }
 
-    pub fn call(&self, context: &context::Context, args: &[&Value]) -> Option<Value> {
+    pub fn call(&self, context: &context::Context, args: &[&Value]) -> error::Result<Option<Value>> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         unsafe {
-            let ptr = v8::Object_CallAsFunction(self.0.as_raw(), self.1, context.as_raw(), ptr::null_mut(), arg_ptrs.len() as i32, arg_ptrs.as_mut_ptr());
-            map_nullable(ptr, |p| Value(self.0, p))
+            Ok(try!(util::invoke_nullable(self.0, |c| v8::Object_CallAsFunction(c, self.1, context.as_raw(), ptr::null_mut(), arg_ptrs.len() as i32, arg_ptrs.as_mut_ptr()))).map(|p| Value(self.0, p)))
         }
     }
 
-    pub fn call_with_this(&self, context: &context::Context, this: &Value, args: &[&Value]) -> Option<Value> {
+    pub fn call_with_this(&self, context: &context::Context, this: &Value, args: &[&Value]) -> error::Result<Option<Value>> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         unsafe {
-            let ptr = v8::Object_CallAsFunction(self.0.as_raw(), self.1, context.as_raw(), this.as_raw(), arg_ptrs.len() as i32, arg_ptrs.as_mut_ptr());
-            map_nullable(ptr, |p| Value(self.0, p))
+            Ok(try!(util::invoke_nullable(self.0, |c| v8::Object_CallAsFunction(c, self.1, context.as_raw(), this.as_raw(), arg_ptrs.len() as i32, arg_ptrs.as_mut_ptr()))).map(|p| Value(self.0, p)))
         }
     }
 
-    pub fn call_as_constructor(&self, context: &context::Context, args: &[&Value]) -> Option<Value> {
+    pub fn call_as_constructor(&self, context: &context::Context, args: &[&Value]) -> error::Result<Option<Value>> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         unsafe {
-            let ptr = v8::Object_CallAsConstructor(self.0.as_raw(), self.1, context.as_raw(), arg_ptrs.len() as i32, arg_ptrs.as_mut_ptr());
-            map_nullable(ptr, |p| Value(self.0, p))
+            Ok(try!(util::invoke_nullable(self.0, |c| v8::Object_CallAsConstructor(c, self.1, context.as_raw(), arg_ptrs.len() as i32, arg_ptrs.as_mut_ptr()))).map(|p| Value(self.0, p)))
         }
     }
 }
@@ -539,9 +529,3 @@ drop!(StringObject, v8::StringObject_Destroy);
 drop!(SymbolObject, v8::SymbolObject_Destroy);
 drop!(RegExp, v8::RegExp_Destroy);
 drop!(External, v8::External_Destroy);
-
-fn map_nullable<A, B, F>(ptr: *mut A, func: F) -> Option<B>
-    where F: FnOnce(*mut A) -> B
-{
-    if ptr.is_null() { None } else { Some(func(ptr)) }
-}

@@ -3,8 +3,6 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "libplatform/libplatform.h"
-
 template<typename A> v8::Persistent<A> *unwrap(v8::Isolate *isolate,
                                                v8::Local<A> value)
 {
@@ -53,6 +51,13 @@ template<typename A> v8::Local<A> wrap(v8::Isolate *isolate,
 
 template<typename A> A wrap(v8::Isolate *isolate, A &&value) {
     return value;
+}
+
+void handle_exception(RustContext &c, v8::TryCatch &try_catch) {
+    if (try_catch.HasCaught()) {
+        *c.exception = unwrap(c.isolate, try_catch.Exception());
+        *c.message = unwrap(c.isolate, try_catch.Message());
+    }
 }
 
 class GluePlatform : public v8::Platform {
@@ -187,72 +192,97 @@ void v8_IdleTask_Run(IdleTask *task, double deadline_in_seconds) {
     task->Run(deadline_in_seconds);
 }
 
-Context *v8_Context_New(Isolate *isolate) {
-    v8::HandleScope scope(isolate);
-    return unwrap(isolate, v8::Context::New(isolate));
+Context *v8_Context_New(RustContext c) {
+    v8::HandleScope scope(c.isolate);
+    v8::TryCatch try_catch(c.isolate);
+    auto result = v8::Context::New(c.isolate);
+    handle_exception(c, try_catch);
+    return unwrap(c.isolate, result);
 }
 
-void v8_Context_Enter(Isolate *isolate, Context *context) {
-    v8::HandleScope scope(isolate);
-    wrap(isolate, context)->Enter();
+void v8_Context_Enter(RustContext c, Context *context) {
+    v8::HandleScope scope(c.isolate);
+    v8::TryCatch try_catch(c.isolate);
+    wrap(c.isolate, context)->Enter();
+    handle_exception(c, try_catch);
 }
 
-void v8_Context_Exit(Isolate *isolate, Context *context) {
-    v8::HandleScope scope(isolate);
-    v8::Context::Scope context_scope(wrap(isolate, context));
-    wrap(isolate, context)->Exit();
+void v8_Context_Exit(RustContext c, Context *context) {
+    v8::HandleScope scope(c.isolate);
+    v8::TryCatch try_catch(c.isolate);
+    v8::Context::Scope context_scope(wrap(c.isolate, context));
+    wrap(c.isolate, context)->Exit();
+    handle_exception(c, try_catch);
 }
 
-String *v8_String_NewFromUtf8_Normal(Isolate *isolate, const char *data, int length) {
-    v8::HandleScope scope(isolate);
-    return unwrap(isolate, v8::String::NewFromUtf8(isolate, data, v8::NewStringType::kNormal, length));
+String *v8_String_NewFromUtf8_Normal(RustContext c, const char *data, int length) {
+    v8::HandleScope scope(c.isolate);
+    v8::TryCatch try_catch(c.isolate);
+    auto result = v8::String::NewFromUtf8(c.isolate, data, v8::NewStringType::kNormal, length);
+    handle_exception(c, try_catch);
+    return unwrap(c.isolate, result);
 }
 
-String *v8_String_NewFromUtf8_Internalized(Isolate *isolate, const char *data, int length) {
-    v8::HandleScope scope(isolate);
-    return unwrap(isolate, v8::String::NewFromUtf8(isolate, data, v8::NewStringType::kInternalized, length));
+String *v8_String_NewFromUtf8_Internalized(RustContext c, const char *data, int length) {
+    v8::HandleScope scope(c.isolate);
+    v8::TryCatch try_catch(c.isolate);
+    auto result = v8::String::NewFromUtf8(c.isolate, data, v8::NewStringType::kInternalized, length);
+    handle_exception(c, try_catch);
+    return unwrap(c.isolate, result);
 }
 
-int v8_String_WriteUtf8(Isolate *isolate, String *string, char *buffer, int length) {
-    v8::HandleScope scope(isolate);
-    return wrap(isolate, string)->WriteUtf8(buffer, length);
+int v8_String_WriteUtf8(RustContext c, String *string, char *buffer, int length) {
+    v8::HandleScope scope(c.isolate);
+    v8::TryCatch try_catch(c.isolate);
+    auto result = wrap(c.isolate, string)->WriteUtf8(buffer, length);
+    handle_exception(c, try_catch);
+    return result;
 }
 
-Script *v8_Script_Compile(Isolate *isolate, Context *context, String *source) {
-    v8::HandleScope scope(isolate);
-    v8::Context::Scope context_scope(wrap(isolate, context));
-    return unwrap(isolate, v8::Script::Compile(wrap(isolate, context), wrap(isolate, source)));
+Script *v8_Script_Compile(RustContext c, Context *context, String *source) {
+    v8::HandleScope scope(c.isolate);
+    v8::TryCatch try_catch(c.isolate);
+    v8::Context::Scope context_scope(wrap(c.isolate, context));
+    auto result = v8::Script::Compile(wrap(c.isolate, context), wrap(c.isolate, source));
+    handle_exception(c, try_catch);
+    return unwrap(c.isolate, result);
 }
 
-Value *v8_Object_CallAsFunction(Isolate *isolate, Object *self, Context *context, Value *recv, int argc, Value *argv[]) {
-    v8::HandleScope scope(isolate);
-    v8::Context::Scope context_scope(wrap(isolate, context));
+Value *v8_Object_CallAsFunction(RustContext c, Object *self, Context *context, Value *recv, int argc, Value *argv[]) {
+    v8::HandleScope scope(c.isolate);
+    v8::TryCatch try_catch(c.isolate);
+    v8::Context::Scope context_scope(wrap(c.isolate, context));
     v8::Local<v8::Value> argv_wrapped[argc];
     v8::Local<v8::Value> recv_wrapped;
 
     for (int i = 0; i < argc; i++) {
-        argv_wrapped[i] = wrap(isolate, argv[i]);
+        argv_wrapped[i] = wrap(c.isolate, argv[i]);
     }
 
     if (recv == nullptr) {
-        recv_wrapped = v8::Undefined(isolate);
+        recv_wrapped = v8::Undefined(c.isolate);
     } else {
-        recv_wrapped = wrap(isolate, recv);
+        recv_wrapped = wrap(c.isolate, recv);
     }
 
-    return unwrap(isolate, wrap(isolate, self)->CallAsFunction(wrap(isolate, context), recv_wrapped, argc, argv_wrapped));
+    auto result = wrap(c.isolate, self)->CallAsFunction(wrap(c.isolate, context), recv_wrapped, argc, argv_wrapped);
+    handle_exception(c, try_catch);
+    return unwrap(c.isolate, result);
 }
 
-Value *v8_Object_CallAsConstructor(Isolate *isolate, Object *self, Context *context, int argc, Value *argv[]) {
-    v8::HandleScope scope(isolate);
-    v8::Context::Scope context_scope(wrap(isolate, context));
+Value *v8_Object_CallAsConstructor(RustContext c, Object *self, Context *context, int argc, Value *argv[]) {
+    v8::HandleScope scope(c.isolate);
+    v8::TryCatch try_catch(c.isolate);
+    v8::Context::Scope context_scope(wrap(c.isolate, context));
     v8::Local<v8::Value> argv_wrapped[argc];
 
     for (int i = 0; i < argc; i++) {
-        argv_wrapped[i] = wrap(isolate, argv[i]);
+        argv_wrapped[i] = wrap(c.isolate, argv[i]);
     }
 
-    return unwrap(isolate, wrap(isolate, self)->CallAsConstructor(wrap(isolate, context), argc, argv_wrapped));
+    auto result = wrap(c.isolate, self)->CallAsConstructor(wrap(c.isolate, context), argc, argv_wrapped);
+    handle_exception(c, try_catch);
+    return unwrap(c.isolate, result);
 }
 
 #include "v8-glue-generated.cc"
