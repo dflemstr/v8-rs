@@ -1,35 +1,15 @@
 extern crate bindgen;
+extern crate clang;
 extern crate gcc;
 
+mod api;
+
+use api::*;
 use std::env;
 use std::fmt;
 use std::fs;
 use std::io;
 use std::path;
-
-struct Class(&'static str, &'static [Method]);
-
-struct Method(&'static str, &'static [Arg], RetType);
-
-enum RetType {
-    Direct(Type),
-    Maybe(Type),
-}
-
-struct Arg(&'static str, Type);
-
-#[derive(Debug)]
-enum Type {
-    ValBool,
-    ValInt,
-    ValF64,
-    ValU32,
-    ValI32,
-    ValU64,
-    ValI64,
-
-    Ptr(&'static str)
-}
 
 const NS: &'static str = "v8";
 
@@ -44,6 +24,8 @@ fn main() {
     let out_dir_str = env::var_os("OUT_DIR").unwrap();
     let out_dir_path = path::Path::new(&out_dir_str);
 
+    println!("cargo:warning={:?}", parse_api());
+
     link_v8();
 
     let header_path = out_dir_path.join("v8-glue-generated.h");
@@ -56,6 +38,16 @@ fn main() {
 
     let ffi_path = out_dir_path.join("ffi.rs");
     gen_bindings(out_dir_path, &ffi_path);
+}
+
+fn parse_api() -> api::Api {
+    let v8_header_path = if let Some(dir_str) = env::var_os("V8_SOURCE") {
+        path::Path::new(&dir_str).join("include").join("v8.h")
+    } else {
+        unimplemented!()
+    };
+
+    api::read(&v8_header_path)
 }
 
 fn link_v8() {
@@ -172,7 +164,7 @@ fn write_header<W>(mut out: W) -> io::Result<()>
 
         for method in class.1.iter() {
             try!(write!(out,
-                        "{retty} {ns}_{class}_{method}(Isolate *isolate, {class} *self",
+                        "{retty} {ns}_{class}_{method}(RustContext c, {class} *self",
                         ns = NS,
                         retty = method.2,
                         class = class.0,
@@ -184,7 +176,7 @@ fn write_header<W>(mut out: W) -> io::Result<()>
             try!(writeln!(out, ");"));
         }
         try!(writeln!(out,
-                      "void {ns}_{class}_Destroy(Isolate *isolate, {class} *self);",
+                      "void {ns}_{class}_Destroy({class} *self);",
                       ns = NS,
                       class = class.0));
     }
@@ -199,7 +191,7 @@ fn write_cc_file<W>(mut out: W) -> io::Result<()>
         for method in class.1.iter() {
             try!(writeln!(out, ""));
             try!(write!(out,
-                        "{retty} {ns}_{class}_{method}(v8::Isolate *isolate, {class} *self",
+                        "{retty} {ns}_{class}_{method}(RustContext c, {class} *self",
                         ns = NS,
                         retty = method.2,
                         class = class.0,
@@ -209,13 +201,13 @@ fn write_cc_file<W>(mut out: W) -> io::Result<()>
                 try!(write!(out, ", {arg}", arg = arg));
             }
             try!(writeln!(out, ") {{"));
-            try!(writeln!(out, "  v8::HandleScope scope(isolate);"));
+            try!(writeln!(out, "  v8::HandleScope scope(c.isolate);"));
+            try!(writeln!(out, "  v8::TryCatch try_catch(c.isolate);"));
             if let Some(&Arg(ctx, Type::Ptr("Context"))) = method.1.iter().next() {
-                try!(writeln!(out, "  v8::Context::Scope {ctx}_scope(wrap(isolate, {ctx}));", ctx=ctx));
+                try!(writeln!(out, "  v8::Context::Scope {ctx}_scope(wrap(c.isolate, {ctx}));", ctx=ctx));
             }
             try!(write!(out,
-                        "  return {retunwrap}(isolate, self->Get(isolate)->{method}(",
-                        retunwrap = method.2.unwrap_fun(),
+                        "  auto result = self->Get(c.isolate)->{method}(",
                         method = method.0));
             let mut needs_sep = false;
             for arg in method.1.iter() {
@@ -223,15 +215,17 @@ fn write_cc_file<W>(mut out: W) -> io::Result<()>
                     try!(write!(out, ", "));
                 }
                 needs_sep = true;
-                try!(write!(out, "wrap(isolate, {arg})", arg = arg.0));
+                try!(write!(out, "wrap(c.isolate, {arg})", arg = arg.0));
             }
-            try!(writeln!(out, "));"));
+            try!(writeln!(out, ");"));
+            try!(writeln!(out, "  handle_exception(c, try_catch);"));
+            try!(writeln!(out, "  return {retunwrap}(c.isolate, result);", retunwrap = method.2.unwrap_fun()));
             try!(writeln!(out, "}}"));
         }
 
         try!(writeln!(out, ""));
         try!(writeln!(out,
-                      "void {ns}_{class}_Destroy(v8::Isolate *isolate, {class} *self) {{",
+                      "void {ns}_{class}_Destroy({class} *self) {{",
                       ns = NS,
                       class = class.0));
         try!(writeln!(out, "  delete self;"));
@@ -318,6 +312,7 @@ const API: &'static [Class] =
           // TODO: methods
       ]),
       Class("Message", &[
+          Method("Get", &[], RetType::Direct(Type::Ptr("String"))),
           Method("GetSourceLine", &[Arg("context", Type::Ptr("Context"))], RetType::Maybe(Type::Ptr("String"))),
           // Method("GetScriptOrigin", &[], RetType::Direct(Type::Ptr("ScriptOrigin"))),
           Method("GetScriptResourceName", &[], RetType::Direct(Type::Ptr("Value"))),

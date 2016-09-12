@@ -27,6 +27,9 @@ typedef void String_Utf8Value;
 
 #endif /* defined __cplusplus */
 
+struct RustContext;
+typedef struct RustContext RustContext;
+
 struct MaybeBool {
     bool is_set;
     bool value;
@@ -67,6 +70,7 @@ struct v8_AllocatorFunctions {
     void *(*AllocateUninitialized)(size_t length);
     void (*Free)(void *data, size_t length);
 };
+typedef struct v8_AllocatorFunctions v8_AllocatorFunctions;
 
 enum v8_ExpectedRuntime {
     SHORT_RUNNING_TASK,
@@ -87,8 +91,9 @@ struct v8_PlatformFunctions {
     // TODO: AddTraceEvent
     // TODO: UpdateTraceEventDuration
 };
+typedef struct v8_PlatformFunctions v8_PlatformFunctions;
 
-Platform *v8_Platform_Create(struct v8_PlatformFunctions platform_functions);
+Platform *v8_Platform_Create(v8_PlatformFunctions platform_functions);
 void v8_Platform_Destroy(Platform *platform);
 
 void v8_V8_InitializeICU();
@@ -97,7 +102,7 @@ void v8_V8_Initialize();
 void v8_V8_Dispose();
 void v8_V8_ShutdownPlatform();
 
-ArrayBuffer_Allocator *v8_ArrayBuffer_Allocator_Create(struct v8_AllocatorFunctions allocator_functions);
+ArrayBuffer_Allocator *v8_ArrayBuffer_Allocator_Create(v8_AllocatorFunctions allocator_functions);
 void v8_ArrayBuffer_Allocator_Destroy(ArrayBuffer_Allocator *allocator);
 
 Isolate *v8_Isolate_New(ArrayBuffer_Allocator *allocator);
@@ -108,20 +113,26 @@ void v8_IdleTask_Run(IdleTask *task, double deadline_in_seconds);
 
 #include "v8-glue-generated.h"
 
-Context *v8_Context_New(Isolate *isolate);
-void v8_Context_Enter(Isolate *isolate, Context *context);
-void v8_Context_Exit(Isolate *isolate, Context *context);
+Context *v8_Context_New(RustContext c);
+void v8_Context_Enter(RustContext c, Context *context);
+void v8_Context_Exit(RustContext c, Context *context);
 
-String *v8_String_NewFromUtf8_Normal(Isolate *isolate, const char *data, int length);
-String *v8_String_NewFromUtf8_Internalized(Isolate *isolate, const char *data, int length);
+String *v8_String_NewFromUtf8_Normal(RustContext c, const char *data, int length);
+String *v8_String_NewFromUtf8_Internalized(RustContext c, const char *data, int length);
 
-int v8_String_WriteUtf8(Isolate *isolate, String *string, char *buffer, int length);
+int v8_String_WriteUtf8(RustContext c, String *string, char *buffer, int length);
 
-Script *v8_Script_Compile(Isolate *isolate, Context *context, String *source);
+Script *v8_Script_Compile(RustContext c, Context *context, String *source);
 
-Value *v8_Object_CallAsFunction(Isolate *isolate, Object *self, Context *context, Value *recv, int argc, Value *argv[]);
+Value *v8_Object_CallAsFunction(RustContext c, Object *self, Context *context, Value *recv, int argc, Value *argv[]);
 
-Value *v8_Object_CallAsConstructor(Isolate *isolate, Object *self, Context *context, int argc, Value *argv[]);
+Value *v8_Object_CallAsConstructor(RustContext c, Object *self, Context *context, int argc, Value *argv[]);
+
+struct RustContext {
+    Isolate *isolate;
+    Value **exception;
+    Message **message;
+};
 
 #if defined __cplusplus
 } /* extern "C" */
