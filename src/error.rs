@@ -1,5 +1,4 @@
 use v8_sys as v8;
-use error;
 use isolate;
 use util;
 use value;
@@ -20,10 +19,10 @@ pub struct StackFrame<'a>(&'a isolate::Isolate, v8::StackFrameRef);
 impl<'a> Message<'a> {
     // TODO: pub fn get_script_origin(&self)
 
-    pub fn get(&self) -> error::Result<value::String> {
+    pub fn get(&self) -> value::String {
         unsafe {
-            Ok(value::String::from_raw(self.0,
-                                       try!(util::invoke(self.0, |c| v8::Message_Get(c, self.1)))))
+            value::String::from_raw(self.0,
+                                    util::invoke(self.0, |c| v8::Message_Get(c, self.1)).unwrap())
         }
     }
 
