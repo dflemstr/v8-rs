@@ -1,0 +1,12 @@
+[package]
+authors = ["David Flemström <dflemstr@spotify.com>"]
+name = "v8-api"
+version = "0.1.0"
+
+[dependencies]
+env_logger = "0.3.4"
+log = "0.3.6"
+
+[dependencies.clang]
+features = ["clang_3_9"]
+version = "0.12.0"

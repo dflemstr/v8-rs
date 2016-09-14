@@ -13,9 +13,9 @@ error_chain! {
     }
 }
 
-pub struct Message<'a>(&'a isolate::Isolate, *mut v8::Message);
-pub struct StackTrace<'a>(&'a isolate::Isolate, *mut v8::StackTrace);
-pub struct StackFrame<'a>(&'a isolate::Isolate, *mut v8::StackFrame);
+pub struct Message<'a>(&'a isolate::Isolate, v8::MessageRef);
+pub struct StackTrace<'a>(&'a isolate::Isolate, v8::StackTraceRef);
+pub struct StackFrame<'a>(&'a isolate::Isolate, v8::StackFrameRef);
 
 impl<'a> Message<'a> {
 
@@ -27,11 +27,11 @@ impl<'a> Message<'a> {
         }
     }
 
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: *mut v8::Message) -> Message<'a> {
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::MessageRef) -> Message<'a> {
         Message(isolate, raw)
     }
 }
 
-drop!(Message, v8::Message_Destroy);
-drop!(StackTrace, v8::StackTrace_Destroy);
-drop!(StackFrame, v8::StackFrame_Destroy);
+drop!(Message, v8::Message_DestroyRef);
+drop!(StackTrace, v8::StackTrace_DestroyRef);
+drop!(StackFrame, v8::StackFrame_DestroyRef);

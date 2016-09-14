@@ -1,6 +1,6 @@
 [package]
 authors = ["David Flemström <dflemstr@spotify.com>"]
-build = "build/lib.rs"
+build = "build.rs"
 name = "v8-sys"
 version = "0.1.0"
 
@@ -8,6 +8,9 @@ version = "0.1.0"
 bindgen = "0.19.0"
 clang = "0.12.0"
 gcc = "0.3.35"
+
+[build-dependencies.v8-api]
+path = "../v8-api"
 
 [dev-dependencies]
 lazy_static = "0.2.1"

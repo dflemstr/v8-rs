@@ -6,7 +6,7 @@ use platform;
 
 static mut INITIALIZED: atomic::AtomicBool = atomic::ATOMIC_BOOL_INIT;
 
-pub struct Isolate(*mut v8::Isolate, allocator::Allocator);
+pub struct Isolate(v8::IsolatePtr, allocator::Allocator);
 
 impl Isolate {
     pub fn new() -> Isolate {
@@ -22,7 +22,7 @@ impl Isolate {
         Isolate(raw, allocator)
     }
 
-    pub fn as_raw(&self) -> *mut v8::Isolate {
+    pub fn as_raw(&self) -> v8::IsolatePtr {
         self.0
     }
 }
