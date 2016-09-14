@@ -11,4 +11,5 @@ lazy_static = "0.2.1"
 path = "v8-sys"
 
 [features]
+default = ["shared"]
 shared = ["v8-sys/shared"]

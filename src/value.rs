@@ -9,161 +9,161 @@ use std::os;
 use std::ptr;
 
 /// The superclass of all JavaScript values and objects.
-pub struct Value<'a>(&'a isolate::Isolate, *mut v8::Value);
+pub struct Value<'a>(&'a isolate::Isolate, v8::ValueRef);
 
 /// The superclass of primitive values.  See ECMA-262 4.3.2.
-pub struct Primitive<'a>(&'a isolate::Isolate, *mut v8::Primitive);
+pub struct Primitive<'a>(&'a isolate::Isolate, v8::PrimitiveRef);
 
 /// A primitive boolean value (ECMA-262, 4.3.14).  Either the true or false value.
-pub struct Boolean<'a>(&'a isolate::Isolate, *mut v8::Boolean);
+pub struct Boolean<'a>(&'a isolate::Isolate, v8::BooleanRef);
 
 /// A superclass for symbols and strings.
-pub struct Name<'a>(&'a isolate::Isolate, *mut v8::Name);
+pub struct Name<'a>(&'a isolate::Isolate, v8::NameRef);
 
 /// A JavaScript string value (ECMA-262, 4.3.17).
-pub struct String<'a>(&'a isolate::Isolate, *mut v8::String);
+pub struct String<'a>(&'a isolate::Isolate, v8::StringRef);
 
 /// A JavaScript symbol (ECMA-262 edition 6)
 ///
 /// This is an experimental feature. Use at your own risk.
-pub struct Symbol<'a>(&'a isolate::Isolate, *mut v8::Symbol);
+pub struct Symbol<'a>(&'a isolate::Isolate, v8::SymbolRef);
 
 /// A private symbol
 ///
 /// This is an experimental feature. Use at your own risk.
-pub struct Private<'a>(&'a isolate::Isolate, *mut v8::Private);
+pub struct Private<'a>(&'a isolate::Isolate, v8::PrivateRef);
 
 /// A JavaScript number value (ECMA-262, 4.3.20)
-pub struct Number<'a>(&'a isolate::Isolate, *mut v8::Number);
+pub struct Number<'a>(&'a isolate::Isolate, v8::NumberRef);
 
 /// A JavaScript value representing a signed integer.
-pub struct Integer<'a>(&'a isolate::Isolate, *mut v8::Integer);
+pub struct Integer<'a>(&'a isolate::Isolate, v8::IntegerRef);
 
 /// A JavaScript value representing a 32-bit signed integer.
-pub struct Int32<'a>(&'a isolate::Isolate, *mut v8::Int32);
+pub struct Int32<'a>(&'a isolate::Isolate, v8::Int32Ref);
 
 /// A JavaScript value representing a 32-bit unsigned integer.
-pub struct Uint32<'a>(&'a isolate::Isolate, *mut v8::Uint32);
+pub struct Uint32<'a>(&'a isolate::Isolate, v8::Uint32Ref);
 
 /// A JavaScript object (ECMA-262, 4.3.3)
-pub struct Object<'a>(&'a isolate::Isolate, *mut v8::Object);
+pub struct Object<'a>(&'a isolate::Isolate, v8::ObjectRef);
 
 /// An instance of the built-in array constructor (ECMA-262, 15.4.2).
-pub struct Array<'a>(&'a isolate::Isolate, *mut v8::Array);
+pub struct Array<'a>(&'a isolate::Isolate, v8::ArrayRef);
 
 /// An instance of the built-in Map constructor (ECMA-262, 6th Edition, 23.1.1).
-pub struct Map<'a>(&'a isolate::Isolate, *mut v8::Map);
+pub struct Map<'a>(&'a isolate::Isolate, v8::MapRef);
 
 /// An instance of the built-in Set constructor (ECMA-262, 6th Edition, 23.2.1).
-pub struct Set<'a>(&'a isolate::Isolate, *mut v8::Set);
+pub struct Set<'a>(&'a isolate::Isolate, v8::SetRef);
 
 /// A JavaScript function object (ECMA-262, 15.3).
-pub struct Function<'a>(&'a isolate::Isolate, *mut v8::Function);
+pub struct Function<'a>(&'a isolate::Isolate, v8::FunctionRef);
 
 /// An instance of the built-in Promise constructor (ES6 draft).
 ///
 /// This API is experimental. Only works with --harmony flag.
-pub struct Promise<'a>(&'a isolate::Isolate, *mut v8::Promise);
+pub struct Promise<'a>(&'a isolate::Isolate, v8::PromiseRef);
 
 /// An instance of the built-in Proxy constructor (ECMA-262, 6th Edition, 26.2.1).
-pub struct Proxy<'a>(&'a isolate::Isolate, *mut v8::Proxy);
+pub struct Proxy<'a>(&'a isolate::Isolate, v8::ProxyRef);
 
-pub struct WasmCompiledModule<'a>(&'a isolate::Isolate, *mut v8::WasmCompiledModule);
+pub struct WasmCompiledModule<'a>(&'a isolate::Isolate, v8::WasmCompiledModuleRef);
 
 /// An instance of the built-in ArrayBuffer constructor (ES6 draft 15.13.5).
 ///
 /// This API is experimental and may change significantly.
-pub struct ArrayBuffer<'a>(&'a isolate::Isolate, *mut v8::ArrayBuffer);
+pub struct ArrayBuffer<'a>(&'a isolate::Isolate, v8::ArrayBufferRef);
 
 /// A base class for an instance of one of "views" over ArrayBuffer, including TypedArrays and
 /// DataView (ES6 draft 15.13).
 ///
 /// This API is experimental and may change significantly.
-pub struct ArrayBufferView<'a>(&'a isolate::Isolate, *mut v8::ArrayBufferView);
+pub struct ArrayBufferView<'a>(&'a isolate::Isolate, v8::ArrayBufferViewRef);
 
 /// A base class for an instance of TypedArray series of constructors (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
-pub struct TypedArray<'a>(&'a isolate::Isolate, *mut v8::TypedArray);
+pub struct TypedArray<'a>(&'a isolate::Isolate, v8::TypedArrayRef);
 
 /// An instance of Uint8Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
-pub struct Uint8Array<'a>(&'a isolate::Isolate, *mut v8::Uint8Array);
+pub struct Uint8Array<'a>(&'a isolate::Isolate, v8::Uint8ArrayRef);
 
 /// An instance of Uint8ClampedArray constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
-pub struct Uint8ClampedArray<'a>(&'a isolate::Isolate, *mut v8::Uint8ClampedArray);
+pub struct Uint8ClampedArray<'a>(&'a isolate::Isolate, v8::Uint8ClampedArrayRef);
 
 /// An instance of Int8Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
-pub struct Int8Array<'a>(&'a isolate::Isolate, *mut v8::Int8Array);
+pub struct Int8Array<'a>(&'a isolate::Isolate, v8::Int8ArrayRef);
 
 /// An instance of Uint16Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
-pub struct Uint16Array<'a>(&'a isolate::Isolate, *mut v8::Uint16Array);
+pub struct Uint16Array<'a>(&'a isolate::Isolate, v8::Uint16ArrayRef);
 
 /// An instance of Int16Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
-pub struct Int16Array<'a>(&'a isolate::Isolate, *mut v8::Int16Array);
+pub struct Int16Array<'a>(&'a isolate::Isolate, v8::Int16ArrayRef);
 
 /// An instance of Uint32Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
-pub struct Uint32Array<'a>(&'a isolate::Isolate, *mut v8::Uint32Array);
+pub struct Uint32Array<'a>(&'a isolate::Isolate, v8::Uint32ArrayRef);
 
 /// An instance of Int32Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
-pub struct Int32Array<'a>(&'a isolate::Isolate, *mut v8::Int32Array);
+pub struct Int32Array<'a>(&'a isolate::Isolate, v8::Int32ArrayRef);
 
 /// An instance of Float32Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
-pub struct Float32Array<'a>(&'a isolate::Isolate, *mut v8::Float32Array);
+pub struct Float32Array<'a>(&'a isolate::Isolate, v8::Float32ArrayRef);
 
 /// An instance of Float64Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
-pub struct Float64Array<'a>(&'a isolate::Isolate, *mut v8::Float64Array);
+pub struct Float64Array<'a>(&'a isolate::Isolate, v8::Float64ArrayRef);
 
 /// An instance of DataView constructor (ES6 draft 15.13.7).
 ///
 /// This API is experimental and may change significantly.
-pub struct DataView<'a>(&'a isolate::Isolate, *mut v8::DataView);
+pub struct DataView<'a>(&'a isolate::Isolate, v8::DataViewRef);
 
 /// An instance of the built-in SharedArrayBuffer constructor.
 ///
 /// This API is experimental and may change significantly.
-pub struct SharedArrayBuffer<'a>(&'a isolate::Isolate, *mut v8::SharedArrayBuffer);
+pub struct SharedArrayBuffer<'a>(&'a isolate::Isolate, v8::SharedArrayBufferRef);
 
 /// An instance of the built-in Date constructor (ECMA-262, 15.9).
-pub struct Date<'a>(&'a isolate::Isolate, *mut v8::Date);
+pub struct Date<'a>(&'a isolate::Isolate, v8::DateRef);
 
 /// A Number object (ECMA-262, 4.3.21).
-pub struct NumberObject<'a>(&'a isolate::Isolate, *mut v8::NumberObject);
+pub struct NumberObject<'a>(&'a isolate::Isolate, v8::NumberObjectRef);
 
 /// A Boolean object (ECMA-262, 4.3.15).
-pub struct BooleanObject<'a>(&'a isolate::Isolate, *mut v8::BooleanObject);
+pub struct BooleanObject<'a>(&'a isolate::Isolate, v8::BooleanObjectRef);
 
 /// A String object (ECMA-262, 4.3.18).
-pub struct StringObject<'a>(&'a isolate::Isolate, *mut v8::StringObject);
+pub struct StringObject<'a>(&'a isolate::Isolate, v8::StringObjectRef);
 
 /// A Symbol object (ECMA-262 edition 6).
 ///
 /// This is an experimental feature. Use at your own risk.
-pub struct SymbolObject<'a>(&'a isolate::Isolate, *mut v8::SymbolObject);
+pub struct SymbolObject<'a>(&'a isolate::Isolate, v8::SymbolObjectRef);
 
 /// An instance of the built-in RegExp constructor (ECMA-262, 15.10).
-pub struct RegExp<'a>(&'a isolate::Isolate, *mut v8::RegExp);
+pub struct RegExp<'a>(&'a isolate::Isolate, v8::RegExpRef);
 
 /// A JavaScript value that wraps an external value. This type of value is mainly used to associate
 /// native data structures with JavaScript objects.
-pub struct External<'a>(&'a isolate::Isolate, *mut v8::External);
+pub struct External<'a>(&'a isolate::Isolate, v8::ExternalRef);
 
 macro_rules! inherit {
     ($child:ident, $parent:ident) => {
@@ -296,7 +296,7 @@ impl<'a> Value<'a> {
     partial_conversion!(to_integer, v8::Value_ToInteger, Integer);
     partial_conversion!(to_uint32, v8::Value_ToUint32, Uint32);
     partial_conversion!(to_int32, v8::Value_ToInt32, Int32);
-    partial_conversion!(to_array_index, v8::Value_ToNumber, Uint32);
+    partial_conversion!(to_array_index, v8::Value_ToArrayIndex, Uint32);
 
     pub fn boolean_value(&self, context: &context::Context) -> error::Result<Option<bool>> {
         // SAFETY: This is unsafe for the same reason as `partial_conversion!`.  The only difference
@@ -350,12 +350,12 @@ impl<'a> Value<'a> {
     /// Creates a value from a set of raw pointers
     // SAFETY: This is unsafe because the passed-in pointer actually has type `void *` and could be
     // pointing to anything.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: *mut v8::Value) -> Value<'a> {
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::ValueRef) -> Value<'a> {
         Value(isolate, raw)
     }
 
     /// Returns the underlying raw pointer behind this value.
-    pub fn as_raw(&self) -> *mut v8::Value {
+    pub fn as_raw(&self) -> v8::ValueRef {
         self.1
     }
 }
@@ -404,22 +404,31 @@ impl<'a> String<'a> {
         }
     }
 
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: *mut v8::String) -> String<'a> {
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::StringRef) -> String<'a> {
         String(isolate, raw)
     }
 
-    pub fn as_raw(&self) -> *mut v8::String {
+    pub fn as_raw(&self) -> v8::StringRef {
         self.1
     }
 }
 
 impl<'a> Object<'a> {
-    pub fn get(&self, context: &context::Context, key: &Value) -> error::Result<Option<Value>> {
+    pub fn get_key(&self, context: &context::Context, key: &Value) -> error::Result<Option<Value>> {
         // SAFETY: This is unsafe because a native method is being called.  It is safe because the
         // method is a member of the Object class, and a null check is performed on the returned
         // pointer.
         unsafe {
-            Ok(try!(util::invoke_nullable(self.0, |c| v8::Object_Get(c, self.1, context.as_raw(), key.as_raw()))).map(|p| Value(self.0, p)))
+            Ok(try!(util::invoke_nullable(self.0, |c| v8::Object_Get_Key(c, self.1, context.as_raw(), key.as_raw()))).map(|p| Value(self.0, p)))
+        }
+    }
+
+    pub fn get_index(&self, context: &context::Context, index: u32) -> error::Result<Option<Value>> {
+        // SAFETY: This is unsafe because a native method is being called.  It is safe because the
+        // method is a member of the Object class, and a null check is performed on the returned
+        // pointer.
+        unsafe {
+            Ok(try!(util::invoke_nullable(self.0, |c| v8::Object_Get_Index(c, self.1, context.as_raw(), index))).map(|p| Value(self.0, p)))
         }
     }
 
@@ -489,43 +498,43 @@ inherit!(External, Value);
 
 // unsafe: Don't add another `drop!` line if you don't know the implications (see the comments
 // around the macro declaration).
-drop!(Value, v8::Value_Destroy);
-drop!(Primitive, v8::Primitive_Destroy);
-drop!(Boolean, v8::Boolean_Destroy);
-drop!(Name, v8::Name_Destroy);
-drop!(String, v8::String_Destroy);
-drop!(Symbol, v8::Symbol_Destroy);
-drop!(Private, v8::Private_Destroy);
-drop!(Number, v8::Number_Destroy);
-drop!(Integer, v8::Integer_Destroy);
-drop!(Int32, v8::Int32_Destroy);
-drop!(Uint32, v8::Uint32_Destroy);
-drop!(Object, v8::Object_Destroy);
-drop!(Array, v8::Array_Destroy);
-drop!(Map, v8::Map_Destroy);
-drop!(Set, v8::Set_Destroy);
-drop!(Function, v8::Function_Destroy);
-drop!(Promise, v8::Promise_Destroy);
-drop!(Proxy, v8::Proxy_Destroy);
-drop!(WasmCompiledModule, v8::WasmCompiledModule_Destroy);
-drop!(ArrayBuffer, v8::ArrayBuffer_Destroy);
-drop!(ArrayBufferView, v8::ArrayBufferView_Destroy);
-drop!(TypedArray, v8::TypedArray_Destroy);
-drop!(Uint8Array, v8::Uint8Array_Destroy);
-drop!(Uint8ClampedArray, v8::Uint8ClampedArray_Destroy);
-drop!(Int8Array, v8::Int8Array_Destroy);
-drop!(Uint16Array, v8::Uint16Array_Destroy);
-drop!(Int16Array, v8::Int16Array_Destroy);
-drop!(Uint32Array, v8::Uint32Array_Destroy);
-drop!(Int32Array, v8::Int32Array_Destroy);
-drop!(Float32Array, v8::Float32Array_Destroy);
-drop!(Float64Array, v8::Float64Array_Destroy);
-drop!(DataView, v8::DataView_Destroy);
-drop!(SharedArrayBuffer, v8::SharedArrayBuffer_Destroy);
-drop!(Date, v8::Date_Destroy);
-drop!(NumberObject, v8::NumberObject_Destroy);
-drop!(BooleanObject, v8::BooleanObject_Destroy);
-drop!(StringObject, v8::StringObject_Destroy);
-drop!(SymbolObject, v8::SymbolObject_Destroy);
-drop!(RegExp, v8::RegExp_Destroy);
-drop!(External, v8::External_Destroy);
+drop!(Value, v8::Value_DestroyRef);
+drop!(Primitive, v8::Primitive_DestroyRef);
+drop!(Boolean, v8::Boolean_DestroyRef);
+drop!(Name, v8::Name_DestroyRef);
+drop!(String, v8::String_DestroyRef);
+drop!(Symbol, v8::Symbol_DestroyRef);
+drop!(Private, v8::Private_DestroyRef);
+drop!(Number, v8::Number_DestroyRef);
+drop!(Integer, v8::Integer_DestroyRef);
+drop!(Int32, v8::Int32_DestroyRef);
+drop!(Uint32, v8::Uint32_DestroyRef);
+drop!(Object, v8::Object_DestroyRef);
+drop!(Array, v8::Array_DestroyRef);
+drop!(Map, v8::Map_DestroyRef);
+drop!(Set, v8::Set_DestroyRef);
+drop!(Function, v8::Function_DestroyRef);
+drop!(Promise, v8::Promise_DestroyRef);
+drop!(Proxy, v8::Proxy_DestroyRef);
+drop!(WasmCompiledModule, v8::WasmCompiledModule_DestroyRef);
+drop!(ArrayBuffer, v8::ArrayBuffer_DestroyRef);
+drop!(ArrayBufferView, v8::ArrayBufferView_DestroyRef);
+drop!(TypedArray, v8::TypedArray_DestroyRef);
+drop!(Uint8Array, v8::Uint8Array_DestroyRef);
+drop!(Uint8ClampedArray, v8::Uint8ClampedArray_DestroyRef);
+drop!(Int8Array, v8::Int8Array_DestroyRef);
+drop!(Uint16Array, v8::Uint16Array_DestroyRef);
+drop!(Int16Array, v8::Int16Array_DestroyRef);
+drop!(Uint32Array, v8::Uint32Array_DestroyRef);
+drop!(Int32Array, v8::Int32Array_DestroyRef);
+drop!(Float32Array, v8::Float32Array_DestroyRef);
+drop!(Float64Array, v8::Float64Array_DestroyRef);
+drop!(DataView, v8::DataView_DestroyRef);
+drop!(SharedArrayBuffer, v8::SharedArrayBuffer_DestroyRef);
+drop!(Date, v8::Date_DestroyRef);
+drop!(NumberObject, v8::NumberObject_DestroyRef);
+drop!(BooleanObject, v8::BooleanObject_DestroyRef);
+drop!(StringObject, v8::StringObject_DestroyRef);
+drop!(SymbolObject, v8::SymbolObject_DestroyRef);
+drop!(RegExp, v8::RegExp_DestroyRef);
+drop!(External, v8::External_DestroyRef);

@@ -168,7 +168,7 @@ mod tests {
             let r = f.call_as_constructor(c, &[&s]).unwrap().unwrap();
             assert!(r.is_object());
             let r = r.to_object(c).unwrap().unwrap();
-            let r = r.get(c, &a_key).unwrap().unwrap();
+            let r = r.get_key(c, &a_key).unwrap().unwrap();
             assert!(r.is_string());
             let r = r.to_string(c).unwrap().unwrap();
             assert_eq!("123", r.to_string().unwrap());
@@ -191,9 +191,9 @@ mod tests {
             let a_key = value::String::from_str(i, "a").unwrap();
             let b_key = value::String::from_str(i, "b").unwrap();
             assert_eq!(Some(2),
-                       result.get(c, &a_key).unwrap().and_then(|v| v.integer_value(c).unwrap()));
+                       result.get_key(c, &a_key).unwrap().and_then(|v| v.integer_value(c).unwrap()));
             assert_eq!(Some(true),
-                       result.get(c, &b_key).unwrap().and_then(|v| v.boolean_value(c).unwrap()));
+                       result.get_key(c, &b_key).unwrap().and_then(|v| v.boolean_value(c).unwrap()));
         }).unwrap();
     }
 

@@ -6,7 +6,7 @@ use isolate;
 use value;
 use util;
 
-pub struct Script<'a>(&'a isolate::Isolate, *mut v8::Script);
+pub struct Script<'a>(&'a isolate::Isolate, v8::ScriptRef);
 
 impl<'a> Script<'a> {
     pub fn compile(isolate: &'a isolate::Isolate,
@@ -27,6 +27,6 @@ impl<'a> Script<'a> {
 
 impl<'a> Drop for Script<'a> {
     fn drop(&mut self) {
-        unsafe { v8::Script_Destroy(self.1) }
+        unsafe { v8::Script_DestroyRef(self.1) }
     }
 }
