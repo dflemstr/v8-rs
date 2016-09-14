@@ -5,7 +5,7 @@ use std::mem;
 
 /// A simple array buffer allocator that guarantees that all allocated
 /// blocks are coercible to `Vec`s.
-pub struct Allocator(*mut v8::ArrayBuffer_Allocator);
+pub struct Allocator(v8::ArrayBuffer_AllocatorPtr);
 
 impl Allocator {
     pub fn new() -> Allocator {
@@ -17,7 +17,7 @@ impl Allocator {
         Allocator(raw)
     }
 
-    pub fn as_raw(&self) -> *mut v8::ArrayBuffer_Allocator {
+    pub fn as_raw(&self) -> v8::ArrayBuffer_AllocatorPtr {
         self.0
     }
 }

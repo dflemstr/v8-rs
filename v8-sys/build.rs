@@ -1,0 +1,365 @@
+extern crate v8_api;
+extern crate bindgen;
+extern crate clang;
+extern crate gcc;
+
+use std::env;
+use std::fmt;
+use std::fs;
+use std::io;
+use std::path;
+
+const LIBS: [&'static str; 6] = ["v8_base",
+                                 "v8_libbase",
+                                 "v8_libsampler",
+                                 "v8_nosnapshot",
+                                 "icui18n",
+                                 "icuuc"];
+
+trait DisplayAsC {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result;
+}
+
+struct C<'a, A>(&'a A) where A: 'a;
+
+impl<'a, A> fmt::Display for C<'a, A> where A: DisplayAsC + 'a {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        DisplayAsC::fmt(self.0, f)
+    }
+}
+
+fn main() {
+    let out_dir_str = env::var_os("OUT_DIR").unwrap();
+    let out_dir_path = path::Path::new(&out_dir_str);
+
+    println!("cargo:rerun-if-changed=src/v8-trampoline.h");
+    println!("cargo:rerun-if-changed=src/v8-glue.h");
+    println!("cargo:rerun-if-changed=src/v8-glue.cc");
+
+    let api = read_api();
+
+    link_v8();
+
+    let header_path = out_dir_path.join("v8-glue-generated.h");
+    write_header(&api, &mut fs::File::create(&header_path).unwrap()).unwrap();
+
+    let cc_file_path = out_dir_path.join("v8-glue-generated.cc");
+    write_cc_file(&api, &mut fs::File::create(&cc_file_path).unwrap()).unwrap();
+
+    build_glue(out_dir_path);
+
+    let ffi_path = out_dir_path.join("ffi.rs");
+    gen_bindings(out_dir_path, &ffi_path);
+}
+
+fn read_api() -> v8_api::Api {
+    let extra_includes = if let Some(dir_str) = env::var_os("V8_SOURCE") {
+        vec![path::PathBuf::from(dir_str).join("include")]
+    } else {
+        vec![]
+    };
+    let trampoline_path = path::Path::new("src/v8-trampoline.h");
+
+    v8_api::read(trampoline_path, &extra_includes)
+}
+
+fn link_v8() {
+    if let Some(dir_str) = env::var_os("V8_BUILD") {
+        println!("V8_BUILD={:?}", dir_str);
+        let dir = path::Path::new(&dir_str);
+
+        maybe_search(dir);
+
+        // make+gyp-based build tree
+        maybe_search(dir.join("lib"));
+        maybe_search(dir.join("obj.target/src"));
+        maybe_search(dir.join("obj.target/third_party/icu"));
+
+        // ninja+gyp-based build tree
+        maybe_search(dir.join("lib"));
+        maybe_search(dir.join("obj/src"));
+        maybe_search(dir.join("obj/third_party/icu"));
+
+        // TODO: for GN-based builds it doesn't seem like the build
+        // produces static archives; maybe run ar here?
+    } else {
+        println!("V8_BUILD not set, searching system paths");
+        maybe_search("/usr/lib");
+        maybe_search("/usr/local/lib");
+        // TODO: hack: lazy way to fix the Travis build
+        maybe_search("/usr/lib/x86_64-linux-gnu");
+        maybe_search("/usr/local/lib/x86_64-linux-gnu");
+        maybe_search("/usr/lib/v8");
+        maybe_search("/usr/local/lib/v8");
+    }
+
+    if cfg!(feature = "shared") {
+        println!("cargo:rustc-link-lib=dylib=v8");
+        println!("cargo:rustc-link-lib=dylib=icui18n");
+        println!("cargo:rustc-link-lib=dylib=icuuc");
+    } else {
+        for lib in LIBS.iter() {
+            println!("cargo:rustc-link-lib=static={}", lib);
+        }
+        if fs::metadata("/usr/lib/x86_64-linux-gnu/libicudata.a").map(|m| m.is_file()).unwrap_or(false) {
+            println!("cargo:rustc-link-lib=static=icudata");
+        }
+    }
+}
+
+fn maybe_search<P>(dir: P) where P: AsRef<path::Path> {
+    let dir = dir.as_ref();
+    if fs::metadata(dir).map(|m| m.is_dir()).unwrap_or(false) {
+        println!("cargo:rustc-link-search=native={}", dir.to_string_lossy());
+    }
+}
+
+fn gen_bindings(out_dir_path: &path::Path, bindings_path: &path::Path) {
+    use std::io::Write;
+    let mut bindings = bindgen::Builder::new("src/v8-glue.h");
+    bindings.remove_prefix("v8_");
+    bindings.clang_arg("-Isrc");
+    bindings.clang_arg(format!("-I{}", out_dir_path.to_string_lossy()));
+
+    if let Some(dir_str) = env::var_os("V8_SOURCE") {
+        println!("V8_SOURCE={:?}", dir_str);
+        let dir = path::Path::new(&dir_str);
+        bindings.clang_arg(format!("-I{}", dir.join("include").to_string_lossy()));
+    } else {
+        println!("V8_SOURCE not set, searching system paths");
+    }
+
+    let generated_bindings = bindings.generate().unwrap();
+
+    let mut bindings_file = fs::File::create(bindings_path).unwrap();
+    writeln!(bindings_file, "mod ffi {{").unwrap();
+    generated_bindings.write(Box::new(&mut bindings_file)).unwrap();
+    writeln!(bindings_file, "}}").unwrap();
+}
+
+fn build_glue(out_dir_path: &path::Path) {
+    let mut config = gcc::Config::new();
+
+    if let Some(dir_str) = env::var_os("V8_SOURCE") {
+        let dir = path::Path::new(&dir_str);
+        config.include(dir.join("include"));
+    }
+
+    config.include("src");
+    config.include(out_dir_path);
+    config.cpp(true);
+    config.flag("-std=c++11");
+    config.flag("-Wall");
+    config.file("src/v8-glue.cc");
+    config.compile("libv8sysglue.a");
+}
+
+fn write_header<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
+    where W: io::Write
+{
+    try!(writeln!(out, "#pragma once"));
+
+    for class in api.classes.iter() {
+        try!(writeln!(out, ""));
+        try!(writeln!(out, "#if defined __cplusplus"));
+        try!(writeln!(out,
+                      "typedef v8::{class} *{class}Ptr;",
+                      class = class.name));
+        try!(writeln!(out,
+                      "typedef v8::Persistent<v8::{class}> *{class}Ref;",
+                      class = class.name));
+        try!(writeln!(out, "#else"));
+        try!(writeln!(out, "typedef struct _{class} *{class}Ptr;", class = class.name));
+        try!(writeln!(out, "typedef struct _{class}Ref *{class}Ref;", class = class.name));
+        try!(writeln!(out, "#endif /* defined __cplusplus */"));
+    }
+
+    for class in api.classes.iter() {
+        try!(writeln!(out, ""));
+
+        for method in class.methods.iter() {
+            try!(write!(out,
+                        "{retty} v8_{class}_{method}(RustContext c",
+                        retty = C(&method.ret_type),
+                        class = class.name,
+                        method = method.mangled_name));
+
+            if !method.is_static {
+                try!(write!(out, ", {class}Ref self", class = class.name));
+            }
+
+            for arg in method.args.iter() {
+                try!(write!(out, ", {arg}", arg = C(arg)));
+            }
+            try!(writeln!(out, ");"));
+        }
+
+        try!(writeln!(out,
+                      "void v8_{class}_DestroyRef({class}Ref self);",
+                      class = class.name));
+
+        try!(writeln!(out,
+                      "void v8_{class}_DestroyPtr({class}Ptr self);",
+                      class = class.name));
+    }
+
+    Ok(())
+}
+
+fn write_cc_file<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
+    where W: io::Write
+{
+    for class in api.classes.iter() {
+        for method in class.methods.iter() {
+            try!(writeln!(out, ""));
+            try!(write!(out,
+                        "{retty} v8_{class}_{method}(RustContext c",
+                        retty = C(&method.ret_type),
+                        class = class.name,
+                        method = method.mangled_name));
+
+            if !method.is_static {
+                try!(write!(out, ", {class}Ref self", class = class.name));
+            }
+
+            for arg in method.args.iter() {
+                try!(write!(out, ", {arg}", arg = C(arg)));
+            }
+            try!(writeln!(out, ") {{"));
+
+            try!(writeln!(out, "  v8::HandleScope __handle_scope(c.isolate);"));
+            try!(writeln!(out, "  v8::TryCatch __try_catch(c.isolate);"));
+
+            if let Some(arg) = method.args.iter().find(|ref a| a.arg_type == v8_api::Type::Ptr(Box::new(v8_api::Type::Class("Context".to_owned())))) {
+                // There should only be one context but who knows
+                try!(writeln!(out, "  v8::Context::Scope {ctx}_scope(wrap(c.isolate, {ctx}));", ctx=arg.name));
+            }
+
+            if let v8_api::RetType::Direct(v8_api::Type::Void) = method.ret_type {
+                try!(write!(out, "  "));
+            } else {
+                try!(write!(out, "  auto result = "));
+            }
+            if method.is_static {
+                try!(write!(out,
+                            "v8::{class}::{method}(",
+                            class = class.name,
+                            method = method.name));
+            } else {
+                try!(write!(out,
+                            "self->Get(c.isolate)->{method}(",
+                            method = method.name));
+            }
+
+            let mut needs_sep = false;
+            for arg in method.args.iter() {
+                if needs_sep {
+                    try!(write!(out, ", "));
+                }
+                needs_sep = true;
+                try!(write!(out, "wrap(c.isolate, {arg})", arg = arg.name));
+            }
+            try!(writeln!(out, ");"));
+            if let v8_api::RetType::Direct(v8_api::Type::Void) = method.ret_type {
+                try!(writeln!(out, "  handle_exception(c, __try_catch);"));
+            } else {
+                try!(writeln!(out, "  handle_exception(c, __try_catch);"));
+                try!(writeln!(out, "  return {unwrapper}(c.isolate, result);",
+                              unwrapper = unwrapper(&method.ret_type)));
+            }
+            try!(writeln!(out, "}}"));
+        }
+
+        try!(writeln!(out, ""));
+        try!(writeln!(out,
+                      "void v8_{class}_DestroyRef({class}Ref self) {{",
+                      class = class.name));
+        try!(writeln!(out, "  delete self;"));
+        try!(writeln!(out, "}}"));
+        try!(writeln!(out, ""));
+        try!(writeln!(out,
+                      "void v8_{class}_DestroyPtr({class}Ptr self) {{",
+                      class = class.name));
+        try!(writeln!(out, "  delete self;"));
+        try!(writeln!(out, "}}"));
+    }
+
+    Ok(())
+}
+
+fn unwrapper(ret_type: &v8_api::RetType) -> &str {
+    use v8_api::*;
+    match *ret_type {
+        RetType::Maybe(Type::Bool) => "unwrap_maybe_bool",
+        RetType::Maybe(Type::Int) => "unwrap_maybe_int",
+        RetType::Maybe(Type::UInt) => "unwrap_maybe_uint",
+        RetType::Maybe(Type::Long) => "unwrap_maybe_long",
+        RetType::Maybe(Type::ULong) => "unwrap_maybe_ulong",
+        RetType::Maybe(Type::U32) => "unwrap_maybe_u32",
+        RetType::Maybe(Type::I32) => "unwrap_maybe_i32",
+        RetType::Maybe(Type::U64) => "unwrap_maybe_u64",
+        RetType::Maybe(Type::I64) => "unwrap_maybe_i64",
+        RetType::Maybe(Type::F64) => "unwrap_maybe_f64",
+        _ => "unwrap",
+    }
+}
+
+impl DisplayAsC for v8_api::Arg {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} {}", C(&self.arg_type), self.name)
+    }
+}
+
+impl DisplayAsC for v8_api::RetType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use v8_api::*;
+        match *self {
+            RetType::Direct(ref t) => DisplayAsC::fmt(t, f),
+            RetType::Maybe(Type::Bool) => write!(f, "MaybeBool"),
+            RetType::Maybe(Type::Int) => write!(f, "MaybeInt"),
+            RetType::Maybe(Type::UInt) => write!(f, "MaybeUInt"),
+            RetType::Maybe(Type::Long) => write!(f, "MaybeLong"),
+            RetType::Maybe(Type::ULong) => write!(f, "MaybeULong"),
+            RetType::Maybe(Type::F64) => write!(f, "MaybeF64"),
+            RetType::Maybe(Type::U64) => write!(f, "MaybeU64"),
+            RetType::Maybe(Type::I64) => write!(f, "MaybeI64"),
+            // TODO: potentially maybeify more types here
+            RetType::Maybe(ref t) => DisplayAsC::fmt(t, f),
+        }
+    }
+}
+
+impl DisplayAsC for v8_api::Type {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use v8_api::*;
+        match *self {
+            Type::Void => write!(f, "void"),
+            Type::Bool => write!(f, "bool"),
+            Type::Char => write!(f, "char"),
+            Type::ConstChar => write!(f, "const char"),
+            Type::UInt => write!(f, "unsigned int"),
+            Type::Int => write!(f, "int"),
+            Type::ULong => write!(f, "unsigned long"),
+            Type::Long => write!(f, "long"),
+            Type::U8 => write!(f, "uint8_t"),
+            Type::I8 => write!(f, "int8_t"),
+            Type::U16 => write!(f, "uint16_t"),
+            Type::I16 => write!(f, "int16_t"),
+            Type::U32 => write!(f, "uint32_t"),
+            Type::I32 => write!(f, "int32_t"),
+            Type::U64 => write!(f, "uint64_t"),
+            Type::I64 => write!(f, "int64_t"),
+            Type::F64 => write!(f, "double"),
+            Type::Class(ref name) => write!(f, "{}", name),
+            Type::Ref(ref target) => match **target {
+                Type::Class(ref name) => write!(f, "{}Ref", name),
+                ref t => write!(f, "&{}", C(t)),
+            },
+            Type::Ptr(ref target) => match **target {
+                Type::Class(ref name) => write!(f, "{}Ptr", name),
+                ref t => write!(f, "{} *", C(t)),
+            },
+            Type::Arr(ref target) => write!(f, "{}[]", C(&**target)),
+        }
+    }
+}

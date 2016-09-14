@@ -12,7 +12,7 @@ lazy_static! {
 /// scheduling.
 // TODO: make this use some kind of main loop/work stealing queue
 // instead.
-pub struct Platform(*mut v8::Platform);
+pub struct Platform(v8::PlatformPtr);
 
 impl Platform {
     pub fn new() -> Platform {
@@ -25,7 +25,7 @@ impl Platform {
         Platform(raw)
     }
 
-    pub fn as_raw(&self) -> *mut v8::Platform {
+    pub fn as_raw(&self) -> v8::PlatformPtr {
         self.0
     }
 }
@@ -38,7 +38,7 @@ impl Drop for Platform {
     }
 }
 
-struct TaskHolder(*mut v8::Task);
+struct TaskHolder(v8::TaskPtr);
 
 unsafe impl Send for TaskHolder {}
 
@@ -61,41 +61,41 @@ extern "C" fn number_of_available_background_threads() -> usize {
     0 // TODO: do something smart
 }
 
-unsafe extern "C" fn call_on_background_thread(task: *mut v8::Task,
-                                               _expected_runtime: v8::ExpectedRuntime) {
+extern "C" fn call_on_background_thread(task: v8::TaskPtr,
+                                        _expected_runtime: v8::ExpectedRuntime) {
     let holder = TaskHolder(task);
     thread::spawn(move || {
-        v8::Task_Run(holder.0);
+        unsafe { v8::Task_Run(holder.0); }
     });
 }
 
-unsafe extern "C" fn call_on_foreground_thread(_isolate: *mut v8::Isolate, task: *mut v8::Task) {
+extern "C" fn call_on_foreground_thread(_isolate: v8::IsolatePtr, task: v8::TaskPtr) {
     let holder = TaskHolder(task);
     // TODO: this should actually be done on some main loop
     thread::spawn(move || {
-        v8::Task_Run(holder.0);
+        unsafe { v8::Task_Run(holder.0); }
     });
 }
 
-unsafe extern "C" fn call_delayed_on_foreground_thread(_isolate: *mut v8::Isolate,
-                                                       task: *mut v8::Task,
-                                                       delay_in_seconds: f64) {
+extern "C" fn call_delayed_on_foreground_thread(_isolate: v8::IsolatePtr,
+                                                task: v8::TaskPtr,
+                                                delay_in_seconds: f64) {
     let holder = TaskHolder(task);
 
     // TODO: this should actually be done on some main loop
     thread::spawn(move || {
         thread::sleep(time::Duration::new(delay_in_seconds as u64,
                                           (delay_in_seconds.fract() * 1e9) as u32));
-        v8::Task_Run(holder.0);
+        unsafe { v8::Task_Run(holder.0); }
     });
 }
 
-unsafe extern "C" fn call_idle_on_foreground_thread(_isolate: *mut v8::Isolate,
-                                                    _task: *mut v8::IdleTask) {
+extern "C" fn call_idle_on_foreground_thread(_isolate: v8::IsolatePtr,
+                                             _task: v8::IdleTaskPtr) {
     unreachable!()
 }
 
-unsafe extern "C" fn idle_tasks_enabled(_isolate: *mut v8::Isolate) -> u8 {
+extern "C" fn idle_tasks_enabled(_isolate: v8::IsolatePtr) -> u8 {
     0
 }
 

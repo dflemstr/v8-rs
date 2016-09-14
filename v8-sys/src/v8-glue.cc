@@ -21,23 +21,30 @@ template<typename A> v8::Persistent<A> *unwrap(v8::Isolate *isolate,
     }
 }
 
-#define UNWRAP_PRIMITIVE(PRIM, MAYBE) MAYBE unwrap_##PRIM(              \
-        v8::Isolate *isolate,                                           \
-        v8::Maybe<PRIM> maybe_value)                                    \
-    {                                                                   \
-        PRIM value;                                                     \
-        bool is_set = maybe_value.To(&value);                           \
-                                                                        \
-        return MAYBE { is_set, value };                                 \
+#define UNWRAP_MAYBE_PRIM(PRIM, NAME, MAYBE)    \
+    MAYBE unwrap_maybe_##NAME(                  \
+        v8::Isolate *isolate,                   \
+        v8::Maybe<PRIM> maybe_value)            \
+    {                                           \
+        PRIM value;                             \
+        bool is_set = maybe_value.To(&value);   \
+                                                \
+        return MAYBE {                          \
+            .is_set = is_set,                   \
+            .value = value,                     \
+        };                                      \
     }
 
-UNWRAP_PRIMITIVE(bool, MaybeBool)
-UNWRAP_PRIMITIVE(double, MaybeF64)
-UNWRAP_PRIMITIVE(uint32_t, MaybeU32)
-UNWRAP_PRIMITIVE(int32_t, MaybeI32)
-UNWRAP_PRIMITIVE(uint64_t, MaybeU64)
-UNWRAP_PRIMITIVE(int64_t, MaybeI64)
-UNWRAP_PRIMITIVE(int, MaybeInt)
+UNWRAP_MAYBE_PRIM(bool, bool, MaybeBool)
+UNWRAP_MAYBE_PRIM(int, int, MaybeInt)
+UNWRAP_MAYBE_PRIM(unsigned int, uint, MaybeUInt)
+UNWRAP_MAYBE_PRIM(long, long, MaybeLong)
+UNWRAP_MAYBE_PRIM(unsigned long, ulong, MaybeULong)
+UNWRAP_MAYBE_PRIM(uint32_t, u32, MaybeU32)
+UNWRAP_MAYBE_PRIM(int32_t, i32, MaybeI32)
+UNWRAP_MAYBE_PRIM(uint64_t, u64, MaybeU64)
+UNWRAP_MAYBE_PRIM(int64_t, i64, MaybeI64)
+UNWRAP_MAYBE_PRIM(double, f64, MaybeF64)
 
 template<typename A> A unwrap(v8::Isolate *isolate, A value) {
     return value;
@@ -60,6 +67,7 @@ void handle_exception(RustContext &c, v8::TryCatch &try_catch) {
     }
 }
 
+
 class GluePlatform : public v8::Platform {
 public:
     GluePlatform(v8_PlatformFunctions platform_functions)
@@ -74,7 +82,7 @@ public:
         return this->_platform_functions.NumberOfAvailableBackgroundThreads();
     }
 
-    virtual void CallOnBackgroundThread(Task* task,
+    virtual void CallOnBackgroundThread(v8::Task *task,
                                         v8::Platform::ExpectedRuntime expected_runtime) {
         v8_ExpectedRuntime rt;
 
@@ -90,20 +98,20 @@ public:
         this->_platform_functions.CallOnBackgroundThread(task, rt);
     }
 
-    virtual void CallOnForegroundThread(Isolate* isolate, Task* task) {
+    virtual void CallOnForegroundThread(v8::Isolate *isolate, v8::Task *task) {
         this->_platform_functions.CallOnForegroundThread(isolate, task);
     }
 
-    virtual void CallDelayedOnForegroundThread(Isolate* isolate, Task* task,
+    virtual void CallDelayedOnForegroundThread(v8::Isolate *isolate, v8::Task *task,
                                                double delay_in_seconds) {
         this->_platform_functions.CallDelayedOnForegroundThread(isolate, task, delay_in_seconds);
     }
 
-    virtual void CallIdleOnForegroundThread(Isolate* isolate, IdleTask* task) {
+    virtual void CallIdleOnForegroundThread(v8::Isolate *isolate, v8::IdleTask *task) {
         this->_platform_functions.CallIdleOnForegroundThread(isolate, task);
     }
 
-    virtual bool IdleTasksEnabled(Isolate* isolate) {
+    virtual bool IdleTasksEnabled(v8::Isolate *isolate) {
         return this->_platform_functions.IdleTasksEnabled(isolate);
     }
 
@@ -137,15 +145,15 @@ private:
     v8_AllocatorFunctions _allocator_functions;
 };
 
-Platform *v8_Platform_Create(struct v8_PlatformFunctions platform_functions) {
+PlatformPtr v8_Platform_Create(struct v8_PlatformFunctions platform_functions) {
     return new GluePlatform(platform_functions);
 }
 
-void v8_Platform_Destroy(Platform *platform) {
+void v8_Platform_Destroy(PlatformPtr platform) {
     delete platform;
 }
 
-void v8_V8_InitializePlatform(Platform *platform) {
+void v8_V8_InitializePlatform(PlatformPtr platform) {
     return v8::V8::InitializePlatform(platform);
 }
 
@@ -166,33 +174,35 @@ void v8_V8_ShutdownPlatform() {
 }
 
 
-ArrayBuffer_Allocator *v8_ArrayBuffer_Allocator_Create(struct v8_AllocatorFunctions allocator_functions) {
+ArrayBuffer_AllocatorPtr v8_ArrayBuffer_Allocator_Create(struct v8_AllocatorFunctions allocator_functions) {
     return new GlueAllocator(allocator_functions);
 
 }
-void v8_ArrayBuffer_Allocator_Destroy(ArrayBuffer_Allocator *allocator) {
+void v8_ArrayBuffer_Allocator_Destroy(ArrayBuffer_AllocatorPtr allocator) {
     delete allocator;
 }
 
-Isolate *v8_Isolate_New(ArrayBuffer_Allocator *allocator) {
+IsolatePtr v8_Isolate_New(ArrayBuffer_AllocatorPtr allocator) {
     auto params = v8::Isolate::CreateParams();
     params.array_buffer_allocator = allocator;
     return v8::Isolate::New(params);
 }
 
-void v8_Isolate_Dispose(Isolate *isolate) {
+void v8_Isolate_Dispose(IsolatePtr isolate) {
     isolate->Dispose();
 }
 
-void v8_Task_Run(Task *task) {
+void v8_Task_Run(TaskPtr task) {
     task->Run();
 }
 
-void v8_IdleTask_Run(IdleTask *task, double deadline_in_seconds) {
+void v8_IdleTask_Run(IdleTaskPtr task, double deadline_in_seconds) {
     task->Run(deadline_in_seconds);
 }
 
-Context *v8_Context_New(RustContext c) {
+#include "v8-glue-generated.cc"
+
+ContextRef v8_Context_New(RustContext c) {
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     auto result = v8::Context::New(c.isolate);
@@ -200,22 +210,7 @@ Context *v8_Context_New(RustContext c) {
     return unwrap(c.isolate, result);
 }
 
-void v8_Context_Enter(RustContext c, Context *context) {
-    v8::HandleScope scope(c.isolate);
-    v8::TryCatch try_catch(c.isolate);
-    wrap(c.isolate, context)->Enter();
-    handle_exception(c, try_catch);
-}
-
-void v8_Context_Exit(RustContext c, Context *context) {
-    v8::HandleScope scope(c.isolate);
-    v8::TryCatch try_catch(c.isolate);
-    v8::Context::Scope context_scope(wrap(c.isolate, context));
-    wrap(c.isolate, context)->Exit();
-    handle_exception(c, try_catch);
-}
-
-String *v8_String_NewFromUtf8_Normal(RustContext c, const char *data, int length) {
+StringRef v8_String_NewFromUtf8_Normal(RustContext c, const char *data, int length) {
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     auto result = v8::String::NewFromUtf8(c.isolate, data, v8::NewStringType::kNormal, length);
@@ -223,7 +218,7 @@ String *v8_String_NewFromUtf8_Normal(RustContext c, const char *data, int length
     return unwrap(c.isolate, result);
 }
 
-String *v8_String_NewFromUtf8_Internalized(RustContext c, const char *data, int length) {
+StringRef v8_String_NewFromUtf8_Internalized(RustContext c, const char *data, int length) {
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     auto result = v8::String::NewFromUtf8(c.isolate, data, v8::NewStringType::kInternalized, length);
@@ -231,7 +226,7 @@ String *v8_String_NewFromUtf8_Internalized(RustContext c, const char *data, int 
     return unwrap(c.isolate, result);
 }
 
-int v8_String_WriteUtf8(RustContext c, String *string, char *buffer, int length) {
+int v8_String_WriteUtf8(RustContext c, StringRef string, char *buffer, int length) {
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     auto result = wrap(c.isolate, string)->WriteUtf8(buffer, length);
@@ -239,7 +234,7 @@ int v8_String_WriteUtf8(RustContext c, String *string, char *buffer, int length)
     return result;
 }
 
-Script *v8_Script_Compile(RustContext c, Context *context, String *source) {
+ScriptRef v8_Script_Compile(RustContext c, ContextRef context, StringRef source) {
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
@@ -248,7 +243,7 @@ Script *v8_Script_Compile(RustContext c, Context *context, String *source) {
     return unwrap(c.isolate, result);
 }
 
-Value *v8_Object_CallAsFunction(RustContext c, Object *self, Context *context, Value *recv, int argc, Value *argv[]) {
+ValueRef v8_Object_CallAsFunction(RustContext c, ObjectRef self, ContextRef context, ValueRef recv, int argc, ValueRef argv[]) {
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
@@ -270,7 +265,7 @@ Value *v8_Object_CallAsFunction(RustContext c, Object *self, Context *context, V
     return unwrap(c.isolate, result);
 }
 
-Value *v8_Object_CallAsConstructor(RustContext c, Object *self, Context *context, int argc, Value *argv[]) {
+ValueRef v8_Object_CallAsConstructor(RustContext c, ObjectRef self, ContextRef context, int argc, ValueRef argv[]) {
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
@@ -284,5 +279,3 @@ Value *v8_Object_CallAsConstructor(RustContext c, Object *self, Context *context
     handle_exception(c, try_catch);
     return unwrap(c.isolate, result);
 }
-
-#include "v8-glue-generated.cc"
