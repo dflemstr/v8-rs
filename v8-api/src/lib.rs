@@ -132,6 +132,8 @@ const METHOD_MANGLES: &'static [MethodMangle] = &[
     MethodMangle { name: "HasOwnProperty", unique_arg: "key", mangle: "HasOwnProperty_Key"},
     MethodMangle { name: "InitializeExternalStartupData", unique_arg: "natives_blob", mangle: "InitializeExternalStartupData_Blobs"},
     MethodMangle { name: "InitializeExternalStartupData", unique_arg: "directory_path", mangle: "InitializeExternalStartupData_Directory"},
+    MethodMangle { name: "New", unique_arg: "shared_array_buffer", mangle: "New_Shared"},
+    MethodMangle { name: "New", unique_arg: "array_buffer", mangle: "New_Owned"},
 ];
 
 pub fn read<P1, P2>(file_path: P1, extra_includes: &[P2]) -> Api
