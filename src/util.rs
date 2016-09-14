@@ -4,7 +4,9 @@ use isolate;
 use std::ptr;
 use value;
 
-pub fn invoke<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<B> where F: FnOnce(v8::RustContext) -> B {
+pub fn invoke<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<B>
+    where F: FnOnce(v8::RustContext) -> B
+{
     let mut exception = ptr::null_mut();
     let mut message = ptr::null_mut();
     let rust_ctx = v8::RustContext {
@@ -30,8 +32,10 @@ pub fn invoke<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<B> whe
     }
 }
 
-pub fn invoke_nullable<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<Option<*mut B>> where F: FnOnce(v8::RustContext) -> *mut B {
-    invoke(isolate, func).map(|p| if p.is_null() { None} else {Some(p)})
+pub fn invoke_nullable<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<Option<*mut B>>
+    where F: FnOnce(v8::RustContext) -> *mut B
+{
+    invoke(isolate, func).map(|p| if p.is_null() { None } else { Some(p) })
 }
 
 macro_rules! drop {

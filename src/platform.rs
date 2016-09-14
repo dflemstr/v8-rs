@@ -65,7 +65,9 @@ extern "C" fn call_on_background_thread(task: v8::TaskPtr,
                                         _expected_runtime: v8::ExpectedRuntime) {
     let holder = TaskHolder(task);
     thread::spawn(move || {
-        unsafe { v8::Task_Run(holder.0); }
+        unsafe {
+            v8::Task_Run(holder.0);
+        }
     });
 }
 
@@ -73,7 +75,9 @@ extern "C" fn call_on_foreground_thread(_isolate: v8::IsolatePtr, task: v8::Task
     let holder = TaskHolder(task);
     // TODO: this should actually be done on some main loop
     thread::spawn(move || {
-        unsafe { v8::Task_Run(holder.0); }
+        unsafe {
+            v8::Task_Run(holder.0);
+        }
     });
 }
 
@@ -86,12 +90,13 @@ extern "C" fn call_delayed_on_foreground_thread(_isolate: v8::IsolatePtr,
     thread::spawn(move || {
         thread::sleep(time::Duration::new(delay_in_seconds as u64,
                                           (delay_in_seconds.fract() * 1e9) as u32));
-        unsafe { v8::Task_Run(holder.0); }
+        unsafe {
+            v8::Task_Run(holder.0);
+        }
     });
 }
 
-extern "C" fn call_idle_on_foreground_thread(_isolate: v8::IsolatePtr,
-                                             _task: v8::IdleTaskPtr) {
+extern "C" fn call_idle_on_foreground_thread(_isolate: v8::IsolatePtr, _task: v8::IdleTaskPtr) {
     unreachable!()
 }
 

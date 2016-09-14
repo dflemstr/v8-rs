@@ -38,198 +38,224 @@ mod tests {
     #[test]
     fn hello_world() {
         eval("'Hello, ' + 'World!'", |_, c, v| {
-            assert!(v.is_string());
-            let result = v.to_string(c).unwrap().map(|s| s.to_string().unwrap());
-            assert_eq!(Some("Hello, World!".to_owned()), result);
-        }).unwrap();
+                assert!(v.is_string());
+                let result = v.to_string(c).unwrap().map(|s| s.to_string().unwrap());
+                assert_eq!(Some("Hello, World!".to_owned()), result);
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_undefined() {
         eval("undefined", |_, _, v| {
-            assert!(v.is_undefined());
-        }).unwrap();
+                assert!(v.is_undefined());
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_null() {
         eval("null", |_, _, v| {
-            assert!(v.is_null());
-        }).unwrap();
+                assert!(v.is_null());
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_bool_false() {
         eval("false", |_, c, v| {
-            assert!(v.is_boolean());
-            assert!(v.is_false());
-            let result = v.boolean_value(c).unwrap();
-            assert_eq!(Some(false), result);
-        }).unwrap();
+                assert!(v.is_boolean());
+                assert!(v.is_false());
+                let result = v.boolean_value(c).unwrap();
+                assert_eq!(Some(false), result);
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_bool_true() {
         eval("true", |_, c, v| {
-            assert!(v.is_boolean());
-            assert!(v.is_true());
-            let result = v.boolean_value(c).unwrap();
-            assert_eq!(Some(true), result);
-        }).unwrap();
+                assert!(v.is_boolean());
+                assert!(v.is_true());
+                let result = v.boolean_value(c).unwrap();
+                assert_eq!(Some(true), result);
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_string() {
         eval("'foo'", |_, c, v| {
-            assert!(v.is_string());
-            let result = v.to_string(c).unwrap().unwrap();
-            assert_eq!("foo", result.to_string().unwrap());
-        }).unwrap();
+                assert!(v.is_string());
+                let result = v.to_string(c).unwrap().unwrap();
+                assert_eq!("foo", result.to_string().unwrap());
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_string_edge_cases() {
         eval(r#"'foo\u0000\uffff௵𒀰\uD808\uDC30'"#, |_, c, v| {
-            assert!(v.is_string());
-            let result = v.to_string(c).unwrap().unwrap();
-            assert_eq!("foo\u{0000}\u{ffff}௵𒀰𒀰", result.to_string().unwrap());
-        }).unwrap();
+                assert!(v.is_string());
+                let result = v.to_string(c).unwrap().unwrap();
+                assert_eq!("foo\u{0000}\u{ffff}௵𒀰𒀰",
+                           result.to_string().unwrap());
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_uint32() {
         eval("42", |_, c, v| {
-            assert!(v.is_number());
-            assert!(v.is_uint32());
-            let result = v.uint32_value(c).unwrap().unwrap();
-            assert_eq!(42, result);
-        }).unwrap();
+                assert!(v.is_number());
+                assert!(v.is_uint32());
+                let result = v.uint32_value(c).unwrap().unwrap();
+                assert_eq!(42, result);
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_int32() {
         eval("-42", |_, c, v| {
-            assert!(v.is_number());
-            assert!(v.is_int32());
-            let result = v.int32_value(c).unwrap().unwrap();
-            assert_eq!(-42, result);
-        }).unwrap();
+                assert!(v.is_number());
+                assert!(v.is_int32());
+                let result = v.int32_value(c).unwrap().unwrap();
+                assert_eq!(-42, result);
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_integer() {
         eval("92233720368", |_, c, v| {
-            assert!(v.is_number());
-            let result = v.integer_value(c).unwrap().unwrap();
-            assert_eq!(92233720368, result);
-        }).unwrap();
+                assert!(v.is_number());
+                let result = v.integer_value(c).unwrap().unwrap();
+                assert_eq!(92233720368, result);
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_function() {
         eval("(function() {})", |_, _, v| {
-            assert!(v.is_function());
-        }).unwrap();
+                assert!(v.is_function());
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_function_then_call() {
         eval("(function(a) { return a + a; })", |i, c, v| {
-            assert!(v.is_function());
-            let f = v.to_object(c).unwrap().unwrap();
-            let s = value::String::from_str(i, "123").unwrap();
-            let r = f.call(c, &[&s]).unwrap().unwrap();
-            assert!(r.is_string());
-            let r = r.to_string(c).unwrap().unwrap();
-            assert_eq!("123123", r.to_string().unwrap());
-        }).unwrap();
+                assert!(v.is_function());
+                let f = v.to_object(c).unwrap().unwrap();
+                let s = value::String::from_str(i, "123").unwrap();
+                let r = f.call(c, &[&s]).unwrap().unwrap();
+                assert!(r.is_string());
+                let r = r.to_string(c).unwrap().unwrap();
+                assert_eq!("123123", r.to_string().unwrap());
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_function_then_call_with_this() {
         eval("(function() { return this.length; })", |i, c, v| {
-            assert!(v.is_function());
-            let f = v.to_object(c).unwrap().unwrap();
-            let s = value::String::from_str(i, "123").unwrap();
-            let r = f.call_with_this(c, &s, &[]).unwrap().unwrap();
-            assert!(r.is_int32());
-            let r = r.int32_value(c).unwrap().unwrap();
-            assert_eq!(3, r);
-        }).unwrap();
+                assert!(v.is_function());
+                let f = v.to_object(c).unwrap().unwrap();
+                let s = value::String::from_str(i, "123").unwrap();
+                let r = f.call_with_this(c, &s, &[]).unwrap().unwrap();
+                assert!(r.is_int32());
+                let r = r.int32_value(c).unwrap().unwrap();
+                assert_eq!(3, r);
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_function_then_construct() {
         eval("(function ctor(a) { this.a = a; })", |i, c, v| {
-            assert!(v.is_function());
-            let f = v.to_object(c).unwrap().unwrap();
-            let a_key = value::String::from_str(i, "a").unwrap();
-            let s = value::String::from_str(i, "123").unwrap();
-            let r = f.call_as_constructor(c, &[&s]).unwrap().unwrap();
-            assert!(r.is_object());
-            let r = r.to_object(c).unwrap().unwrap();
-            let r = r.get_key(c, &a_key).unwrap().unwrap();
-            assert!(r.is_string());
-            let r = r.to_string(c).unwrap().unwrap();
-            assert_eq!("123", r.to_string().unwrap());
-        }).unwrap();
+                assert!(v.is_function());
+                let f = v.to_object(c).unwrap().unwrap();
+                let a_key = value::String::from_str(i, "a").unwrap();
+                let s = value::String::from_str(i, "123").unwrap();
+                let r = f.call_as_constructor(c, &[&s]).unwrap().unwrap();
+                assert!(r.is_object());
+                let r = r.to_object(c).unwrap().unwrap();
+                let r = r.get_key(c, &a_key).unwrap().unwrap();
+                assert!(r.is_string());
+                let r = r.to_string(c).unwrap().unwrap();
+                assert_eq!("123", r.to_string().unwrap());
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_array() {
         eval("[1, true, null]", |_, _, v| {
-            assert!(v.is_array());
-            // TODO: Try indexing the array?
-        }).unwrap();
+                assert!(v.is_array());
+                // TODO: Try indexing the array?
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_object() {
         eval("({a: 2, b: true})", |i, c, v| {
-            assert!(v.is_object());
-            let result = v.to_object(c).unwrap().unwrap();
-            let a_key = value::String::from_str(i, "a").unwrap();
-            let b_key = value::String::from_str(i, "b").unwrap();
-            assert_eq!(Some(2),
-                       result.get_key(c, &a_key).unwrap().and_then(|v| v.integer_value(c).unwrap()));
-            assert_eq!(Some(true),
-                       result.get_key(c, &b_key).unwrap().and_then(|v| v.boolean_value(c).unwrap()));
-        }).unwrap();
+                assert!(v.is_object());
+                let result = v.to_object(c).unwrap().unwrap();
+                let a_key = value::String::from_str(i, "a").unwrap();
+                let b_key = value::String::from_str(i, "b").unwrap();
+                assert_eq!(Some(2),
+                           result.get_key(c, &a_key)
+                               .unwrap()
+                               .and_then(|v| v.integer_value(c).unwrap()));
+                assert_eq!(Some(true),
+                           result.get_key(c, &b_key)
+                               .unwrap()
+                               .and_then(|v| v.boolean_value(c).unwrap()));
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_date() {
         eval("new Date(0)", |_, _, v| {
-            assert!(v.is_date());
-        }).unwrap();
+                assert!(v.is_date());
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_arguments_object() {
         eval("(function() { return arguments; })()", |_, _, v| {
-            assert!(v.is_arguments_object());
-        }).unwrap();
+                assert!(v.is_arguments_object());
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_boolean_object() {
         eval("new Boolean(true)", |_, _, v| {
-            assert!(v.is_boolean_object());
-        }).unwrap();
+                assert!(v.is_boolean_object());
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_number_object() {
         eval("new Number(42)", |_, _, v| {
-            assert!(v.is_number_object());
-        }).unwrap();
+                assert!(v.is_number_object());
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_string_object() {
         eval("new String('abc')", |_, _, v| {
-            assert!(v.is_string_object());
-        }).unwrap();
+                assert!(v.is_string_object());
+            })
+            .unwrap();
     }
 
     #[test]
@@ -240,15 +266,17 @@ mod tests {
     #[test]
     fn eval_reg_exp() {
         eval("/./", |_, _, v| {
-            assert!(v.is_reg_exp());
-        }).unwrap();
+                assert!(v.is_reg_exp());
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_generator_function() {
         eval("(function* () {})", |_, _, v| {
-            assert!(v.is_generator_function());
-        }).unwrap();
+                assert!(v.is_generator_function());
+            })
+            .unwrap();
     }
 
     #[test]
@@ -259,22 +287,25 @@ mod tests {
     #[test]
     fn eval_promise() {
         eval("new Promise(function() {})", |_, _, v| {
-            assert!(v.is_promise());
-        }).unwrap();
+                assert!(v.is_promise());
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_map() {
         eval("new Map()", |_, _, v| {
-            assert!(v.is_map());
-        }).unwrap();
+                assert!(v.is_map());
+            })
+            .unwrap();
     }
 
     #[test]
     fn eval_set() {
         eval("new Set()", |_, _, v| {
-            assert!(v.is_set());
-        }).unwrap();
+                assert!(v.is_set());
+            })
+            .unwrap();
     }
 
     #[test]
@@ -296,7 +327,7 @@ mod tests {
         match error.kind() {
             &error::ErrorKind::Javascript(ref msg) => {
                 assert_eq!("Uncaught SyntaxError: Unexpected end of input", msg);
-            },
+            }
             x => panic!("Unexpected error kind: {:?}", x),
         }
     }

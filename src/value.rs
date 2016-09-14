@@ -195,8 +195,8 @@ macro_rules! inherit {
 macro_rules! type_predicate {
     ($name:ident, $wrapped:expr) => {
         pub fn $name(&self) -> bool {
-            // SAFETY: This is unsafe because it calls a native method with two void pointers.  It's
-            // safe because the macro is only used with the Value class and one of its methods.
+// SAFETY: This is unsafe because it calls a native method with two void pointers.  It's
+// safe because the macro is only used with the Value class and one of its methods.
             unsafe { util::invoke(self.0, |i| $wrapped(i, self.1)).map(|r| 0 != r).unwrap_or(false) }
         }
     }
@@ -205,9 +205,9 @@ macro_rules! type_predicate {
 macro_rules! partial_conversion {
     ($name:ident, $wrapped:expr, $target:ident) => {
         pub fn $name(&self, context: &context::Context) -> error::Result<Option<$target>> {
-            // SAFETY: This is unsafe because it calls a native method with two void pointers that
-            // returns a pointer.  It's safe because the method belongs to the class of the second
-            // pointer, and a null check is made on the returned pointer.
+// SAFETY: This is unsafe because it calls a native method with two void pointers that
+// returns a pointer.  It's safe because the method belongs to the class of the second
+// pointer, and a null check is made on the returned pointer.
             unsafe {
                 Ok(try!(util::invoke_nullable(self.0, |i| $wrapped(i, self.1, context.as_raw()))).map(|p| $target(self.0, p)))
             }
@@ -302,7 +302,8 @@ impl<'a> Value<'a> {
         // SAFETY: This is unsafe for the same reason as `partial_conversion!`.  The only difference
         // is that extra `0 != ` checks have been added.
         unsafe {
-            let m = try!(util::invoke(self.0, |i| v8::Value_BooleanValue(i, self.1, context.as_raw())));
+            let m = try!(util::invoke(self.0,
+                                      |i| v8::Value_BooleanValue(i, self.1, context.as_raw())));
 
             if 0 != m.is_set {
                 Ok(Some(0 != m.value))
@@ -321,7 +322,9 @@ impl<'a> Value<'a> {
         // SAFETY: This is unsafe for the same reason as `boolean_value`.  The only difference is
         // that an additional pointer is involved.
         unsafe {
-            let m = try!(util::invoke(self.0, |c| v8::Value_Equals(c, self.1, context.as_raw(), that.as_raw())));
+            let m = try!(util::invoke(self.0, |c| {
+                v8::Value_Equals(c, self.1, context.as_raw(), that.as_raw())
+            }));
 
             if 0 != m.is_set {
                 Ok(Some(0 != m.value))
@@ -335,7 +338,8 @@ impl<'a> Value<'a> {
         // SAFETY: This is unsafe for the same reason as `boolean_value`.  The only difference is
         // that an additional pointer is involved.
         unsafe {
-            Ok(0 != try!(util::invoke(self.0, |c| v8::Value_StrictEquals(c, self.1, that.as_raw()))))
+            Ok(0 !=
+               try!(util::invoke(self.0, |c| v8::Value_StrictEquals(c, self.1, that.as_raw()))))
         }
     }
 
@@ -371,35 +375,43 @@ impl<'a> String<'a> {
         // SAFETY: This is unsafe because a native method is called that reads from memory.  It is
         // safe because the method only reads from the sent-in pointer up to the sent-in length.
         unsafe {
-            Ok(String(isolate, try!(util::invoke(isolate, |c| v8::String_NewFromUtf8_Normal(c,
-                                                                    str.as_ptr() as *const i8,
-                                                                    str.len() as os::raw::c_int)))))
+            Ok(String(isolate,
+                      try!(util::invoke(isolate, |c| {
+                          v8::String_NewFromUtf8_Normal(c,
+                                                        str.as_ptr() as *const i8,
+                                                        str.len() as os::raw::c_int)
+                      }))))
         }
     }
 
-    pub fn internalized_from_str(isolate: &'a isolate::Isolate, str: &str) -> error::Result<String<'a>> {
+    pub fn internalized_from_str(isolate: &'a isolate::Isolate,
+                                 str: &str)
+                                 -> error::Result<String<'a>> {
         // SAFETY: This is unsafe for the same reasons as `from_str`.
         unsafe {
-            Ok(String(isolate, try!(util::invoke(isolate, |c| v8::String_NewFromUtf8_Internalized(c,
-                                                                            str.as_ptr() as *const i8,
-                                                                            str.len() as os::raw::c_int)))))
+            Ok(String(isolate,
+                      try!(util::invoke(isolate, |c| {
+                          v8::String_NewFromUtf8_Internalized(c,
+                                                              str.as_ptr() as *const i8,
+                                                              str.len() as os::raw::c_int)
+                      }))))
         }
     }
 
     pub fn to_string(&self) -> error::Result<::std::string::String> {
         // SAFETY: This is unsafe because native code is getting called.  It is safe because the
         // method is a member of the String class.
-        let len = unsafe { try!(util::invoke(self.0, |c| v8::String_Utf8Length(c, self.1))) } as usize;
+        let len =
+            unsafe { try!(util::invoke(self.0, |c| v8::String_Utf8Length(c, self.1))) } as usize;
         let mut buf = vec![0u8; len];
 
         // SAFETY: This is unsafe because native code writes to managed memory, and it might not be
         // valid UTF-8.  It is safe because the underlying method should only write up to the
         // specified length and valid UTF-8.
         unsafe {
-            try!(util::invoke(self.0, |c| v8::String_WriteUtf8(c,
-                                 self.1,
-                                 buf.as_mut_ptr() as *mut i8,
-                                 len as i32)));
+            try!(util::invoke(self.0, |c| {
+                v8::String_WriteUtf8(c, self.1, buf.as_mut_ptr() as *mut i8, len as i32)
+            }));
             Ok(::std::string::String::from_utf8_unchecked(buf))
         }
     }
@@ -419,37 +431,79 @@ impl<'a> Object<'a> {
         // method is a member of the Object class, and a null check is performed on the returned
         // pointer.
         unsafe {
-            Ok(try!(util::invoke_nullable(self.0, |c| v8::Object_Get_Key(c, self.1, context.as_raw(), key.as_raw()))).map(|p| Value(self.0, p)))
+            Ok(try!(util::invoke_nullable(self.0, |c| {
+                    v8::Object_Get_Key(c, self.1, context.as_raw(), key.as_raw())
+                }))
+                .map(|p| Value(self.0, p)))
         }
     }
 
-    pub fn get_index(&self, context: &context::Context, index: u32) -> error::Result<Option<Value>> {
+    pub fn get_index(&self,
+                     context: &context::Context,
+                     index: u32)
+                     -> error::Result<Option<Value>> {
         // SAFETY: This is unsafe because a native method is being called.  It is safe because the
         // method is a member of the Object class, and a null check is performed on the returned
         // pointer.
         unsafe {
-            Ok(try!(util::invoke_nullable(self.0, |c| v8::Object_Get_Index(c, self.1, context.as_raw(), index))).map(|p| Value(self.0, p)))
+            Ok(try!(util::invoke_nullable(self.0, |c| {
+                    v8::Object_Get_Index(c, self.1, context.as_raw(), index)
+                }))
+                .map(|p| Value(self.0, p)))
         }
     }
 
-    pub fn call(&self, context: &context::Context, args: &[&Value]) -> error::Result<Option<Value>> {
+    pub fn call(&self,
+                context: &context::Context,
+                args: &[&Value])
+                -> error::Result<Option<Value>> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         unsafe {
-            Ok(try!(util::invoke_nullable(self.0, |c| v8::Object_CallAsFunction(c, self.1, context.as_raw(), ptr::null_mut(), arg_ptrs.len() as i32, arg_ptrs.as_mut_ptr()))).map(|p| Value(self.0, p)))
+            Ok(try!(util::invoke_nullable(self.0, |c| {
+                    v8::Object_CallAsFunction(c,
+                                              self.1,
+                                              context.as_raw(),
+                                              ptr::null_mut(),
+                                              arg_ptrs.len() as i32,
+                                              arg_ptrs.as_mut_ptr())
+                }))
+                .map(|p| Value(self.0, p)))
         }
     }
 
-    pub fn call_with_this(&self, context: &context::Context, this: &Value, args: &[&Value]) -> error::Result<Option<Value>> {
+    pub fn call_with_this(&self,
+                          context: &context::Context,
+                          this: &Value,
+                          args: &[&Value])
+                          -> error::Result<Option<Value>> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         unsafe {
-            Ok(try!(util::invoke_nullable(self.0, |c| v8::Object_CallAsFunction(c, self.1, context.as_raw(), this.as_raw(), arg_ptrs.len() as i32, arg_ptrs.as_mut_ptr()))).map(|p| Value(self.0, p)))
+            Ok(try!(util::invoke_nullable(self.0, |c| {
+                    v8::Object_CallAsFunction(c,
+                                              self.1,
+                                              context.as_raw(),
+                                              this.as_raw(),
+                                              arg_ptrs.len() as i32,
+                                              arg_ptrs.as_mut_ptr())
+                }))
+                .map(|p| Value(self.0, p)))
         }
     }
 
-    pub fn call_as_constructor(&self, context: &context::Context, args: &[&Value]) -> error::Result<Option<Value>> {
+    pub fn call_as_constructor(&self,
+                               context: &context::Context,
+                               args: &[&Value])
+                               -> error::Result<Option<Value>> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         unsafe {
-            Ok(try!(util::invoke_nullable(self.0, |c| v8::Object_CallAsConstructor(c, self.1, context.as_raw(), arg_ptrs.len() as i32, arg_ptrs.as_mut_ptr()))).map(|p| Value(self.0, p)))
+            Ok(try!(util::invoke_nullable(self.0, |c| {
+                    v8::Object_CallAsConstructor(c,
+                                                 self.1,
+                                                 context.as_raw(),
+                                                 arg_ptrs.len() as i32,
+                                                 arg_ptrs.as_mut_ptr())
+                }))
+                .map(|p| Value(self.0, p)))
         }
     }
 }

@@ -18,12 +18,12 @@ pub struct StackTrace<'a>(&'a isolate::Isolate, v8::StackTraceRef);
 pub struct StackFrame<'a>(&'a isolate::Isolate, v8::StackFrameRef);
 
 impl<'a> Message<'a> {
-
     // TODO: pub fn get_script_origin(&self)
 
     pub fn get(&self) -> error::Result<value::String> {
         unsafe {
-            Ok(value::String::from_raw(self.0, try!(util::invoke(self.0, |c| v8::Message_Get(c, self.1)))))
+            Ok(value::String::from_raw(self.0,
+                                       try!(util::invoke(self.0, |c| v8::Message_Get(c, self.1)))))
         }
     }
 

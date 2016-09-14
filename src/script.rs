@@ -14,13 +14,17 @@ impl<'a> Script<'a> {
                    source: &value::String)
                    -> error::Result<Script<'a>> {
         unsafe {
-            Ok(Script(isolate, try!(util::invoke(isolate, |c| v8::Script_Compile(c, context.as_raw(), source.as_raw())))))
+            Ok(Script(isolate,
+                      try!(util::invoke(isolate, |c| {
+                          v8::Script_Compile(c, context.as_raw(), source.as_raw())
+                      }))))
         }
     }
 
     pub fn run(&self, context: &context::Context) -> error::Result<Option<value::Value>> {
         unsafe {
-            Ok(try!(util::invoke_nullable(self.0, |c| v8::Script_Run(c, self.1, context.as_raw()))).map(|p| value::Value::from_raw(self.0, p)))
+            Ok(try!(util::invoke_nullable(self.0, |c| v8::Script_Run(c, self.1, context.as_raw())))
+                .map(|p| value::Value::from_raw(self.0, p)))
         }
     }
 }
