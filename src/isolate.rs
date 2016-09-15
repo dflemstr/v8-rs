@@ -37,7 +37,7 @@ impl Drop for Isolate {
 
 fn ensure_initialized() {
     unsafe {
-        if !INITIALIZED.swap(true, atomic::Ordering::Relaxed) {
+        if !INITIALIZED.swap(true, atomic::Ordering::SeqCst) {
             v8::V8_InitializeICU();
 
             let platform = platform::Platform::new();
