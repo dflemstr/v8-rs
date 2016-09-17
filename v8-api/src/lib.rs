@@ -5,73 +5,125 @@ extern crate log;
 use std::fmt;
 use std::path;
 
+/// A description of the V8 API.
 #[derive(Debug)]
 pub struct Api {
+    /// The classes that the API consists of.
     pub classes: Vec<Class>,
 }
 
+/// A C++ class,
 #[derive(Debug)]
 pub struct Class {
+    /// The simple name of the class (without the `v8::` prefix).
     pub name: String,
+    /// The methods of this class, in declaration order.
     pub methods: Vec<Method>,
 }
 
+/// A C++ method
 #[derive(Debug)]
 pub struct Method {
+    /// Whether the method is static.
     pub is_static: bool,
+    /// The name of the method.
     pub name: String,
+    /// A mangled version of the method that makes it unique among all
+    /// of the methods of its class.
     pub mangled_name: String,
+    /// The arguments that the method takes, in declaration order.
     pub args: Vec<Arg>,
+    /// The return type of the method.
     pub ret_type: RetType,
 }
 
+/// The return type of a method.
 #[derive(Debug)]
 pub enum RetType {
+    /// The type is directly returned.  For primitives `T`, this means
+    /// just `T` (e.g. `int`).  For references to `T`, this means
+    /// `Local<T>` (e.g. `Local<String>`).  For pointers to `T`, this
+    /// means a non-null pointer `T *`.
     Direct(Type),
+    /// The type might be absent.  For primitives `T`, this means
+    /// `Maybe<T>` (e.g. `Maybe<int>`).  For references to `T`, this
+    /// means `MaybeLocal<T>`.  For pointers to `T`, this means a
+    /// nullable pointer `T *`.
     Maybe(Type),
 }
 
+/// A method argument.
 #[derive(Debug)]
 pub struct Arg {
+    /// The argument name.
     pub name: String,
+    /// The type of the argument.
     pub arg_type: Type,
 }
 
+/// The types used in V8.
 #[derive(Debug, Eq, PartialEq)]
 pub enum Type {
+    /// The `void` type.
     Void,
+    /// The `bool` type.
     Bool,
 
+    /// The `char` type.
     Char,
+    /// The `const char` type.
     ConstChar,
+    /// The `unsigned int` type.
     UInt,
+    /// The `int` type.
     Int,
+    /// The `unsigned long` type.
     ULong,
+    /// The `long` type.
     Long,
 
+    /// The `uint8_t` type.
     U8,
+    /// The `int8_t` type.
     I8,
+    /// The `uint16_t` type.
     U16,
+    /// The `int16_t` type.
     I16,
+    /// The `uint32_t` type.
     U32,
+    /// The `int32_t` type.
     I32,
+    /// The `uint64_t` type.
     U64,
+    /// The `int64_t` type.
     I64,
+    /// The `double` type.
     F64,
 
+    /// A class with the specified name, without the `v8::` prefix.
     Class(String),
 
+    /// A reference to the specified type, meaning a `Local<T>` or
+    /// `MaybeLocal<T>`.
     Ref(Box<Type>),
+    /// A pointer to the specified type, i.e. `T *`.
     Ptr(Box<Type>),
+    /// An array of the specified type, i.e. `T[]`.
     Arr(Box<Type>),
 }
 
+/// A method mangle rule.
 struct MethodMangle {
+    /// The exact name of the method to mangle.
     name: &'static str,
+    /// A unique argument name that only the method to mangle has.
     unique_arg: &'static str,
+    /// The mangled name of the method.
     mangle: &'static str,
 }
 
+/// Classes that we should not return because they are special.
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const SPECIAL_CLASSES: &'static [&'static str] = &[
     // v8.h
@@ -98,6 +150,7 @@ const SPECIAL_CLASSES: &'static [&'static str] = &[
     "IdleTask",
 ];
 
+/// Methods that we should not return because they are special.
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const SPECIAL_METHODS: &'static [&'static str] = &[
     "Compile", // Because ScriptOrigin param
@@ -116,6 +169,7 @@ const SPECIAL_METHODS: &'static [&'static str] = &[
     "ShutdownPlatform", // V8::ShutdownPlatform takes no context
 ];
 
+/// Default mangle rules.
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const METHOD_MANGLES: &'static [MethodMangle] = &[
     MethodMangle { name: "Set", unique_arg: "index", mangle: "Set_Index"},
@@ -136,6 +190,14 @@ const METHOD_MANGLES: &'static [MethodMangle] = &[
     MethodMangle { name: "New", unique_arg: "array_buffer", mangle: "New_Owned"},
 ];
 
+/// Reads the V8 API from the given file path pointing to a `v8.h`
+/// file (or a file that includes `v8.h`), using the specified extra
+/// includes if necessary.
+///
+/// # Panics
+///
+/// Since this library is supposed to be used in a build script,
+/// panics if anything goes wrong whatsoever.
 pub fn read<P1, P2>(file_path: P1, extra_includes: &[P2]) -> Api
     where P1: AsRef<path::Path>,
           P2: AsRef<path::Path>
@@ -172,8 +234,11 @@ fn build_api(entity: &clang::Entity) -> Api {
 fn build_classes(entity: &clang::Entity) -> Vec<Class> {
     entity.get_children()
         .into_iter()
+        // Is a class
         .filter(|e| e.get_kind() == clang::EntityKind::ClassDecl)
+        // Is not just a declaration
         .filter(|e| !e.get_children().is_empty())
+        // Is not nameless or special
         .filter(|e| {
             e.get_name().map(|ref n| !SPECIAL_CLASSES.contains(&n.as_str())).unwrap_or(false)
         })
@@ -186,9 +251,13 @@ fn build_class(entity: &clang::Entity) -> Class {
         name: entity.get_name().unwrap(),
         methods: entity.get_children()
             .into_iter()
+            // Is a method
             .filter(|e| e.get_kind() == clang::EntityKind::Method)
+            // Is not deprecated
             .filter(|e| e.get_availability() == clang::Availability::Available)
+            // Is public
             .filter(|e| e.get_accessibility() == Some(clang::Accessibility::Public))
+            // Is not an operator or special
             .filter(|e| {
                 e.get_name()
                     .map(|ref n| {
@@ -196,7 +265,11 @@ fn build_class(entity: &clang::Entity) -> Class {
                     })
                     .unwrap_or(false)
             })
-            .flat_map(|e| build_method(&e))
+            .flat_map(|e| build_method(&e)
+                      .map_err(|err| {
+                          warn!("Could not translate method {}", e.get_display_name().unwrap_or_else(||"(unnamed)".to_owned()));
+                          err
+                      }))
             .collect(),
     }
 }
