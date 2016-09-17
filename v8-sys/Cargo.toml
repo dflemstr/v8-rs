@@ -5,6 +5,8 @@ description = "Low-level bindings to V8, the Javascript engine"
 include = ["build.rs", "src/**/*", "Cargo.toml"]
 keywords = ["v8", "javascript", "js", "ecmascript", "google"]
 name = "v8-sys"
+license = "Apache-2.0"
+repository = "https://github.com/dflemstr/v8-rs/tree/master/v8-sys"
 version = "0.1.0"
 
 [build-dependencies]
