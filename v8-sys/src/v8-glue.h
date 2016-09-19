@@ -122,6 +122,7 @@ StringRef v8_String_NewFromUtf8_Internalized(RustContext c, const char *data, in
 int v8_String_WriteUtf8(RustContext c, StringRef string, char *buffer, int length);
 
 ScriptRef v8_Script_Compile(RustContext c, ContextRef context, StringRef source);
+ScriptRef v8_Script_Compile_Origin(RustContext c, ContextRef context, StringRef source, ValueRef resource_name, IntegerRef resource_line_offset, IntegerRef resource_column_offset, BooleanRef resource_is_shared_cross_origin, IntegerRef script_id, BooleanRef resource_is_embedder_debug_script, ValueRef source_map_url, BooleanRef resource_is_opaque);
 
 ValueRef v8_Object_CallAsFunction(RustContext c, ObjectRef self, ContextRef context, ValueRef recv, int argc, ValueRef argv[]);
 

@@ -50,14 +50,18 @@ UNWRAP_MAYBE_PRIM(uint64_t, u64, MaybeU64)
 UNWRAP_MAYBE_PRIM(int64_t, i64, MaybeI64)
 UNWRAP_MAYBE_PRIM(double, f64, MaybeF64)
 
-template<typename A> A unwrap(v8::Isolate *isolate, A value) {
+template<typename A> A unwrap(v8::Isolate *isolate, A &&value) {
     return value;
 }
 
 template<typename A> v8::Local<A> wrap(v8::Isolate *isolate,
                                        v8::Persistent<A> *value)
 {
-    return value->Get(isolate);
+    if (value) {
+        return value->Get(isolate);
+    } else {
+        return v8::Local<A>();
+    }
 }
 
 template<typename A> A wrap(v8::Isolate *isolate, A &&value) {
@@ -251,6 +255,42 @@ ScriptRef v8_Script_Compile(RustContext c, ContextRef context, StringRef source)
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
     auto result = v8::Script::Compile(wrap(c.isolate, context), wrap(c.isolate, source));
+    handle_exception(c, try_catch);
+    return unwrap(c.isolate, result);
+}
+
+
+ScriptRef v8_Script_Compile_Origin(
+    RustContext c,
+    ContextRef context,
+    StringRef source,
+    ValueRef resource_name,
+    IntegerRef resource_line_offset,
+    IntegerRef resource_column_offset,
+    BooleanRef resource_is_shared_cross_origin,
+    IntegerRef script_id,
+    BooleanRef resource_is_embedder_debug_script,
+    ValueRef source_map_url,
+    BooleanRef resource_is_opaque) {
+    v8::HandleScope scope(c.isolate);
+    v8::TryCatch try_catch(c.isolate);
+    v8::Context::Scope context_scope(wrap(c.isolate, context));
+
+    v8::ScriptOrigin origin(
+        wrap(c.isolate, resource_name),
+        wrap(c.isolate, resource_line_offset),
+        wrap(c.isolate, resource_column_offset),
+        wrap(c.isolate, resource_is_shared_cross_origin),
+        wrap(c.isolate, script_id),
+        wrap(c.isolate, resource_is_embedder_debug_script),
+        wrap(c.isolate, source_map_url),
+        wrap(c.isolate, resource_is_opaque));
+
+    auto result = v8::Script::Compile(
+        wrap(c.isolate, context),
+        wrap(c.isolate, source),
+        &origin);
+
     handle_exception(c, try_catch);
     return unwrap(c.isolate, result);
 }
