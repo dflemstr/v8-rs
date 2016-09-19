@@ -6,7 +6,11 @@
 template<typename A> v8::Persistent<A> *unwrap(v8::Isolate *isolate,
                                                v8::Local<A> value)
 {
-    return new v8::Persistent<A>(isolate, value);
+    if (value.IsEmpty()) {
+        return nullptr;
+    } else {
+        return new v8::Persistent<A>(isolate, value);
+    }
 }
 
 template<typename A> v8::Persistent<A> *unwrap(v8::Isolate *isolate,
