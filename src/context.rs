@@ -9,6 +9,10 @@ impl Context {
         unsafe { Context(util::invoke(isolate, |c| v8::Context_New(c)).unwrap()) }
     }
 
+    pub unsafe fn from_raw(raw: v8::ContextRef) -> Context {
+        Context(raw)
+    }
+
     pub fn as_raw(&self) -> v8::ContextRef {
         self.0
     }

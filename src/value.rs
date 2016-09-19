@@ -193,7 +193,8 @@ macro_rules! inherit {
 }
 
 macro_rules! type_predicate {
-    ($name:ident, $wrapped:expr) => {
+    ($name:ident, $wrapped:expr, $doc:expr) => {
+        #[doc=$doc]
         pub fn $name(&self) -> bool {
 // SAFETY: This is unsafe because it calls a native method with two void pointers.  It's
 // safe because the macro is only used with the Value class and one of its methods.
@@ -238,57 +239,170 @@ macro_rules! partial_get {
 
 
 impl<'a> Value<'a> {
-    // TODO: Doc strings for methods
-
-    type_predicate!(is_undefined, v8::Value_IsUndefined);
-    type_predicate!(is_null, v8::Value_IsNull);
-    type_predicate!(is_true, v8::Value_IsTrue);
-    type_predicate!(is_false, v8::Value_IsFalse);
-    type_predicate!(is_name, v8::Value_IsName);
-    type_predicate!(is_string, v8::Value_IsString);
-    type_predicate!(is_symbol, v8::Value_IsSymbol);
-    type_predicate!(is_function, v8::Value_IsFunction);
-    type_predicate!(is_array, v8::Value_IsArray);
-    type_predicate!(is_object, v8::Value_IsObject);
-    type_predicate!(is_boolean, v8::Value_IsBoolean);
-    type_predicate!(is_number, v8::Value_IsNumber);
-    type_predicate!(is_external, v8::Value_IsExternal);
-    type_predicate!(is_int32, v8::Value_IsInt32);
-    type_predicate!(is_uint32, v8::Value_IsUint32);
-    type_predicate!(is_date, v8::Value_IsDate);
-    type_predicate!(is_arguments_object, v8::Value_IsArgumentsObject);
-    type_predicate!(is_boolean_object, v8::Value_IsBooleanObject);
-    type_predicate!(is_number_object, v8::Value_IsNumberObject);
-    type_predicate!(is_string_object, v8::Value_IsStringObject);
-    type_predicate!(is_symbol_object, v8::Value_IsSymbolObject);
-    type_predicate!(is_native_error, v8::Value_IsNativeError);
-    type_predicate!(is_reg_exp, v8::Value_IsRegExp);
-    type_predicate!(is_generator_function, v8::Value_IsGeneratorFunction);
-    type_predicate!(is_generator_object, v8::Value_IsGeneratorObject);
-    type_predicate!(is_promise, v8::Value_IsPromise);
-    type_predicate!(is_map, v8::Value_IsMap);
-    type_predicate!(is_set, v8::Value_IsSet);
-    type_predicate!(is_map_iterator, v8::Value_IsMapIterator);
-    type_predicate!(is_set_iterator, v8::Value_IsSetIterator);
-    type_predicate!(is_weak_map, v8::Value_IsWeakMap);
-    type_predicate!(is_weak_set, v8::Value_IsWeakSet);
-    type_predicate!(is_array_buffer, v8::Value_IsArrayBuffer);
-    type_predicate!(is_array_buffer_view, v8::Value_IsArrayBufferView);
-    type_predicate!(is_typed_array, v8::Value_IsTypedArray);
-    type_predicate!(is_uint8_array, v8::Value_IsUint8Array);
-    type_predicate!(is_uint8_clamped_array, v8::Value_IsUint8ClampedArray);
-    type_predicate!(is_int8_array, v8::Value_IsInt8Array);
-    type_predicate!(is_uint16_array, v8::Value_IsUint16Array);
-    type_predicate!(is_int16_array, v8::Value_IsInt16Array);
-    type_predicate!(is_uint32_array, v8::Value_IsUint32Array);
-    type_predicate!(is_int32_array, v8::Value_IsInt32Array);
-    type_predicate!(is_float32_array, v8::Value_IsFloat32Array);
-    type_predicate!(is_float64_array, v8::Value_IsFloat64Array);
-    type_predicate!(is_data_view, v8::Value_IsDataView);
-    type_predicate!(is_shared_array_buffer, v8::Value_IsSharedArrayBuffer);
-    type_predicate!(is_proxy, v8::Value_IsProxy);
+    type_predicate!(is_undefined,
+                    v8::Value_IsUndefined,
+                    "Returns true if this value is the undefined value.  See ECMA-262 4.3.10.");
+    type_predicate!(is_null,
+                    v8::Value_IsNull,
+                    "Returns true if this value is the null value.  See ECMA-262 4.3.11.");
+    type_predicate!(is_true,
+                    v8::Value_IsTrue,
+                    "Returns true if this value is true.");
+    type_predicate!(is_false,
+                    v8::Value_IsFalse,
+                    "Returns true if this value is false.");
+    type_predicate!(is_name,
+                    v8::Value_IsName,
+                    "Returns true if this value is a symbol or a string.\n\nThis is an \
+                     experimental feature.");
+    type_predicate!(is_string,
+                    v8::Value_IsString,
+                    "Returns true if this value is an instance of the String type.  See ECMA-262 \
+                     8.4.");
+    type_predicate!(is_symbol,
+                    v8::Value_IsSymbol,
+                    "Returns true if this value is a symbol.\n\nThis is an experimental feature.");
+    type_predicate!(is_function,
+                    v8::Value_IsFunction,
+                    "Returns true if this value is a function.");
+    type_predicate!(is_array,
+                    v8::Value_IsArray,
+                    "Returns true if this value is an array.  Note that it will return false for \
+                     an Proxy for an array.");
+    type_predicate!(is_object,
+                    v8::Value_IsObject,
+                    "Returns true if this value is an object.");
+    type_predicate!(is_boolean,
+                    v8::Value_IsBoolean,
+                    "Returns true if this value is boolean.");
+    type_predicate!(is_number,
+                    v8::Value_IsNumber,
+                    "Returns true if this value is a number.");
+    type_predicate!(is_external,
+                    v8::Value_IsExternal,
+                    "Returns true if this value is external.");
+    type_predicate!(is_int32,
+                    v8::Value_IsInt32,
+                    "Returns true if this value is a 32-bit signed integer.");
+    type_predicate!(is_uint32,
+                    v8::Value_IsUint32,
+                    "Returns true if this value is a 32-bit unsigned integer.");
+    type_predicate!(is_date,
+                    v8::Value_IsDate,
+                    "Returns true if this value is a Date.");
+    type_predicate!(is_arguments_object,
+                    v8::Value_IsArgumentsObject,
+                    "Returns true if this value is an Arguments object.");
+    type_predicate!(is_boolean_object,
+                    v8::Value_IsBooleanObject,
+                    "Returns true if this value is a Boolean object.");
+    type_predicate!(is_number_object,
+                    v8::Value_IsNumberObject,
+                    "Returns true if this value is a Number object.");
+    type_predicate!(is_string_object,
+                    v8::Value_IsStringObject,
+                    "Returns true if this value is a String object.");
+    type_predicate!(is_symbol_object,
+                    v8::Value_IsSymbolObject,
+                    "Returns true if this value is a Symbol object.\n\nThis is an experimental \
+                     feature.");
+    type_predicate!(is_native_error,
+                    v8::Value_IsNativeError,
+                    "Returns true if this value is a NativeError.");
+    type_predicate!(is_reg_exp,
+                    v8::Value_IsRegExp,
+                    "Returns true if this value is a RegExp.");
+    type_predicate!(is_generator_function,
+                    v8::Value_IsGeneratorFunction,
+                    "Returns true if this value is a Generator function.\n\nThis is an \
+                     experimental feature.");
+    type_predicate!(is_generator_object,
+                    v8::Value_IsGeneratorObject,
+                    "Returns true if this value is a Generator object (iterator).\n\nThis is an \
+                     experimental feature.");
+    type_predicate!(is_promise,
+                    v8::Value_IsPromise,
+                    "Returns true if this value is a Promise.\n\nThis is an experimental feature.");
+    type_predicate!(is_map,
+                    v8::Value_IsMap,
+                    "Returns true if this value is a Map.");
+    type_predicate!(is_set,
+                    v8::Value_IsSet,
+                    "Returns true if this value is a Set.");
+    type_predicate!(is_map_iterator,
+                    v8::Value_IsMapIterator,
+                    "Returns true if this value is a Map Iterator.");
+    type_predicate!(is_set_iterator,
+                    v8::Value_IsSetIterator,
+                    "Returns true if this value is a Set Iterator.");
+    type_predicate!(is_weak_map,
+                    v8::Value_IsWeakMap,
+                    "Returns true if this value is a WeakMap.");
+    type_predicate!(is_weak_set,
+                    v8::Value_IsWeakSet,
+                    "Returns true if this value is a WeakSet.");
+    type_predicate!(is_array_buffer,
+                    v8::Value_IsArrayBuffer,
+                    "Returns true if this value is an ArrayBuffer.\n\nThis is an experimental \
+                     feature.");
+    type_predicate!(is_array_buffer_view,
+                    v8::Value_IsArrayBufferView,
+                    "Returns true if this value is an ArrayBufferView.\n\nThis is an \
+                     experimental feature.");
+    type_predicate!(is_typed_array,
+                    v8::Value_IsTypedArray,
+                    "Returns true if this value is one of TypedArrays.\n\nThis is an \
+                     experimental feature.");
+    type_predicate!(is_uint8_array,
+                    v8::Value_IsUint8Array,
+                    "Returns true if this value is an Uint8Array.\n\nThis is an experimental \
+                     feature.");
+    type_predicate!(is_uint8_clamped_array,
+                    v8::Value_IsUint8ClampedArray,
+                    "Returns true if this value is an Uint8ClampedArray.\n\nThis is an \
+                     experimental feature.");
+    type_predicate!(is_int8_array,
+                    v8::Value_IsInt8Array,
+                    "Returns true if this value is an Int8Array.\n\nThis is an experimental \
+                     feature.");
+    type_predicate!(is_uint16_array,
+                    v8::Value_IsUint16Array,
+                    "Returns true if this value is an Uint16Array.\n\nThis is an experimental \
+                     feature.");
+    type_predicate!(is_int16_array,
+                    v8::Value_IsInt16Array,
+                    "Returns true if this value is an Int16Array.\n\nThis is an experimental \
+                     feature.");
+    type_predicate!(is_uint32_array,
+                    v8::Value_IsUint32Array,
+                    "Returns true if this value is an Uint32Array.\n\nThis is an experimental \
+                     feature.");
+    type_predicate!(is_int32_array,
+                    v8::Value_IsInt32Array,
+                    "Returns true if this value is an Int32Array.\n\nThis is an experimental \
+                     feature.");
+    type_predicate!(is_float32_array,
+                    v8::Value_IsFloat32Array,
+                    "Returns true if this value is a Float32Array.\n\nThis is an experimental \
+                     feature.");
+    type_predicate!(is_float64_array,
+                    v8::Value_IsFloat64Array,
+                    "Returns true if this value is a Float64Array.\n\nThis is an experimental \
+                     feature.");
+    type_predicate!(is_data_view,
+                    v8::Value_IsDataView,
+                    "Returns true if this value is a DataView.\n\nThis is an experimental \
+                     feature.");
+    type_predicate!(is_shared_array_buffer,
+                    v8::Value_IsSharedArrayBuffer,
+                    "Returns true if this value is a SharedArrayBuffer.\n\nThis is an \
+                     experimental feature.");
+    type_predicate!(is_proxy,
+                    v8::Value_IsProxy,
+                    "Returns true if this value is a JavaScript Proxy.");
     type_predicate!(is_web_assembly_compiled_module,
-                    v8::Value_IsWebAssemblyCompiledModule);
+                    v8::Value_IsWebAssemblyCompiledModule,
+                    "");
 
     partial_conversion!(to_boolean, v8::Value_ToBoolean, Boolean);
     partial_conversion!(to_number, v8::Value_ToNumber, Number);
@@ -353,7 +467,7 @@ impl<'a> Value<'a> {
         }
     }
 
-    /// Creates a value from a set of raw pointers
+    /// Creates a value from a set of raw pointers.
     // SAFETY: This is unsafe because the passed-in pointer actually has type `void *` and could be
     // pointing to anything.
     pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::ValueRef) -> Value<'a> {
@@ -372,19 +486,81 @@ impl<'a> PartialEq for Value<'a> {
     }
 }
 
-impl<'a> String<'a> {
-    pub fn from_str(isolate: &'a isolate::Isolate, str: &str) -> String<'a> {
-        // SAFETY: This is unsafe because a native method is called that reads from memory.  It is
-        // safe because the method only reads from the sent-in pointer up to the sent-in length.
-        unsafe {
-            let ptr = str.as_ptr() as *const i8;
-            let len = str.len() as os::raw::c_int;
-            let raw = util::invoke(isolate, |c| v8::String_NewFromUtf8_Normal(c, ptr, len))
-                .unwrap();
-            String(isolate, raw)
-        }
+impl<'a> Primitive<'a> {
+    /// Creates a primitive from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::PrimitiveRef) -> Primitive<'a> {
+        Primitive(isolate, raw)
     }
 
+    /// Returns the underlying raw pointer behind this primitive.
+    pub fn as_raw(&self) -> v8::PrimitiveRef {
+        self.1
+    }
+}
+
+impl<'a> Boolean<'a> {
+    pub fn new(isolate: &'a isolate::Isolate, value: bool) -> Boolean<'a> {
+        let c_value = if value { 1 } else { 0 };
+        let raw = unsafe {
+            util::invoke(isolate, |c| v8::Boolean_New(c, isolate.as_raw(), c_value)).unwrap()
+        };
+        Boolean(isolate, raw)
+    }
+
+    /// Creates a boolean from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::BooleanRef) -> Boolean<'a> {
+        Boolean(isolate, raw)
+    }
+
+    /// Returns the underlying raw pointer behind this boolean.
+    pub fn as_raw(&self) -> v8::BooleanRef {
+        self.1
+    }
+}
+
+impl<'a> Name<'a> {
+    /// Returns the identity hash for this object.
+    ///
+    /// The current implementation uses an inline property on the object to store the identity
+    /// hash.
+    ///
+    /// The return value will never be 0.  Also, it is not guaranteed
+    /// to be unique.
+    pub fn get_identity_hash(&self) -> u32 {
+        unsafe { util::invoke(self.0, |c| v8::Name_GetIdentityHash(c, self.1)).unwrap() as u32 }
+    }
+
+    /// Creates a name from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::NameRef) -> Name<'a> {
+        Name(isolate, raw)
+    }
+
+    /// Returns the underlying raw pointer behind this primitive.
+    pub fn as_raw(&self) -> v8::NameRef {
+        self.1
+    }
+}
+
+impl<'a> String<'a> {
+    pub fn empty(isolate: &'a isolate::Isolate) -> String<'a> {
+        let raw =
+            unsafe { util::invoke(isolate, |c| v8::String_Empty(c, isolate.as_raw())).unwrap() };
+        String(isolate, raw)
+    }
+
+    /// Allocates a new string from UTF-8 data.
+    pub fn from_str(isolate: &'a isolate::Isolate, str: &str) -> String<'a> {
+        let ptr = str.as_ptr() as *const i8;
+        let len = str.len() as os::raw::c_int;
+        // SAFETY: This is unsafe because a native method is called that reads from memory.  It is
+        // safe because the method only reads from the sent-in pointer up to the sent-in length.
+        let raw = unsafe {
+            util::invoke(isolate, |c| v8::String_NewFromUtf8_Normal(c, ptr, len)).unwrap()
+        };
+        String(isolate, raw)
+    }
+
+    /// Allocates a new internalized string from UTF-8 data.
     pub fn internalized_from_str(isolate: &'a isolate::Isolate, str: &str) -> String<'a> {
         // SAFETY: This is unsafe for the same reasons as `from_str`.
         unsafe {
@@ -395,6 +571,32 @@ impl<'a> String<'a> {
                 .unwrap();
             String(isolate, raw)
         }
+    }
+
+    /// Returns the number of characters in this string.
+    pub fn length(&self) -> u32 {
+        unsafe { util::invoke(self.0, |c| v8::String_Length(c, self.1)).unwrap() as u32 }
+    }
+
+    /// Returns the number of bytes in the UTF-8 encoded representation of this string.
+    pub fn utf8_length(&self) -> u32 {
+        unsafe { util::invoke(self.0, |c| v8::String_Utf8Length(c, self.1)).unwrap() as u32 }
+    }
+
+    /// Returns whether this string is known to contain only one byte data.
+    ///
+    /// Does not read the string.
+    ///
+    /// False negatives are possible.
+    pub fn is_one_byte(&self) -> bool {
+        unsafe { 0 != util::invoke(self.0, |c| v8::String_IsOneByte(c, self.1)).unwrap() }
+    }
+
+    /// Returns whether this string contain only one byte data.
+    ///
+    /// Will read the entire string in some cases.
+    pub fn contains_only_one_byte(&self) -> bool {
+        unsafe { 0 != util::invoke(self.0, |c| v8::String_ContainsOnlyOneByte(c, self.1)).unwrap() }
     }
 
     pub fn to_string(&self) -> ::std::string::String {
@@ -416,17 +618,302 @@ impl<'a> String<'a> {
         }
     }
 
+    /// Creates a string from a set of raw pointers.
     pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::StringRef) -> String<'a> {
         String(isolate, raw)
     }
 
+    /// Returns the underlying raw pointer behind this string.
     pub fn as_raw(&self) -> v8::StringRef {
         self.1
     }
 }
 
+impl<'a> Symbol<'a> {
+    /// Access global symbol registry.
+    ///
+    /// Note that symbols created this way are never collected, so they should only be used for
+    /// statically fixed properties.  Also, there is only one global name space for the names used
+    /// as keys.  To minimize the potential for clashes, use qualified names as keys.
+    pub fn for_name(isolate: &'a isolate::Isolate, name: &String<'a>) -> Symbol<'a> {
+        let raw = unsafe {
+            util::invoke(isolate,
+                         |c| v8::Symbol_For(c, isolate.as_raw(), name.as_raw()))
+                .unwrap()
+        };
+        Symbol(isolate, raw)
+    }
+
+    /// Retrieve a global symbol.
+    ///
+    /// Similar to `for_name`, but using a separate registry that is not accessible by (and cannot
+    /// clash with) JavaScript code.
+    pub fn for_api_name(isolate: &'a isolate::Isolate, name: &String<'a>) -> Symbol<'a> {
+        let raw = unsafe {
+            util::invoke(isolate,
+                         |c| v8::Symbol_ForApi(c, isolate.as_raw(), name.as_raw()))
+                .unwrap()
+        };
+        Symbol(isolate, raw)
+    }
+
+    /// Well-known symbol `Symbol.iterator`.
+    pub fn get_iterator(isolate: &'a isolate::Isolate) -> Symbol<'a> {
+        let raw = unsafe {
+            util::invoke(isolate, |c| v8::Symbol_GetIterator(c, isolate.as_raw())).unwrap()
+        };
+        Symbol(isolate, raw)
+    }
+
+    /// Well-known symbol `Symbol.unscopables`.
+    pub fn get_unscopables(isolate: &'a isolate::Isolate) -> Symbol<'a> {
+        let raw = unsafe {
+            util::invoke(isolate, |c| v8::Symbol_GetUnscopables(c, isolate.as_raw())).unwrap()
+        };
+        Symbol(isolate, raw)
+    }
+
+    /// Well-known symbol `Symbol.toStringTag`.
+    pub fn get_to_string_tag(isolate: &'a isolate::Isolate) -> Symbol<'a> {
+        let raw = unsafe {
+            util::invoke(isolate, |c| v8::Symbol_GetToStringTag(c, isolate.as_raw())).unwrap()
+        };
+        Symbol(isolate, raw)
+    }
+
+    /// Well-known symbol `Symbol.isConcatSpreadable`.
+    pub fn get_is_concat_spreadable(isolate: &'a isolate::Isolate) -> Symbol<'a> {
+        let raw = unsafe {
+            util::invoke(isolate,
+                         |c| v8::Symbol_GetIsConcatSpreadable(c, isolate.as_raw()))
+                .unwrap()
+        };
+        Symbol(isolate, raw)
+    }
+
+    /// Creates a symbol from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::SymbolRef) -> Symbol<'a> {
+        Symbol(isolate, raw)
+    }
+
+    /// Returns the underlying raw pointer behind this symbol.
+    pub fn as_raw(&self) -> v8::SymbolRef {
+        self.1
+    }
+}
+
+impl<'a> Private<'a> {
+    /// Create a private symbol.
+    ///
+    /// If name is not empty, it will be the description.
+    pub fn new(isolate: &'a isolate::Isolate, name: &String<'a>) -> Private<'a> {
+        let raw = unsafe {
+            util::invoke(isolate,
+                         |c| v8::Private_New(c, isolate.as_raw(), name.as_raw()))
+                .unwrap()
+        };
+        Private(isolate, raw)
+    }
+
+    /// Retrieve a global private symbol.
+    ///
+    /// If a symbol with this name has not been retrieved in the same isolate before, it is
+    /// created.  Note that private symbols created this way are never collected, so they should
+    /// only be used for statically fixed properties.  Also, there is only one global name space
+    /// for the names used as keys.  To minimize the potential for clashes, use qualified names as
+    /// keys, e.g., "Class#property".
+    pub fn for_api_name(isolate: &'a isolate::Isolate, name: &String<'a>) -> Private<'a> {
+        let raw = unsafe {
+            util::invoke(isolate,
+                         |c| v8::Private_ForApi(c, isolate.as_raw(), name.as_raw()))
+                .unwrap()
+        };
+        Private(isolate, raw)
+    }
+
+    /// Creates a private from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::PrivateRef) -> Private<'a> {
+        Private(isolate, raw)
+    }
+
+    /// Returns the underlying raw pointer behind this private.
+    pub fn as_raw(&self) -> v8::PrivateRef {
+        self.1
+    }
+}
+
+impl<'a> Number<'a> {
+    pub fn new(isolate: &'a isolate::Isolate, value: f64) -> Number<'a> {
+        let raw = unsafe {
+            util::invoke(isolate, |c| v8::Number_New(c, isolate.as_raw(), value)).unwrap()
+        };
+        Number(isolate, raw)
+    }
+
+    pub fn value(&self) -> f64 {
+        unsafe { util::invoke(self.0, |c| v8::Number_Value(c, self.1)).unwrap() }
+    }
+
+    /// Creates a number from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::NumberRef) -> Number<'a> {
+        Number(isolate, raw)
+    }
+
+    /// Returns the underlying raw pointer behind this number.
+    pub fn as_raw(&self) -> v8::NumberRef {
+        self.1
+    }
+}
+
+impl<'a> Integer<'a> {
+    pub fn new(isolate: &'a isolate::Isolate, value: i32) -> Integer<'a> {
+        let raw = unsafe {
+            util::invoke(isolate, |c| v8::Integer_New(c, isolate.as_raw(), value)).unwrap()
+        };
+        Integer(isolate, raw)
+    }
+
+    pub fn new_from_unsigned(isolate: &'a isolate::Isolate, value: u32) -> Integer<'a> {
+        let raw = unsafe {
+            util::invoke(isolate,
+                         |c| v8::Integer_NewFromUnsigned(c, isolate.as_raw(), value))
+                .unwrap()
+        };
+        Integer(isolate, raw)
+    }
+
+    pub fn value(&self) -> i64 {
+        unsafe { util::invoke(self.0, |c| v8::Integer_Value(c, self.1)).unwrap() }
+    }
+
+    /// Creates an integer from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::IntegerRef) -> Integer<'a> {
+        Integer(isolate, raw)
+    }
+
+    /// Returns the underlying raw pointer behind this integer.
+    pub fn as_raw(&self) -> v8::IntegerRef {
+        self.1
+    }
+}
+
+impl<'a> Int32<'a> {
+    pub fn value(&self) -> i32 {
+        unsafe { util::invoke(self.0, |c| v8::Int32_Value(c, self.1)).unwrap() }
+    }
+
+    /// Creates a 32-bit integer from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::Int32Ref) -> Int32<'a> {
+        Int32(isolate, raw)
+    }
+
+    /// Returns the underlying raw pointer behind this 32-bit integer.
+    pub fn as_raw(&self) -> v8::Int32Ref {
+        self.1
+    }
+}
+
+impl<'a> Uint32<'a> {
+    pub fn value(&self) -> u32 {
+        unsafe { util::invoke(self.0, |c| v8::Uint32_Value(c, self.1)).unwrap() }
+    }
+
+    /// Creates a 32-bit unsigned integer from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::Uint32Ref) -> Uint32<'a> {
+        Uint32(isolate, raw)
+    }
+
+    /// Returns the underlying raw pointer behind this 32-bit unsigned integer.
+    pub fn as_raw(&self) -> v8::Uint32Ref {
+        self.1
+    }
+}
+
 impl<'a> Object<'a> {
-    pub fn get_key(&self, context: &context::Context, key: &Value) -> Option<Value> {
+    pub fn new(isolate: &'a isolate::Isolate) -> Object<'a> {
+        let raw = unsafe {
+            util::invoke(isolate, |c| v8::Object_New(c, isolate.as_raw())).unwrap()
+        };
+        Object(isolate, raw)
+    }
+
+    pub fn set(&self, context: &context::Context, key: &Value, value: &Value) -> Option<bool> {
+        unsafe {
+            let m = util::invoke(self.0, |c| {
+                    v8::Object_Set_Key(c, self.1, context.as_raw(), key.as_raw(), value.as_raw())
+                })
+                .unwrap();
+
+            if 0 != m.is_set {
+                Some(0 != m.value)
+            } else {
+                None
+            }
+        }
+    }
+
+    pub fn set_index(&self, context: &context::Context, index: u32, value: &Value) -> Option<bool> {
+        unsafe {
+            let m = util::invoke(self.0, |c| {
+                    v8::Object_Set_Index(c, self.1, context.as_raw(), index, value.as_raw())
+                })
+                .unwrap();
+
+            if 0 != m.is_set {
+                Some(0 != m.value)
+            } else {
+                None
+            }
+        }
+    }
+
+    pub fn create_data_property(&self,
+                                context: &context::Context,
+                                key: &Name,
+                                value: &Value)
+                                -> Option<bool> {
+        unsafe {
+            let m = util::invoke(self.0, |c| {
+                    v8::Object_CreateDataProperty_Key(c,
+                                                      self.1,
+                                                      context.as_raw(),
+                                                      key.as_raw(),
+                                                      value.as_raw())
+                })
+                .unwrap();
+
+            if 0 != m.is_set {
+                Some(0 != m.value)
+            } else {
+                None
+            }
+        }
+    }
+
+    pub fn create_data_property_index(&self,
+                                      context: &context::Context,
+                                      index: u32,
+                                      value: &Value)
+                                      -> Option<bool> {
+        unsafe {
+            let m = util::invoke(self.0, |c| {
+                    v8::Object_CreateDataProperty_Index(c,
+                                                        self.1,
+                                                        context.as_raw(),
+                                                        index,
+                                                        value.as_raw())
+                })
+                .unwrap();
+
+            if 0 != m.is_set {
+                Some(0 != m.value)
+            } else {
+                None
+            }
+        }
+    }
+
+    pub fn get(&self, context: &context::Context, key: &Value) -> Option<Value> {
         // SAFETY: This is unsafe because a native method is being called.  It is safe because the
         // method is a member of the Object class, and a null check is performed on the returned
         // pointer.
@@ -438,10 +925,7 @@ impl<'a> Object<'a> {
         }
     }
 
-    pub fn get_index(&self,
-                     context: &context::Context,
-                     index: u32)
-                     -> Option<Value> {
+    pub fn get_index(&self, context: &context::Context, index: u32) -> Option<Value> {
         // SAFETY: This is unsafe because a native method is being called.  It is safe because the
         // method is a member of the Object class, and a null check is performed on the returned
         // pointer.
@@ -453,6 +937,253 @@ impl<'a> Object<'a> {
         }
     }
 
+    pub fn delete(&self, context: &context::Context, key: &Value) -> Option<bool> {
+        unsafe {
+            let m = util::invoke(self.0, |c| {
+                    v8::Object_Delete_Key(c, self.1, context.as_raw(), key.as_raw())
+                })
+                .unwrap();
+
+            if 0 != m.is_set {
+                Some(0 != m.value)
+            } else {
+                None
+            }
+        }
+    }
+
+    pub fn delete_index(&self, context: &context::Context, index: u32) -> Option<bool> {
+        unsafe {
+            let m = util::invoke(self.0,
+                                 |c| v8::Object_Delete_Index(c, self.1, context.as_raw(), index))
+                .unwrap();
+
+            if 0 != m.is_set {
+                Some(0 != m.value)
+            } else {
+                None
+            }
+        }
+    }
+
+    pub fn has(&self, context: &context::Context, key: &Value) -> Option<bool> {
+        unsafe {
+            let m = util::invoke(self.0,
+                                 |c| v8::Object_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
+                .unwrap();
+
+            if 0 != m.is_set {
+                Some(0 != m.value)
+            } else {
+                None
+            }
+        }
+    }
+
+    pub fn has_index(&self, context: &context::Context, index: u32) -> Option<bool> {
+        unsafe {
+            let m = util::invoke(self.0,
+                                 |c| v8::Object_Has_Index(c, self.1, context.as_raw(), index))
+                .unwrap();
+
+            if 0 != m.is_set {
+                Some(0 != m.value)
+            } else {
+                None
+            }
+        }
+    }
+
+    /// Returns an array containing the names of the enumerable properties of this object,
+    /// including properties from prototype objects.
+    ///
+    /// The array returned by this method contains the same values as would be enumerated by a
+    /// for-in statement over this object.
+    pub fn get_property_names(&self, context: &context::Context) -> Option<Array> {
+        unsafe {
+            util::invoke_nullable(self.0,
+                                  |c| v8::Object_GetPropertyNames(c, self.1, context.as_raw()))
+                .unwrap()
+                .map(|p| Array(self.0, p))
+        }
+    }
+
+    /// This function has the same functionality as `get_property_names` but the returned array
+    /// doesn't contain the names of properties from prototype objects.
+    pub fn get_own_property_names(&self, context: &context::Context) -> Option<Array> {
+        unsafe {
+            util::invoke_nullable(self.0,
+                                  |c| v8::Object_GetOwnPropertyNames(c, self.1, context.as_raw()))
+                .unwrap()
+                .map(|p| Array(self.0, p))
+        }
+    }
+
+    /// Get the prototype object.
+    ///
+    /// This does not skip objects marked to be skipped by `__proto__` and it does not consult the
+    /// security handler.
+    pub fn get_prototype(&self) -> Value {
+        let raw = unsafe { util::invoke(self.0, |c| v8::Object_GetPrototype(c, self.1)).unwrap() };
+        Value(self.0, raw)
+    }
+
+    /// Set the prototype object.
+    ///
+    /// This does not skip objects marked to be skipped by `__proto__` and it does not consult the
+    /// security handler.
+    pub fn set_prototype(&self, context: &context::Context, prototype: &Value) -> Option<bool> {
+        unsafe {
+            let m = util::invoke(self.0, |c| {
+                    v8::Object_SetPrototype(c, self.1, context.as_raw(), prototype.as_raw())
+                })
+                .unwrap();
+
+            if 0 != m.is_set {
+                Some(0 != m.value)
+            } else {
+                None
+            }
+        }
+    }
+
+    /// Call builtin Object.prototype.toString on this object.
+    ///
+    /// This is different from Value::ToString() that may call user-defined toString function. This
+    /// one does not.
+    pub fn object_proto_to_string(&self, context: &context::Context) -> Option<String> {
+        unsafe {
+            util::invoke_nullable(self.0,
+                                  |c| v8::Object_ObjectProtoToString(c, self.1, context.as_raw()))
+                .unwrap()
+                .map(|p| String(self.0, p))
+        }
+
+    }
+
+    /// Returns the name of the function invoked as a constructor for this object.
+    pub fn get_constructor_name(&self) -> String {
+        let raw = unsafe {
+            util::invoke(self.0,
+                         |c| v8::Object_GetConstructorName(c, self.1))
+                .unwrap()
+        };
+
+        String(self.0, raw)
+    }
+
+    pub fn has_own_property(&self, context: &context::Context, key: &Name) -> Option<bool> {
+        unsafe {
+            let m = util::invoke(self.0,
+                                 |c| v8::Object_HasOwnProperty_Key(c, self.1, context.as_raw(), key.as_raw()))
+                .unwrap();
+
+            if 0 != m.is_set {
+                Some(0 != m.value)
+            } else {
+                None
+            }
+        }
+    }
+
+    pub fn has_own_property_index(&self, context: &context::Context, index: u32) -> Option<bool> {
+        unsafe {
+            let m = util::invoke(self.0,
+                                 |c| v8::Object_HasOwnProperty_Index(c, self.1, context.as_raw(), index))
+                .unwrap();
+
+            if 0 != m.is_set {
+                Some(0 != m.value)
+            } else {
+                None
+            }
+        }
+    }
+
+    pub fn has_real_named_property(&self, context: &context::Context, key: &Name) -> Option<bool> {
+        unsafe {
+            let m = util::invoke(self.0,
+                                 |c| v8::Object_HasRealNamedProperty(c, self.1, context.as_raw(), key.as_raw()))
+                .unwrap();
+
+            if 0 != m.is_set {
+                Some(0 != m.value)
+            } else {
+                None
+            }
+        }
+    }
+
+    pub fn has_real_indexed_property(&self, context: &context::Context, index: u32) -> Option<bool> {
+        unsafe {
+            let m = util::invoke(self.0,
+                                 |c| v8::Object_HasRealIndexedProperty(c, self.1, context.as_raw(), index))
+                .unwrap();
+
+            if 0 != m.is_set {
+                Some(0 != m.value)
+            } else {
+                None
+            }
+        }
+    }
+
+    /// Returns the identity hash for this object.
+    ///
+    /// The current implementation uses a hidden property on the object to store the identity hash.
+    ///
+    /// The return value will never be 0. Also, it is not guaranteed to be unique.
+    pub fn get_identity_hash(&self) -> u32 {
+        unsafe { util::invoke(self.0, |c| v8::Object_GetIdentityHash(c, self.1)).unwrap() as u32 }
+    }
+
+    /// Clone this object with a fast but shallow copy.
+    ///
+    /// Values will point to the same values as the original object.
+    pub fn clone(&self) -> Object {
+        let raw = unsafe {
+            util::invoke(self.0,
+                         |c| v8::Object_Clone(c, self.1))
+                .unwrap()
+        };
+
+        Object(self.0, raw)
+    }
+
+    /// Clone this object with a fast but shallow copy.
+    ///
+    /// Values will point to the same values as the original object.
+    pub fn creation_context(&self) -> context::Context {
+        unsafe {
+            let raw = util::invoke(self.0,
+                         |c| v8::Object_CreationContext(c, self.1))
+                .unwrap();
+            context::Context::from_raw(raw)
+        }
+    }
+
+    /// Checks whether a callback is set by the ObjectTemplate::SetCallAsFunctionHandler method.
+    ///
+    /// When an Object is callable this method returns true.
+    pub fn is_callable(&self) -> bool {
+        unsafe {
+            0 != util::invoke(self.0,
+                              |c| v8::Object_IsCallable(c, self.1))
+                .unwrap()
+        }
+    }
+
+    /// True if this object is a constructor.
+    pub fn is_constructor(&self) -> bool {
+        unsafe {
+            0 != util::invoke(self.0,
+                              |c| v8::Object_IsConstructor(c, self.1))
+                .unwrap()
+        }
+    }
+
+    /// Call an Object as a function if a callback is set by the
+    /// ObjectTemplate::SetCallAsFunctionHandler method.
     pub fn call(&self,
                 context: &context::Context,
                 args: &[&Value])
@@ -471,6 +1202,8 @@ impl<'a> Object<'a> {
         }
     }
 
+    /// Call an Object as a function if a callback is set by the
+    /// ObjectTemplate::SetCallAsFunctionHandler method.
     pub fn call_with_this(&self,
                           context: &context::Context,
                           this: &Value,
@@ -490,6 +1223,10 @@ impl<'a> Object<'a> {
         }
     }
 
+    /// Call an Object as a constructor if a callback is set by the
+    /// ObjectTemplate::SetCallAsFunctionHandler method.
+    ///
+    /// Note: This method behaves like the Function::NewInstance method.
     pub fn call_as_constructor(&self,
                                context: &context::Context,
                                args: &[&Value])
@@ -505,6 +1242,123 @@ impl<'a> Object<'a> {
                 }))
                 .map(|p| Value(self.0, p)))
         }
+    }
+
+    /// Creates an object from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::ObjectRef) -> Object<'a> {
+        Object(isolate, raw)
+    }
+
+    /// Returns the underlying raw pointer behind this object.
+    pub fn as_raw(&self) -> v8::ObjectRef {
+        self.1
+    }
+}
+
+impl<'a> Array<'a> {
+    pub fn new(isolate: &isolate::Isolate, length: u32) -> Array {
+        let raw = unsafe {
+            util::invoke(isolate, |c| v8::Array_New(c, isolate.as_raw(), length as i32)).unwrap()
+        };
+        Array(isolate, raw)
+    }
+
+    /// Creates an array from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::ArrayRef) -> Array<'a> {
+        Array(isolate, raw)
+    }
+
+    /// Returns the underlying raw pointer behind this array.
+    pub fn as_raw(&self) -> v8::ArrayRef {
+        self.1
+    }
+}
+
+impl<'a> Map<'a> {
+    pub fn new(isolate: &isolate::Isolate) -> Map {
+        let raw = unsafe {
+            util::invoke(isolate, |c| v8::Map_New(c, isolate.as_raw())).unwrap()
+        };
+        Map(isolate, raw)
+    }
+
+    pub fn size(&self) -> usize {
+        unsafe {
+            util::invoke(self.0, |c|v8::Map_Size(c, self.1)).unwrap() as usize
+        }
+    }
+
+    pub fn clear(&self) {
+        unsafe {
+            util::invoke(self.0, |c|v8::Map_Clear(c, self.1)).unwrap()
+        }
+    }
+
+    pub fn get(&self, context: &context::Context, key: &Value) -> Option<Value> {
+        unsafe {
+            util::invoke_nullable(self.0,
+                                  |c| v8::Map_Get_Key(c, self.1, context.as_raw(), key.as_raw()))
+                .unwrap()
+                .map(|p| Value(self.0, p))
+        }
+    }
+
+    pub fn set(&self, context: &context::Context, key: &Value, value: &Value) {
+        unsafe {
+            util::invoke(self.0, |c| {
+                v8::Map_Set_Key(c, self.1, context.as_raw(), key.as_raw(), value.as_raw())
+            })
+                .unwrap();
+        }
+    }
+
+    pub fn has(&self, context: &context::Context, key: &Value) -> Option<bool> {
+        unsafe {
+            let m = util::invoke(self.0,
+                                 |c| v8::Map_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
+                .unwrap();
+
+            if 0 != m.is_set {
+                Some(0 != m.value)
+            } else {
+                None
+            }
+        }
+    }
+
+    pub fn delete(&self, context: &context::Context, key: &Value) -> Option<bool> {
+        unsafe {
+            let m = util::invoke(self.0, |c| {
+                v8::Map_Delete_Key(c, self.1, context.as_raw(), key.as_raw())
+            })
+                .unwrap();
+
+            if 0 != m.is_set {
+                Some(0 != m.value)
+            } else {
+                None
+            }
+        }
+    }
+
+    /// Returns an array of length Size() * 2, where index N is the Nth key and index N + 1 is the
+    /// Nth value.
+    pub fn as_array(&self) -> Array {
+        let raw = unsafe {
+            util::invoke(self.0,
+                         |c| v8::Map_AsArray(c, self.1)).unwrap()
+        };
+        Array(self.0, raw)
+    }
+
+    /// Creates a map from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::MapRef) -> Map<'a> {
+        Map(isolate, raw)
+    }
+
+    /// Returns the underlying raw pointer behind this map.
+    pub fn as_raw(&self) -> v8::MapRef {
+        self.1
     }
 }
 
