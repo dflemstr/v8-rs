@@ -1,10 +1,10 @@
 use std::mem;
-use std::sync::atomic;
+use std::sync;
 use v8_sys as v8;
 use allocator;
 use platform;
 
-static mut INITIALIZED: atomic::AtomicBool = atomic::ATOMIC_BOOL_INIT;
+static INITIALIZE: sync::Once = sync::ONCE_INIT;
 
 pub struct Isolate(v8::IsolatePtr, allocator::Allocator);
 
@@ -38,8 +38,8 @@ impl Drop for Isolate {
 }
 
 fn ensure_initialized() {
-    unsafe {
-        if !INITIALIZED.swap(true, atomic::Ordering::SeqCst) {
+    INITIALIZE.call_once(|| {
+        unsafe {
             v8::V8_InitializeICU();
 
             let platform = platform::Platform::new();
@@ -49,5 +49,5 @@ fn ensure_initialized() {
 
             v8::V8_Initialize();
         }
-    }
+    });
 }
