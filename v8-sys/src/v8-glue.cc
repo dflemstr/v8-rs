@@ -188,6 +188,14 @@ IsolatePtr v8_Isolate_New(ArrayBuffer_AllocatorPtr allocator) {
     return v8::Isolate::New(params);
 }
 
+void v8_Isolate_SetCaptureStackTraceForUncaughtExceptions_Overview(IsolatePtr self, bool capture, int frame_limit) {
+    self->SetCaptureStackTraceForUncaughtExceptions(capture, frame_limit, v8::StackTrace::kOverview);
+}
+
+void v8_Isolate_SetCaptureStackTraceForUncaughtExceptions_Detailed(IsolatePtr self, bool capture, int frame_limit) {
+    self->SetCaptureStackTraceForUncaughtExceptions(capture, frame_limit, v8::StackTrace::kDetailed);
+}
+
 void v8_Isolate_Dispose(IsolatePtr isolate) {
     isolate->Dispose();
 }

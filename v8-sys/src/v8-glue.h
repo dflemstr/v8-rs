@@ -100,10 +100,13 @@ void v8_V8_Initialize();
 void v8_V8_Dispose();
 void v8_V8_ShutdownPlatform();
 
+
 ArrayBuffer_AllocatorPtr v8_ArrayBuffer_Allocator_Create(v8_AllocatorFunctions allocator_functions);
 void v8_ArrayBuffer_Allocator_Destroy(ArrayBuffer_AllocatorPtr allocator);
 
 IsolatePtr v8_Isolate_New(ArrayBuffer_AllocatorPtr allocator);
+void v8_Isolate_SetCaptureStackTraceForUncaughtExceptions_Overview(IsolatePtr self, bool capture, int frame_limit);
+void v8_Isolate_SetCaptureStackTraceForUncaughtExceptions_Detailed(IsolatePtr self, bool capture, int frame_limit);
 void v8_Isolate_Dispose(IsolatePtr isolate);
 
 void v8_Task_Run(TaskPtr task);
