@@ -74,8 +74,9 @@ mod tests {
     {
         let isolate = Isolate::new();
         let context = Context::new(&isolate);
+        let name = value::String::from_str(&isolate, "test.js");
         let source = value::String::from_str(&isolate, source);
-        let script = try!(Script::compile(&isolate, &context, &source));
+        let script = try!(Script::compile_with_name(&isolate, &context, &name, &source));
         let result = try!(script.run(&context)).unwrap();
         Ok(with_result(&isolate, &context, &result))
     }
@@ -408,15 +409,13 @@ mod tests {
   }
   x();
 })();
-"#,
-                          |_, _, _| {
-                          });
+"#, |_, _, _| {});
 
         let error = result.unwrap_err();
         match error.kind() {
             &error::ErrorKind::Javascript(ref msg, ref stack_trace) => {
                 assert_eq!("Uncaught Error: x", msg);
-                assert_eq!("    at new w (<unknown>:13:11)\n    at z (<unknown>:10:5)\n    at eval <unknown>:1:1\n    at y (<unknown>:7:5)\n    at x (<unknown>:4:5)\n    at <unknown>:15:3\n    at <unknown>:16:3\n", format!("{}", stack_trace));
+                assert_eq!("    at new w (test.js:13:11)\n    at z (test.js:10:5)\n    at eval <unknown>:1:1\n    at y (test.js:7:5)\n    at x (test.js:4:5)\n    at test.js:15:3\n    at test.js:16:3\n", format!("{}", stack_trace));
             }
             x => panic!("Unexpected error kind: {:?}", x),
         }
