@@ -19,6 +19,8 @@ impl Isolate {
             panic!("Could not create Isolate");
         }
 
+        unsafe { v8::Isolate_SetCaptureStackTraceForUncaughtExceptions_Detailed(raw, 1, 1024) };
+
         Isolate(raw, allocator)
     }
 

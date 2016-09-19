@@ -1,3 +1,48 @@
+//! A high-level wrapper around the [V8 Javascript engine][1].
+//!
+//! # Usage
+//!
+//! First, you need to create an [`Isolate`](isolate/struct.Isolate.html).  An isolate is a VM
+//! instance with its own heap.  You should most likely create one per thread and re-use it as much
+//! as possible.
+//!
+//! Then, you need to create a [`Context`](context/struct.Context.html).  A context is an execution
+//! environment that allows separate, unrelated, JavaScript code to run in a single instance of V8.
+//! You must explicitly specify the context in which you want any JavaScript code to be run.  You
+//! should keep track of the context of a script manually as part of your application.
+//!
+//! # Example
+//!
+//! ```
+//! use v8::{self, value};
+//!
+//! // Create a V8 heap
+//! let isolate = v8::Isolate::new();
+//! // Create a new context of execution
+//! let context = v8::Context::new(&isolate);
+//!
+//! // Load the source code that we want to evaluate
+//! let source = value::String::from_str(&isolate, "'Hello, ' + 'World!'");
+//!
+//! // Compile the source code.  `unwrap()` panics if the code is invalid,
+//! // e.g. if there is a syntax  error.
+//! let script = v8::Script::compile(&isolate, &context, &source).unwrap();
+//!
+//! // Run the compiled script.  The first `unwrap()` panics if the code threw
+//! // an exception.  The second `unwrap()` is for if the script did not yield a
+//! // result.
+//! let result = script.run(&context).unwrap().unwrap();
+//!
+//! // Convert the result to a value::String.  `unwrap()` panics if the value is
+//! // not a string.
+//! let result_str = result.to_string(&context).unwrap();
+//!
+//! // Success!
+//! assert_eq!("Hello, World!", result_str.to_string());
+//! ```
+//!
+//! [1]: https://developers.google.com/v8/
+
 #[macro_use]
 extern crate error_chain;
 #[macro_use]
@@ -324,8 +369,54 @@ mod tests {
 
         let error = result.unwrap_err();
         match error.kind() {
-            &error::ErrorKind::Javascript(ref msg) => {
+            &error::ErrorKind::Javascript(ref msg, _) => {
                 assert_eq!("Uncaught SyntaxError: Unexpected end of input", msg);
+            }
+            x => panic!("Unexpected error kind: {:?}", x),
+        }
+    }
+
+    #[test]
+    fn eval_exception() {
+        let result = eval("throw 'x';", |_, _, _| {
+        });
+
+        let error = result.unwrap_err();
+        match error.kind() {
+            &error::ErrorKind::Javascript(ref msg, _) => {
+                assert_eq!("Uncaught x", msg);
+            }
+            x => panic!("Unexpected error kind: {:?}", x),
+        }
+    }
+
+    #[test]
+    fn eval_exception_stack() {
+        let result = eval(r#"
+(function() {
+  function x() {
+    y();
+  }
+  function y() {
+    eval("z()");
+  }
+  function z() {
+    new w();
+  }
+  function w() {
+    throw new Error('x');
+  }
+  x();
+})();
+"#,
+                          |_, _, _| {
+                          });
+
+        let error = result.unwrap_err();
+        match error.kind() {
+            &error::ErrorKind::Javascript(ref msg, ref stack_trace) => {
+                assert_eq!("Uncaught Error: x", msg);
+                assert_eq!("    at new w (<unknown>:13:11)\n    at z (<unknown>:10:5)\n    at eval <unknown>:1:1\n    at y (<unknown>:7:5)\n    at x (<unknown>:4:5)\n    at <unknown>:15:3\n    at <unknown>:16:3\n", format!("{}", stack_trace));
             }
             x => panic!("Unexpected error kind: {:?}", x),
         }

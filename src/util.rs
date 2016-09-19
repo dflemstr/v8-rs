@@ -28,7 +28,9 @@ pub fn invoke<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<B>
         let message = unsafe { error::Message::from_raw(isolate, message) };
         let message_str = message.get().to_string();
 
-        Err(error::ErrorKind::Javascript(message_str).into())
+        let stack_trace = message.get_stack_trace().to_captured();
+
+        Err(error::ErrorKind::Javascript(message_str, stack_trace).into())
     }
 }
 
