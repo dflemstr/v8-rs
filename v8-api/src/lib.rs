@@ -369,7 +369,7 @@ fn build_type(typ: &clang::Type) -> Result<Type, ()> {
                 "int64_t" | "const int64_t" => Ok(Type::I64),
                 "double" | "const double" => Ok(Type::F64),
                 s => {
-                    warn!("Unmapped type {:?}", s);
+                    warn!("Unmapped type {:?} (a typedef)", s);
                     Err(())
                 }
             }
@@ -384,15 +384,16 @@ fn build_type(typ: &clang::Type) -> Result<Type, ()> {
                     "v8::Isolate" => Ok(Type::Class("Isolate".to_owned())),
                     "v8::ObjectTemplate" => Ok(Type::Class("ObjectTemplate".to_owned())),
                     "v8::Value" => Ok(Type::Class("Value".to_owned())),
+                    "v8::Local<v8::String>" => Ok(Type::Ref(Box::new(Type::Class("String".to_owned())))),
                     n => {
-                        warn!("Unmapped type {:?} of kind {:?}", n, typ.get_kind());
+                        warn!("Unmapped type {:?} of kind {:?} (in unexposed exception table)", n, typ.get_kind());
                         Err(())
                     }
                 }
             }
         }
         _ => {
-            warn!("Unmapped type {:?} of kind {:?}",
+            warn!("Unmapped type {:?} of kind {:?} (in kind dispatch table)",
                   typ.get_display_name(),
                   typ.get_kind());
             Err(())
