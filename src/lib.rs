@@ -47,7 +47,7 @@
 extern crate error_chain;
 #[macro_use]
 extern crate lazy_static;
-extern crate v8_ng_sys as v8_sys;
+extern crate v8_sys;
 
 mod allocator;
 mod platform;
