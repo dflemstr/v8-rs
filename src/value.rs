@@ -68,8 +68,6 @@ pub struct Promise<'a>(&'a isolate::Isolate, v8::PromiseRef);
 /// An instance of the built-in Proxy constructor (ECMA-262, 6th Edition, 26.2.1).
 pub struct Proxy<'a>(&'a isolate::Isolate, v8::ProxyRef);
 
-pub struct WasmCompiledModule<'a>(&'a isolate::Isolate, v8::WasmCompiledModuleRef);
-
 /// An instance of the built-in ArrayBuffer constructor (ES6 draft 15.13.5).
 ///
 /// This API is experimental and may change significantly.
@@ -400,9 +398,6 @@ impl<'a> Value<'a> {
     type_predicate!(is_proxy,
                     v8::Value_IsProxy,
                     "Returns true if this value is a JavaScript Proxy.");
-    type_predicate!(is_web_assembly_compiled_module,
-                    v8::Value_IsWebAssemblyCompiledModule,
-                    "");
 
     partial_conversion!(to_boolean, v8::Value_ToBoolean, Boolean);
     partial_conversion!(to_number, v8::Value_ToNumber, Number);
@@ -1362,7 +1357,6 @@ inherit!(Set, Object);
 inherit!(Function, Object);
 inherit!(Promise, Object);
 inherit!(Proxy, Object);
-inherit!(WasmCompiledModule, Object);
 inherit!(ArrayBuffer, Object);
 inherit!(ArrayBufferView, Object);
 inherit!(TypedArray, ArrayBufferView);
@@ -1405,7 +1399,6 @@ drop!(Set, v8::Set_DestroyRef);
 drop!(Function, v8::Function_DestroyRef);
 drop!(Promise, v8::Promise_DestroyRef);
 drop!(Proxy, v8::Proxy_DestroyRef);
-drop!(WasmCompiledModule, v8::WasmCompiledModule_DestroyRef);
 drop!(ArrayBuffer, v8::ArrayBuffer_DestroyRef);
 drop!(ArrayBufferView, v8::ArrayBufferView_DestroyRef);
 drop!(TypedArray, v8::TypedArray_DestroyRef);
