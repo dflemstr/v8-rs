@@ -147,6 +147,7 @@ const SPECIAL_CLASSES: &'static [&'static str] = &[
     "ValueSerializer", // Weird API and only on modern V8's
     "ValueDeserializer", // Weird API and only on modern V8's
     "ExtensionConfiguration", // Weird API
+    "Module", // Too experimental
 
     // v8-platform.h
     // These are all pre-requisites for creating an Isolate so
