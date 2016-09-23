@@ -103,6 +103,12 @@ pub enum Type {
 
     /// A class with the specified name, without the `v8::` prefix.
     Class(String),
+    /// An enum with the specified name, without the `v8::` prefix.
+    Enum(String),
+    /// A callback function pointer name, without the `v8::` prefix.
+    Callback(String),
+    /// An argument to a callback
+    CallbackLValue(String),
 
     /// A reference to the specified type, meaning a `Local<T>` or
     /// `MaybeLocal<T>`.
@@ -356,6 +362,16 @@ fn build_type(typ: &clang::Type) -> Result<Type, ()> {
                 Ok(Type::Class(name))
             }
         }
+        clang::TypeKind::Enum => {
+            // TODO: is this right?
+            let name = typ.get_display_name().replace("v8::", "");
+            if name.contains("::") {
+                warn!("No support for nested type {:?}", name);
+                Err(())
+            } else {
+                Ok(Type::Enum(name))
+            }
+        }
         clang::TypeKind::Typedef => {
             // TODO: is this right?
             match typ.get_display_name().as_str() {
@@ -368,6 +384,9 @@ fn build_type(typ: &clang::Type) -> Result<Type, ()> {
                 "uint64_t" | "const uint64_t" => Ok(Type::U64),
                 "int64_t" | "const int64_t" => Ok(Type::I64),
                 "double" | "const double" => Ok(Type::F64),
+                s if s.ends_with("Callback") => {
+                    Ok(Type::Callback(s.to_owned()))
+                }
                 s => {
                     warn!("Unmapped type {:?} (a typedef)", s);
                     Err(())
@@ -385,10 +404,23 @@ fn build_type(typ: &clang::Type) -> Result<Type, ()> {
                     "v8::ObjectTemplate" => Ok(Type::Class("ObjectTemplate".to_owned())),
                     "v8::Value" => Ok(Type::Class("Value".to_owned())),
                     "v8::Local<v8::String>" => Ok(Type::Ref(Box::new(Type::Class("String".to_owned())))),
+                    "v8::Local<v8::FunctionTemplate>" => Ok(Type::Ref(Box::new(Type::Class("FunctionTemplate".to_owned())))),
                     n => {
                         warn!("Unmapped type {:?} of kind {:?} (in unexposed exception table)", n, typ.get_kind());
                         Err(())
                     }
+                }
+            }
+        }
+        clang::TypeKind::LValueReference => {
+            match typ.get_display_name().as_str() {
+                "const v8::NamedPropertyHandlerConfiguration &" =>
+                    Ok(Type::CallbackLValue("NamedPropertyHandlerConfiguration".to_owned())),
+                "const v8::IndexedPropertyHandlerConfiguration &" =>
+                    Ok(Type::CallbackLValue("IndexedPropertyHandlerConfiguration".to_owned())),
+                n => {
+                    warn!("Unmapped type {:?} of kind {:?} (in lvalue reference exception table)", n, typ.get_kind());
+                    Err(())
                 }
             }
         }
@@ -487,7 +519,10 @@ impl fmt::Display for Type {
             Type::U64 => write!(f, "u64"),
             Type::I64 => write!(f, "i64"),
             Type::F64 => write!(f, "f64"),
+            Type::Enum(ref e) => write!(f, "enum {}", e),
             Type::Class(ref class) => write!(f, "class {}", class),
+            Type::Callback(ref callback) => write!(f, "callback {}", callback),
+            Type::CallbackLValue(ref v) => write!(f, "callback lvalue {}", v),
             Type::Ptr(ref target) => write!(f, "*mut {}", target),
             Type::Ref(ref target) => write!(f, "&{}", target),
             Type::Arr(ref target) => write!(f, "[{}]", target),
