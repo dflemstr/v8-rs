@@ -2,24 +2,24 @@ use v8_sys as v8;
 use isolate;
 use util;
 
-pub struct Context(v8::ContextRef);
+pub struct Context<'a>(&'a isolate::Isolate, v8::ContextRef);
 
-impl Context {
+impl<'a> Context<'a> {
     pub fn new(isolate: &isolate::Isolate) -> Context {
-        unsafe { Context(util::invoke(isolate, |c| v8::Context_New(c)).unwrap()) }
+        unsafe { Context(isolate, util::invoke(isolate, |c| v8::Context_New(c)).unwrap()) }
     }
 
-    pub unsafe fn from_raw(raw: v8::ContextRef) -> Context {
-        Context(raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::ContextRef) -> Context {
+        Context(isolate, raw)
     }
 
     pub fn as_raw(&self) -> v8::ContextRef {
-        self.0
+        self.1
     }
 }
 
-impl Drop for Context {
+impl<'a> Drop for Context<'a> {
     fn drop(&mut self) {
-        unsafe { v8::Context_DestroyRef(self.0) }
+        unsafe { v8::Context_DestroyRef(self.1) }
     }
 }

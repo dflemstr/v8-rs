@@ -1144,13 +1144,10 @@ impl<'a> Object<'a> {
         Object(self.0, raw)
     }
 
-    /// Clone this object with a fast but shallow copy.
-    ///
-    /// Values will point to the same values as the original object.
     pub fn creation_context(&self) -> context::Context {
         unsafe {
             let raw = util::invoke(self.0, |c| v8::Object_CreationContext(c, self.1)).unwrap();
-            context::Context::from_raw(raw)
+            context::Context::from_raw(self.0, raw)
         }
     }
 
