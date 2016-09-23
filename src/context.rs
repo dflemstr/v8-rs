@@ -2,6 +2,7 @@ use v8_sys as v8;
 use isolate;
 use util;
 
+#[derive(Debug)]
 pub struct Context<'a>(&'a isolate::Isolate, v8::ContextRef);
 
 impl<'a> Context<'a> {
