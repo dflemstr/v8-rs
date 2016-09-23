@@ -6,6 +6,7 @@ use platform;
 
 static INITIALIZE: sync::Once = sync::ONCE_INIT;
 
+#[derive(Debug)]
 pub struct Isolate(v8::IsolatePtr, allocator::Allocator);
 
 impl Isolate {

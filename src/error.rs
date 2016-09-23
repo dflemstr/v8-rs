@@ -31,8 +31,13 @@ pub struct CapturedStackFrame {
 }
 
 /// An error message.
+#[derive(Debug)]
 pub struct Message<'a>(&'a isolate::Isolate, v8::MessageRef);
+
+#[derive(Debug)]
 pub struct StackTrace<'a>(&'a isolate::Isolate, v8::StackTraceRef);
+
+#[derive(Debug)]
 pub struct StackFrame<'a>(&'a isolate::Isolate, v8::StackFrameRef);
 
 impl<'a> Message<'a> {

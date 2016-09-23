@@ -12,6 +12,7 @@ lazy_static! {
 /// scheduling.
 // TODO: make this use some kind of main loop/work stealing queue
 // instead.
+#[derive(Debug)]
 pub struct Platform(v8::PlatformPtr);
 
 impl Platform {
@@ -38,6 +39,7 @@ impl Drop for Platform {
     }
 }
 
+#[derive(Debug)]
 struct TaskHolder(v8::TaskPtr);
 
 unsafe impl Send for TaskHolder {}

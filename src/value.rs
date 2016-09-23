@@ -9,158 +9,197 @@ use std::os;
 use std::ptr;
 
 /// The superclass of all JavaScript values and objects.
+#[derive(Debug)]
 pub struct Value<'a>(&'a isolate::Isolate, v8::ValueRef);
 
 /// The superclass of primitive values.  See ECMA-262 4.3.2.
+#[derive(Debug)]
 pub struct Primitive<'a>(&'a isolate::Isolate, v8::PrimitiveRef);
 
 /// A primitive boolean value (ECMA-262, 4.3.14).  Either the true or false value.
+#[derive(Debug)]
 pub struct Boolean<'a>(&'a isolate::Isolate, v8::BooleanRef);
 
 /// A superclass for symbols and strings.
+#[derive(Debug)]
 pub struct Name<'a>(&'a isolate::Isolate, v8::NameRef);
 
 /// A JavaScript string value (ECMA-262, 4.3.17).
+#[derive(Debug)]
 pub struct String<'a>(&'a isolate::Isolate, v8::StringRef);
 
 /// A JavaScript symbol (ECMA-262 edition 6)
 ///
 /// This is an experimental feature. Use at your own risk.
+#[derive(Debug)]
 pub struct Symbol<'a>(&'a isolate::Isolate, v8::SymbolRef);
 
 /// A private symbol
 ///
 /// This is an experimental feature. Use at your own risk.
+#[derive(Debug)]
 pub struct Private<'a>(&'a isolate::Isolate, v8::PrivateRef);
 
 /// A JavaScript number value (ECMA-262, 4.3.20)
+#[derive(Debug)]
 pub struct Number<'a>(&'a isolate::Isolate, v8::NumberRef);
 
 /// A JavaScript value representing a signed integer.
+#[derive(Debug)]
 pub struct Integer<'a>(&'a isolate::Isolate, v8::IntegerRef);
 
 /// A JavaScript value representing a 32-bit signed integer.
+#[derive(Debug)]
 pub struct Int32<'a>(&'a isolate::Isolate, v8::Int32Ref);
 
 /// A JavaScript value representing a 32-bit unsigned integer.
+#[derive(Debug)]
 pub struct Uint32<'a>(&'a isolate::Isolate, v8::Uint32Ref);
 
 /// A JavaScript object (ECMA-262, 4.3.3)
+#[derive(Debug)]
 pub struct Object<'a>(&'a isolate::Isolate, v8::ObjectRef);
 
 /// An instance of the built-in array constructor (ECMA-262, 15.4.2).
+#[derive(Debug)]
 pub struct Array<'a>(&'a isolate::Isolate, v8::ArrayRef);
 
 /// An instance of the built-in Map constructor (ECMA-262, 6th Edition, 23.1.1).
+#[derive(Debug)]
 pub struct Map<'a>(&'a isolate::Isolate, v8::MapRef);
 
 /// An instance of the built-in Set constructor (ECMA-262, 6th Edition, 23.2.1).
+#[derive(Debug)]
 pub struct Set<'a>(&'a isolate::Isolate, v8::SetRef);
 
 /// A JavaScript function object (ECMA-262, 15.3).
+#[derive(Debug)]
 pub struct Function<'a>(&'a isolate::Isolate, v8::FunctionRef);
 
 /// An instance of the built-in Promise constructor (ES6 draft).
 ///
 /// This API is experimental. Only works with --harmony flag.
+#[derive(Debug)]
 pub struct Promise<'a>(&'a isolate::Isolate, v8::PromiseRef);
 
 /// An instance of the built-in Proxy constructor (ECMA-262, 6th Edition, 26.2.1).
+#[derive(Debug)]
 pub struct Proxy<'a>(&'a isolate::Isolate, v8::ProxyRef);
 
 /// An instance of the built-in ArrayBuffer constructor (ES6 draft 15.13.5).
 ///
 /// This API is experimental and may change significantly.
+#[derive(Debug)]
 pub struct ArrayBuffer<'a>(&'a isolate::Isolate, v8::ArrayBufferRef);
 
 /// A base class for an instance of one of "views" over ArrayBuffer, including TypedArrays and
 /// DataView (ES6 draft 15.13).
 ///
 /// This API is experimental and may change significantly.
+#[derive(Debug)]
 pub struct ArrayBufferView<'a>(&'a isolate::Isolate, v8::ArrayBufferViewRef);
 
 /// A base class for an instance of TypedArray series of constructors (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
+#[derive(Debug)]
 pub struct TypedArray<'a>(&'a isolate::Isolate, v8::TypedArrayRef);
 
 /// An instance of Uint8Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
+#[derive(Debug)]
 pub struct Uint8Array<'a>(&'a isolate::Isolate, v8::Uint8ArrayRef);
 
 /// An instance of Uint8ClampedArray constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
+#[derive(Debug)]
 pub struct Uint8ClampedArray<'a>(&'a isolate::Isolate, v8::Uint8ClampedArrayRef);
 
 /// An instance of Int8Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
+#[derive(Debug)]
 pub struct Int8Array<'a>(&'a isolate::Isolate, v8::Int8ArrayRef);
 
 /// An instance of Uint16Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
+#[derive(Debug)]
 pub struct Uint16Array<'a>(&'a isolate::Isolate, v8::Uint16ArrayRef);
 
 /// An instance of Int16Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
+#[derive(Debug)]
 pub struct Int16Array<'a>(&'a isolate::Isolate, v8::Int16ArrayRef);
 
 /// An instance of Uint32Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
+#[derive(Debug)]
 pub struct Uint32Array<'a>(&'a isolate::Isolate, v8::Uint32ArrayRef);
 
 /// An instance of Int32Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
+#[derive(Debug)]
 pub struct Int32Array<'a>(&'a isolate::Isolate, v8::Int32ArrayRef);
 
 /// An instance of Float32Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
+#[derive(Debug)]
 pub struct Float32Array<'a>(&'a isolate::Isolate, v8::Float32ArrayRef);
 
 /// An instance of Float64Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
+#[derive(Debug)]
 pub struct Float64Array<'a>(&'a isolate::Isolate, v8::Float64ArrayRef);
 
 /// An instance of DataView constructor (ES6 draft 15.13.7).
 ///
 /// This API is experimental and may change significantly.
+#[derive(Debug)]
 pub struct DataView<'a>(&'a isolate::Isolate, v8::DataViewRef);
 
 /// An instance of the built-in SharedArrayBuffer constructor.
 ///
 /// This API is experimental and may change significantly.
+#[derive(Debug)]
 pub struct SharedArrayBuffer<'a>(&'a isolate::Isolate, v8::SharedArrayBufferRef);
 
 /// An instance of the built-in Date constructor (ECMA-262, 15.9).
+#[derive(Debug)]
 pub struct Date<'a>(&'a isolate::Isolate, v8::DateRef);
 
 /// A Number object (ECMA-262, 4.3.21).
+#[derive(Debug)]
 pub struct NumberObject<'a>(&'a isolate::Isolate, v8::NumberObjectRef);
 
 /// A Boolean object (ECMA-262, 4.3.15).
+#[derive(Debug)]
 pub struct BooleanObject<'a>(&'a isolate::Isolate, v8::BooleanObjectRef);
 
 /// A String object (ECMA-262, 4.3.18).
+#[derive(Debug)]
 pub struct StringObject<'a>(&'a isolate::Isolate, v8::StringObjectRef);
 
 /// A Symbol object (ECMA-262 edition 6).
 ///
 /// This is an experimental feature. Use at your own risk.
+#[derive(Debug)]
 pub struct SymbolObject<'a>(&'a isolate::Isolate, v8::SymbolObjectRef);
 
 /// An instance of the built-in RegExp constructor (ECMA-262, 15.10).
+#[derive(Debug)]
 pub struct RegExp<'a>(&'a isolate::Isolate, v8::RegExpRef);
 
 /// A JavaScript value that wraps an external value. This type of value is mainly used to associate
 /// native data structures with JavaScript objects.
+#[derive(Debug)]
 pub struct External<'a>(&'a isolate::Isolate, v8::ExternalRef);
 
 macro_rules! inherit {

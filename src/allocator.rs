@@ -5,6 +5,7 @@ use std::mem;
 
 /// A simple array buffer allocator that guarantees that all allocated
 /// blocks are coercible to `Vec`s.
+#[derive(Debug)]
 pub struct Allocator(v8::ArrayBuffer_AllocatorPtr);
 
 impl Allocator {

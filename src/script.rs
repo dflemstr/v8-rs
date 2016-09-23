@@ -6,6 +6,7 @@ use isolate;
 use value;
 use util;
 
+#[derive(Debug)]
 pub struct Script<'a>(&'a isolate::Isolate, v8::ScriptRef);
 
 impl<'a> Script<'a> {
