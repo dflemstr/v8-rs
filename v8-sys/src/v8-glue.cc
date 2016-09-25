@@ -266,7 +266,7 @@ PropertyCallbackInfo build_callback_info(
 }
 
 enum class HandlerFields {
-    Getter, Setter, Descriptor, Query, Deleter, Enumerator, Definer, Data, Flags
+    Getter, Setter, Query, Deleter, Enumerator, Data, Flags
 };
 
 void generic_named_property_handler_getter(
@@ -300,24 +300,6 @@ void generic_named_property_handler_setter(
     PropertyCallbackInfo callback_info = build_callback_info(info, data);
 
     setter(unwrap(isolate, property), unwrap(isolate, value), &callback_info);
-
-    if (callback_info.ReturnValue) {
-        info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
-    }
-}
-
-void generic_named_property_handler_descriptor(
-    v8::Local<v8::Name> property,
-    const v8::PropertyCallbackInfo<v8::Value> &info) {
-    v8::Isolate *isolate = info.GetIsolate();
-    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
-    GenericNamedPropertyDescriptorCallback descriptor =
-        (GenericNamedPropertyDescriptorCallback)
-        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Descriptor);
-    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
-    PropertyCallbackInfo callback_info = build_callback_info(info, data);
-
-    descriptor(unwrap(isolate, property), &callback_info);
 
     if (callback_info.ReturnValue) {
         info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
@@ -377,25 +359,6 @@ void generic_named_property_handler_enumerator(
     }
 }
 
-void generic_named_property_handler_definer(
-    v8::Local<v8::Name> property,
-    const v8::PropertyDescriptor &desc,
-    const v8::PropertyCallbackInfo<v8::Value> &info) {
-    v8::Isolate *isolate = info.GetIsolate();
-    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
-    GenericNamedPropertyDefinerCallback definer =
-        (GenericNamedPropertyDefinerCallback)
-        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Definer);
-    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
-    PropertyCallbackInfo callback_info = build_callback_info(info, data);
-
-    definer(unwrap(isolate, property), (PropertyDescriptorPtr) &desc, &callback_info);
-
-    if (callback_info.ReturnValue) {
-        info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
-    }
-}
-
 v8::NamedPropertyHandlerConfiguration wrap(
     v8::Isolate *isolate,
     NamedPropertyHandlerConfiguration value) {
@@ -403,11 +366,9 @@ v8::NamedPropertyHandlerConfiguration wrap(
 
     v8::GenericNamedPropertyGetterCallback getter;
     v8::GenericNamedPropertySetterCallback setter;
-    v8::GenericNamedPropertyDescriptorCallback descriptor;
     v8::GenericNamedPropertyQueryCallback query;
     v8::GenericNamedPropertyDeleterCallback deleter;
     v8::GenericNamedPropertyEnumeratorCallback enumerator;
-    v8::GenericNamedPropertyDefinerCallback definer;
 
     if (value.getter) {
         outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Getter, (void *) value.getter);
@@ -421,13 +382,6 @@ v8::NamedPropertyHandlerConfiguration wrap(
         setter = generic_named_property_handler_setter;
     } else {
         setter = nullptr;
-    }
-
-    if (value.descriptor) {
-        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Descriptor, (void *) value.descriptor);
-        descriptor = generic_named_property_handler_descriptor;
-    } else {
-        descriptor = nullptr;
     }
 
     if (value.query) {
@@ -451,29 +405,16 @@ v8::NamedPropertyHandlerConfiguration wrap(
         enumerator = nullptr;
     }
 
-    if (value.definer) {
-        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Definer, (void *) value.definer);
-        definer = generic_named_property_handler_definer;
-    } else {
-        definer = nullptr;
-    }
-
     outer_data->SetInternalField((int) HandlerFields::Data, wrap(isolate, value.data));
 
-    auto result = v8::NamedPropertyHandlerConfiguration(
+    return v8::NamedPropertyHandlerConfiguration(
         getter,
         setter,
-        descriptor,
+        query,
         deleter,
         enumerator,
-        definer,
         outer_data,
         wrap(isolate, value.flags));
-
-    // So that we can use the same function for both ctors of NamedPropertyHandlerConfiguration
-    result.query = query;
-
-    return result;
 }
 
 void indexed_property_handler_getter(
@@ -507,24 +448,6 @@ void indexed_property_handler_setter(
     PropertyCallbackInfo callback_info = build_callback_info(info, data);
 
     setter(index, unwrap(isolate, value), &callback_info);
-
-    if (callback_info.ReturnValue) {
-        info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
-    }
-}
-
-void indexed_property_handler_descriptor(
-    uint32_t index,
-    const v8::PropertyCallbackInfo<v8::Value> &info) {
-    v8::Isolate *isolate = info.GetIsolate();
-    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
-    IndexedPropertyDescriptorCallback descriptor =
-        (IndexedPropertyDescriptorCallback)
-        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Descriptor);
-    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
-    PropertyCallbackInfo callback_info = build_callback_info(info, data);
-
-    descriptor(index, &callback_info);
 
     if (callback_info.ReturnValue) {
         info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
@@ -584,25 +507,6 @@ void indexed_property_handler_enumerator(
     }
 }
 
-void indexed_property_handler_definer(
-    uint32_t index,
-    const v8::PropertyDescriptor &desc,
-    const v8::PropertyCallbackInfo<v8::Value> &info) {
-    v8::Isolate *isolate = info.GetIsolate();
-    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
-    IndexedPropertyDefinerCallback definer =
-        (IndexedPropertyDefinerCallback)
-        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Definer);
-    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
-    PropertyCallbackInfo callback_info = build_callback_info(info, data);
-
-    definer(index, (PropertyDescriptorPtr) &desc, &callback_info);
-
-    if (callback_info.ReturnValue) {
-        info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
-    }
-}
-
 v8::IndexedPropertyHandlerConfiguration wrap(
     v8::Isolate *isolate,
     IndexedPropertyHandlerConfiguration value) {
@@ -610,11 +514,9 @@ v8::IndexedPropertyHandlerConfiguration wrap(
 
     v8::IndexedPropertyGetterCallback getter;
     v8::IndexedPropertySetterCallback setter;
-    v8::IndexedPropertyDescriptorCallback descriptor;
     v8::IndexedPropertyQueryCallback query;
     v8::IndexedPropertyDeleterCallback deleter;
     v8::IndexedPropertyEnumeratorCallback enumerator;
-    v8::IndexedPropertyDefinerCallback definer;
 
     if (value.getter) {
         outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Getter, (void *) value.getter);
@@ -628,13 +530,6 @@ v8::IndexedPropertyHandlerConfiguration wrap(
         setter = indexed_property_handler_setter;
     } else {
         setter = nullptr;
-    }
-
-    if (value.descriptor) {
-        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Descriptor, (void *) value.descriptor);
-        descriptor = indexed_property_handler_descriptor;
-    } else {
-        descriptor = nullptr;
     }
 
     if (value.query) {
@@ -658,29 +553,16 @@ v8::IndexedPropertyHandlerConfiguration wrap(
         enumerator = nullptr;
     }
 
-    if (value.definer) {
-        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Definer, (void *) value.definer);
-        definer = indexed_property_handler_definer;
-    } else {
-        definer = nullptr;
-    }
-
     outer_data->SetInternalField((int) HandlerFields::Data, wrap(isolate, value.data));
 
-    auto result = v8::IndexedPropertyHandlerConfiguration(
+    return v8::IndexedPropertyHandlerConfiguration(
         getter,
         setter,
-        descriptor,
+        query,
         deleter,
         enumerator,
-        definer,
         outer_data,
         wrap(isolate, value.flags));
-
-    // So that we can use the same function for both ctors of NamedPropertyHandlerConfiguration
-    result.query = query;
-
-    return result;
 }
 
 template<typename A> A wrap(v8::Isolate *isolate, A &&value) {

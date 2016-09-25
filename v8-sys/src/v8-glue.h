@@ -266,15 +266,6 @@ typedef void (*GenericNamedPropertyDeleterCallback)(
 typedef void (*GenericNamedPropertyEnumeratorCallback)(
     PropertyCallbackInfoPtr_Array info);
 
-typedef void (*GenericNamedPropertyDefinerCallback)(
-    NameRef property,
-    PropertyDescriptorPtr desc,
-    PropertyCallbackInfoPtr_Array info);
-
-typedef void (*GenericNamedPropertyDescriptorCallback)(
-    NameRef property,
-    PropertyCallbackInfoPtr_Value info);
-
 typedef void (*IndexedPropertyGetterCallback)(
     uint32_t index,
     PropertyCallbackInfoPtr_Value info);
@@ -295,15 +286,6 @@ typedef void (*IndexedPropertyDeleterCallback)(
 typedef void (*IndexedPropertyEnumeratorCallback)(
     PropertyCallbackInfoPtr_Array info);
 
-typedef void (*IndexedPropertyDefinerCallback)(
-    uint32_t index,
-    PropertyDescriptorPtr desc,
-    PropertyCallbackInfoPtr_Array info);
-
-typedef void (*IndexedPropertyDescriptorCallback)(
-    uint32_t index,
-    PropertyCallbackInfoPtr_Value info);
-
 typedef bool (*AccessCheckCallback)(
     ContextRef accessing_context,
     ObjectRef accessed_object,
@@ -323,8 +305,6 @@ struct NamedPropertyHandlerConfiguration {
     GenericNamedPropertyQueryCallback query;
     GenericNamedPropertyDeleterCallback deleter;
     GenericNamedPropertyEnumeratorCallback enumerator;
-    GenericNamedPropertyDefinerCallback definer;
-    GenericNamedPropertyDescriptorCallback descriptor;
     ValueRef data;
     PropertyHandlerFlags flags;
 };
@@ -336,8 +316,6 @@ struct IndexedPropertyHandlerConfiguration {
   IndexedPropertyQueryCallback query;
   IndexedPropertyDeleterCallback deleter;
   IndexedPropertyEnumeratorCallback enumerator;
-  IndexedPropertyDefinerCallback definer;
-  IndexedPropertyDescriptorCallback descriptor;
   ValueRef data;
   PropertyHandlerFlags flags;
 };
