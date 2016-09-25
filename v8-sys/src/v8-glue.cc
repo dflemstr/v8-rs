@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 
+
 template<typename A> v8::Persistent<A> *unwrap(v8::Isolate *isolate,
                                                v8::Local<A> value)
 {
@@ -50,6 +51,44 @@ UNWRAP_MAYBE_PRIM(uint64_t, u64, MaybeU64)
 UNWRAP_MAYBE_PRIM(int64_t, i64, MaybeI64)
 UNWRAP_MAYBE_PRIM(double, f64, MaybeF64)
 
+PropertyAttribute unwrap(
+    v8::Isolate *isolate,
+    v8::Maybe<v8::PropertyAttribute> maybe_value) {
+    v8::PropertyAttribute value;
+
+    if (maybe_value.To(&value)) {
+        PropertyAttribute result = PropertyAttribute_None;
+
+        if (value & v8::PropertyAttribute::ReadOnly) {
+            result = PropertyAttribute(result | PropertyAttribute_ReadOnly);
+        }
+
+        if (value & v8::PropertyAttribute::DontEnum) {
+            result = PropertyAttribute(result | PropertyAttribute_DontEnum);
+        }
+
+        if (value & v8::PropertyAttribute::DontDelete) {
+            result = PropertyAttribute(result | PropertyAttribute_DontDelete);
+        }
+
+        return result;
+    } else {
+        return PropertyAttribute_Absent;
+    }
+}
+
+PromiseRejectEvent unwrap(
+    v8::Isolate *isolate,
+    v8::PromiseRejectEvent value) {
+    switch (value) {
+    default:
+    case v8::PromiseRejectEvent::kPromiseRejectWithNoHandler:
+        return PromiseRejectEvent_kPromiseRejectWithNoHandler;
+    case v8::kPromiseHandlerAddedAfterReject:
+        return PromiseRejectEvent_kPromiseHandlerAddedAfterReject;
+    }
+}
+
 template<typename A> A unwrap(v8::Isolate *isolate, A &&value) {
     return value;
 }
@@ -64,6 +103,586 @@ template<typename A> v8::Local<A> wrap(v8::Isolate *isolate,
     }
 }
 
+v8::AccessControl wrap(v8::Isolate *isolate, AccessControl value) {
+    v8::AccessControl result = v8::AccessControl::DEFAULT;
+
+    if (value & AccessControl_ALL_CAN_READ) {
+        result = v8::AccessControl(result | v8::AccessControl::ALL_CAN_READ);
+    }
+
+    if (value & AccessControl_ALL_CAN_WRITE) {
+        result = v8::AccessControl(result | v8::AccessControl::ALL_CAN_WRITE);
+    }
+
+    if (value & AccessControl_PROHIBITS_OVERWRITING) {
+        result = v8::AccessControl(result | v8::AccessControl::PROHIBITS_OVERWRITING);
+    }
+
+    return result;
+}
+
+v8::PropertyFilter wrap(v8::Isolate *isolate, PropertyFilter value) {
+    v8::PropertyFilter result = v8::PropertyFilter::ALL_PROPERTIES;
+
+    if (value & PropertyFilter_ONLY_WRITABLE) {
+        result = v8::PropertyFilter(result | v8::PropertyFilter::ONLY_WRITABLE);
+    }
+
+    if (value & PropertyFilter_ONLY_ENUMERABLE) {
+        result = v8::PropertyFilter(result | v8::PropertyFilter::ONLY_ENUMERABLE);
+    }
+
+    if (value & PropertyFilter_ONLY_CONFIGURABLE) {
+        result = v8::PropertyFilter(result | v8::PropertyFilter::ONLY_CONFIGURABLE);
+    }
+
+    if (value & PropertyFilter_SKIP_STRINGS) {
+        result = v8::PropertyFilter(result | v8::PropertyFilter::SKIP_STRINGS);
+    }
+
+    if (value & PropertyFilter_SKIP_SYMBOLS) {
+        result = v8::PropertyFilter(result | v8::PropertyFilter::SKIP_SYMBOLS);
+    }
+
+    return result;
+}
+
+v8::KeyCollectionMode wrap(v8::Isolate *isolate, KeyCollectionMode value) {
+    switch (value) {
+    default:
+    case KeyCollectionMode_kOwnOnly:
+        return v8::KeyCollectionMode::kOwnOnly;
+    case KeyCollectionMode_kIncludePrototypes:
+        return v8::KeyCollectionMode::kIncludePrototypes;
+    }
+}
+
+v8::IndexFilter wrap(v8::Isolate *isolate, IndexFilter value) {
+    switch (value) {
+    default:
+    case IndexFilter_kIncludeIndices:
+        return v8::IndexFilter::kIncludeIndices;
+    case IndexFilter_kSkipIndices:
+        return v8::IndexFilter::kSkipIndices;
+    }
+}
+
+v8::IntegrityLevel wrap(v8::Isolate *isolate, IntegrityLevel value) {
+    switch (value) {
+    default:
+    case IntegrityLevel_kFrozen:
+        return v8::IntegrityLevel::kFrozen;
+    case IntegrityLevel_kSealed:
+        return v8::IntegrityLevel::kSealed;
+    }
+}
+
+v8::PropertyAttribute wrap(v8::Isolate *isolate, PropertyAttribute value) {
+    if (value == PropertyAttribute_Absent) {
+        return v8::PropertyAttribute::None;
+    }
+
+    v8::PropertyAttribute result = v8::PropertyAttribute::None;
+
+    if (value & PropertyAttribute_ReadOnly) {
+        result = v8::PropertyAttribute(result | v8::PropertyAttribute::ReadOnly);
+    }
+
+    if (value & PropertyAttribute_DontEnum) {
+        result = v8::PropertyAttribute(result | v8::PropertyAttribute::DontEnum);
+    }
+
+    if (value & PropertyAttribute_DontDelete) {
+        result = v8::PropertyAttribute(result | v8::PropertyAttribute::DontDelete);
+    }
+
+    return result;
+}
+
+v8::PropertyHandlerFlags wrap(v8::Isolate *isolate, PropertyHandlerFlags value) {
+    v8::PropertyHandlerFlags result = v8::PropertyHandlerFlags::kNone;
+
+    if (value & PropertyHandlerFlags_kAllCanRead) {
+        result = v8::PropertyHandlerFlags(int(result) | int(v8::PropertyHandlerFlags::kAllCanRead));
+    }
+
+    if (value & PropertyHandlerFlags_kNonMasking) {
+        result = v8::PropertyHandlerFlags(int(result) | int(v8::PropertyHandlerFlags::kNonMasking));
+    }
+
+    if (value & PropertyHandlerFlags_kOnlyInterceptStrings) {
+        result = v8::PropertyHandlerFlags(int(result) | int(v8::PropertyHandlerFlags::kOnlyInterceptStrings));
+    }
+
+    return result;
+}
+
+v8::ConstructorBehavior wrap(v8::Isolate *isolate, ConstructorBehavior value) {
+    switch (value) {
+    default:
+    case ConstructorBehavior_kThrow:
+        return v8::ConstructorBehavior::kThrow;
+    case ConstructorBehavior_kAllow:
+        return v8::ConstructorBehavior::kAllow;
+    }
+}
+
+v8::PromiseRejectEvent wrap(v8::Isolate *isolate, PromiseRejectEvent value) {
+    switch (value) {
+    default:
+    case PromiseRejectEvent_kPromiseRejectWithNoHandler:
+        return v8::PromiseRejectEvent::kPromiseRejectWithNoHandler;
+    case PromiseRejectEvent_kPromiseHandlerAddedAfterReject:
+        return v8::PromiseRejectEvent::kPromiseHandlerAddedAfterReject;
+    }
+}
+
+v8::Intrinsic wrap(v8::Isolate *isolate, Intrinsic value) {
+    switch (value) {
+    default:
+#define V8_SWITCH_INTRINSIC(name, iname) case Intrinsic_k##name: return v8::Intrinsic::k##name;
+        V8_INTRINSICS_LIST(V8_SWITCH_INTRINSIC)
+#undef V8_SWITCH_INTRINSIC
+    }
+}
+
+template<typename A>
+PropertyCallbackInfo build_callback_info(
+    const v8::PropertyCallbackInfo<A> &info,
+    v8::Local<v8::Value> data) {
+
+    v8::Isolate *isolate = info.GetIsolate();
+
+    PropertyCallbackInfo result = PropertyCallbackInfo {
+        .GetIsolate = isolate,
+        .Data = unwrap(isolate, data),
+        .This = unwrap(isolate, info.This()),
+        .Holder = unwrap(isolate, info.Holder()),
+        .ReturnValue = nullptr,
+        .ShouldThrowOnError = info.ShouldThrowOnError(),
+    };
+
+    return result;
+}
+
+enum class HandlerFields {
+    Getter, Setter, Descriptor, Query, Deleter, Enumerator, Definer, Data, Flags
+};
+
+void generic_named_property_handler_getter(
+    v8::Local<v8::Name> property,
+    const v8::PropertyCallbackInfo<v8::Value> &info) {
+    v8::Isolate *isolate = info.GetIsolate();
+    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    GenericNamedPropertyGetterCallback getter =
+        (GenericNamedPropertyGetterCallback)
+        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Getter);
+    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
+    PropertyCallbackInfo callback_info = build_callback_info(info, data);
+
+    getter(unwrap(isolate, property), &callback_info);
+
+    if (callback_info.ReturnValue) {
+        info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
+    }
+}
+
+void generic_named_property_handler_setter(
+    v8::Local<v8::Name> property,
+    v8::Local<v8::Value> value,
+    const v8::PropertyCallbackInfo<v8::Value> &info) {
+    v8::Isolate *isolate = info.GetIsolate();
+    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    GenericNamedPropertySetterCallback setter =
+        (GenericNamedPropertySetterCallback)
+        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Setter);
+    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
+    PropertyCallbackInfo callback_info = build_callback_info(info, data);
+
+    setter(unwrap(isolate, property), unwrap(isolate, value), &callback_info);
+
+    if (callback_info.ReturnValue) {
+        info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
+    }
+}
+
+void generic_named_property_handler_descriptor(
+    v8::Local<v8::Name> property,
+    const v8::PropertyCallbackInfo<v8::Value> &info) {
+    v8::Isolate *isolate = info.GetIsolate();
+    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    GenericNamedPropertyDescriptorCallback descriptor =
+        (GenericNamedPropertyDescriptorCallback)
+        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Descriptor);
+    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
+    PropertyCallbackInfo callback_info = build_callback_info(info, data);
+
+    descriptor(unwrap(isolate, property), &callback_info);
+
+    if (callback_info.ReturnValue) {
+        info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
+    }
+}
+
+void generic_named_property_handler_query(
+    v8::Local<v8::Name> property,
+    const v8::PropertyCallbackInfo<v8::Integer> &info) {
+    v8::Isolate *isolate = info.GetIsolate();
+    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    GenericNamedPropertyQueryCallback query =
+        (GenericNamedPropertyQueryCallback)
+        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Query);
+    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
+    PropertyCallbackInfo callback_info = build_callback_info(info, data);
+
+    query(unwrap(isolate, property), &callback_info);
+
+    if (callback_info.ReturnValue) {
+        info.GetReturnValue().Set(v8::Local<v8::Integer>::Cast(wrap(isolate, callback_info.ReturnValue)));
+    }
+}
+
+void generic_named_property_handler_deleter(
+    v8::Local<v8::Name> property,
+    const v8::PropertyCallbackInfo<v8::Boolean> &info) {
+    v8::Isolate *isolate = info.GetIsolate();
+    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    GenericNamedPropertyDeleterCallback deleter =
+        (GenericNamedPropertyDeleterCallback)
+        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Deleter);
+    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
+    PropertyCallbackInfo callback_info = build_callback_info(info, data);
+
+    deleter(unwrap(isolate, property), &callback_info);
+
+    if (callback_info.ReturnValue) {
+        info.GetReturnValue().Set(v8::Local<v8::Boolean>::Cast(wrap(isolate, callback_info.ReturnValue)));
+    }
+}
+
+void generic_named_property_handler_enumerator(
+    const v8::PropertyCallbackInfo<v8::Array> &info) {
+    v8::Isolate *isolate = info.GetIsolate();
+    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    GenericNamedPropertyEnumeratorCallback enumerator =
+        (GenericNamedPropertyEnumeratorCallback)
+        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Enumerator);
+    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
+    PropertyCallbackInfo callback_info = build_callback_info(info, data);
+
+    enumerator(&callback_info);
+
+    if (callback_info.ReturnValue) {
+        info.GetReturnValue().Set(v8::Local<v8::Array>::Cast(wrap(isolate, callback_info.ReturnValue)));
+    }
+}
+
+void generic_named_property_handler_definer(
+    v8::Local<v8::Name> property,
+    const v8::PropertyDescriptor &desc,
+    const v8::PropertyCallbackInfo<v8::Value> &info) {
+    v8::Isolate *isolate = info.GetIsolate();
+    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    GenericNamedPropertyDefinerCallback definer =
+        (GenericNamedPropertyDefinerCallback)
+        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Definer);
+    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
+    PropertyCallbackInfo callback_info = build_callback_info(info, data);
+
+    definer(unwrap(isolate, property), (PropertyDescriptorPtr) &desc, &callback_info);
+
+    if (callback_info.ReturnValue) {
+        info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
+    }
+}
+
+v8::NamedPropertyHandlerConfiguration wrap(
+    v8::Isolate *isolate,
+    NamedPropertyHandlerConfiguration value) {
+    v8::Local<v8::Object> outer_data = v8::Object::New(isolate);
+
+    v8::GenericNamedPropertyGetterCallback getter;
+    v8::GenericNamedPropertySetterCallback setter;
+    v8::GenericNamedPropertyDescriptorCallback descriptor;
+    v8::GenericNamedPropertyQueryCallback query;
+    v8::GenericNamedPropertyDeleterCallback deleter;
+    v8::GenericNamedPropertyEnumeratorCallback enumerator;
+    v8::GenericNamedPropertyDefinerCallback definer;
+
+    if (value.getter) {
+        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Getter, (void *) value.getter);
+        getter = generic_named_property_handler_getter;
+    } else {
+        getter = nullptr;
+    }
+
+    if (value.setter) {
+        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Setter, (void *) value.setter);
+        setter = generic_named_property_handler_setter;
+    } else {
+        setter = nullptr;
+    }
+
+    if (value.descriptor) {
+        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Descriptor, (void *) value.descriptor);
+        descriptor = generic_named_property_handler_descriptor;
+    } else {
+        descriptor = nullptr;
+    }
+
+    if (value.query) {
+        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Query, (void *) value.query);
+        query = generic_named_property_handler_query;
+    } else {
+        query = nullptr;
+    }
+
+    if (value.deleter) {
+        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Deleter, (void *) value.deleter);
+        deleter = generic_named_property_handler_deleter;
+    } else {
+        deleter = nullptr;
+    }
+
+    if (value.enumerator) {
+        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Enumerator, (void *) value.enumerator);
+        enumerator = generic_named_property_handler_enumerator;
+    } else {
+        enumerator = nullptr;
+    }
+
+    if (value.definer) {
+        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Definer, (void *) value.definer);
+        definer = generic_named_property_handler_definer;
+    } else {
+        definer = nullptr;
+    }
+
+    outer_data->SetInternalField((int) HandlerFields::Data, wrap(isolate, value.data));
+
+    auto result = v8::NamedPropertyHandlerConfiguration(
+        getter,
+        setter,
+        descriptor,
+        deleter,
+        enumerator,
+        definer,
+        outer_data,
+        wrap(isolate, value.flags));
+
+    // So that we can use the same function for both ctors of NamedPropertyHandlerConfiguration
+    result.query = query;
+
+    return result;
+}
+
+void indexed_property_handler_getter(
+    uint32_t index,
+    const v8::PropertyCallbackInfo<v8::Value> &info) {
+    v8::Isolate *isolate = info.GetIsolate();
+    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    IndexedPropertyGetterCallback getter =
+        (IndexedPropertyGetterCallback)
+        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Getter);
+    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
+    PropertyCallbackInfo callback_info = build_callback_info(info, data);
+
+    getter(index, &callback_info);
+
+    if (callback_info.ReturnValue) {
+        info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
+    }
+}
+
+void indexed_property_handler_setter(
+    uint32_t index,
+    v8::Local<v8::Value> value,
+    const v8::PropertyCallbackInfo<v8::Value> &info) {
+    v8::Isolate *isolate = info.GetIsolate();
+    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    IndexedPropertySetterCallback setter =
+        (IndexedPropertySetterCallback)
+        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Setter);
+    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
+    PropertyCallbackInfo callback_info = build_callback_info(info, data);
+
+    setter(index, unwrap(isolate, value), &callback_info);
+
+    if (callback_info.ReturnValue) {
+        info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
+    }
+}
+
+void indexed_property_handler_descriptor(
+    uint32_t index,
+    const v8::PropertyCallbackInfo<v8::Value> &info) {
+    v8::Isolate *isolate = info.GetIsolate();
+    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    IndexedPropertyDescriptorCallback descriptor =
+        (IndexedPropertyDescriptorCallback)
+        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Descriptor);
+    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
+    PropertyCallbackInfo callback_info = build_callback_info(info, data);
+
+    descriptor(index, &callback_info);
+
+    if (callback_info.ReturnValue) {
+        info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
+    }
+}
+
+void indexed_property_handler_query(
+    uint32_t index,
+    const v8::PropertyCallbackInfo<v8::Integer> &info) {
+    v8::Isolate *isolate = info.GetIsolate();
+    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    IndexedPropertyQueryCallback query =
+        (IndexedPropertyQueryCallback)
+        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Query);
+    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
+    PropertyCallbackInfo callback_info = build_callback_info(info, data);
+
+    query(index, &callback_info);
+
+    if (callback_info.ReturnValue) {
+        info.GetReturnValue().Set(v8::Local<v8::Integer>::Cast(wrap(isolate, callback_info.ReturnValue)));
+    }
+}
+
+void indexed_property_handler_deleter(
+    uint32_t index,
+    const v8::PropertyCallbackInfo<v8::Boolean> &info) {
+    v8::Isolate *isolate = info.GetIsolate();
+    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    IndexedPropertyDeleterCallback deleter =
+        (IndexedPropertyDeleterCallback)
+        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Deleter);
+    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
+    PropertyCallbackInfo callback_info = build_callback_info(info, data);
+
+    deleter(index, &callback_info);
+
+    if (callback_info.ReturnValue) {
+        info.GetReturnValue().Set(v8::Local<v8::Boolean>::Cast(wrap(isolate, callback_info.ReturnValue)));
+    }
+}
+
+void indexed_property_handler_enumerator(
+    const v8::PropertyCallbackInfo<v8::Array> &info) {
+    v8::Isolate *isolate = info.GetIsolate();
+    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    IndexedPropertyEnumeratorCallback enumerator =
+        (IndexedPropertyEnumeratorCallback)
+        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Enumerator);
+    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
+    PropertyCallbackInfo callback_info = build_callback_info(info, data);
+
+    enumerator(&callback_info);
+
+    if (callback_info.ReturnValue) {
+        info.GetReturnValue().Set(v8::Local<v8::Array>::Cast(wrap(isolate, callback_info.ReturnValue)));
+    }
+}
+
+void indexed_property_handler_definer(
+    uint32_t index,
+    const v8::PropertyDescriptor &desc,
+    const v8::PropertyCallbackInfo<v8::Value> &info) {
+    v8::Isolate *isolate = info.GetIsolate();
+    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    IndexedPropertyDefinerCallback definer =
+        (IndexedPropertyDefinerCallback)
+        outer_data->GetAlignedPointerFromInternalField((int) HandlerFields::Definer);
+    v8::Local<v8::Value> data = outer_data->GetInternalField((int) HandlerFields::Data);
+    PropertyCallbackInfo callback_info = build_callback_info(info, data);
+
+    definer(index, (PropertyDescriptorPtr) &desc, &callback_info);
+
+    if (callback_info.ReturnValue) {
+        info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
+    }
+}
+
+v8::IndexedPropertyHandlerConfiguration wrap(
+    v8::Isolate *isolate,
+    IndexedPropertyHandlerConfiguration value) {
+    v8::Local<v8::Object> outer_data = v8::Object::New(isolate);
+
+    v8::IndexedPropertyGetterCallback getter;
+    v8::IndexedPropertySetterCallback setter;
+    v8::IndexedPropertyDescriptorCallback descriptor;
+    v8::IndexedPropertyQueryCallback query;
+    v8::IndexedPropertyDeleterCallback deleter;
+    v8::IndexedPropertyEnumeratorCallback enumerator;
+    v8::IndexedPropertyDefinerCallback definer;
+
+    if (value.getter) {
+        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Getter, (void *) value.getter);
+        getter = indexed_property_handler_getter;
+    } else {
+        getter = nullptr;
+    }
+
+    if (value.setter) {
+        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Setter, (void *) value.setter);
+        setter = indexed_property_handler_setter;
+    } else {
+        setter = nullptr;
+    }
+
+    if (value.descriptor) {
+        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Descriptor, (void *) value.descriptor);
+        descriptor = indexed_property_handler_descriptor;
+    } else {
+        descriptor = nullptr;
+    }
+
+    if (value.query) {
+        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Query, (void *) value.query);
+        query = indexed_property_handler_query;
+    } else {
+        query = nullptr;
+    }
+
+    if (value.deleter) {
+        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Deleter, (void *) value.deleter);
+        deleter = indexed_property_handler_deleter;
+    } else {
+        deleter = nullptr;
+    }
+
+    if (value.enumerator) {
+        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Enumerator, (void *) value.enumerator);
+        enumerator = indexed_property_handler_enumerator;
+    } else {
+        enumerator = nullptr;
+    }
+
+    if (value.definer) {
+        outer_data->SetAlignedPointerInInternalField((int) HandlerFields::Definer, (void *) value.definer);
+        definer = indexed_property_handler_definer;
+    } else {
+        definer = nullptr;
+    }
+
+    outer_data->SetInternalField((int) HandlerFields::Data, wrap(isolate, value.data));
+
+    auto result = v8::IndexedPropertyHandlerConfiguration(
+        getter,
+        setter,
+        descriptor,
+        deleter,
+        enumerator,
+        definer,
+        outer_data,
+        wrap(isolate, value.flags));
+
+    // So that we can use the same function for both ctors of NamedPropertyHandlerConfiguration
+    result.query = query;
+
+    return result;
+}
+
 template<typename A> A wrap(v8::Isolate *isolate, A &&value) {
     return value;
 }
@@ -74,7 +693,6 @@ void handle_exception(RustContext &c, v8::TryCatch &try_catch) {
         *c.message = unwrap(c.isolate, try_catch.Message());
     }
 }
-
 
 class GluePlatform : public v8::Platform {
 public:
@@ -95,6 +713,7 @@ public:
         v8_ExpectedRuntime rt;
 
         switch (expected_runtime) {
+        default:
         case v8::Platform::kShortRunningTask:
             rt = SHORT_RUNNING_TASK;
             break;

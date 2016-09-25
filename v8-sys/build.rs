@@ -40,6 +40,9 @@ fn main() {
 
     link_v8();
 
+    let decl_header_path = out_dir_path.join("v8-glue-decl-generated.h");
+    write_decl_header(&api, &mut fs::File::create(&decl_header_path).unwrap()).unwrap();
+
     let header_path = out_dir_path.join("v8-glue-generated.h");
     write_header(&api, &mut fs::File::create(&header_path).unwrap()).unwrap();
 
@@ -154,7 +157,7 @@ fn build_glue(out_dir_path: &path::Path) {
     config.compile("libv8sysglue.a");
 }
 
-fn write_header<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
+fn write_decl_header<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
     where W: io::Write
 {
     try!(writeln!(out, "#pragma once"));
@@ -173,6 +176,14 @@ fn write_header<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
         try!(writeln!(out, "typedef struct _{class}Ref *{class}Ref;", class = class.name));
         try!(writeln!(out, "#endif /* defined __cplusplus */"));
     }
+
+    Ok(())
+}
+
+fn write_header<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
+    where W: io::Write
+{
+    try!(writeln!(out, "#pragma once"));
 
     for class in api.classes.iter() {
         try!(writeln!(out, ""));
@@ -351,6 +362,9 @@ impl DisplayAsC for v8_api::Type {
             Type::I64 => write!(f, "int64_t"),
             Type::F64 => write!(f, "double"),
             Type::Class(ref name) => write!(f, "{}", name),
+            Type::Enum(ref name) => write!(f, "{}", name),
+            Type::Callback(ref name) => write!(f, "{}", name),
+            Type::CallbackLValue(ref name) => write!(f, "{}", name),
             Type::Ref(ref target) => match **target {
                 Type::Class(ref name) => write!(f, "{}Ref", name),
                 ref t => write!(f, "&{}", C(t)),
