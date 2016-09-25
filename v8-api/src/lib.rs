@@ -123,8 +123,8 @@ pub enum Type {
 struct MethodMangle {
     /// The exact name of the method to mangle.
     name: &'static str,
-    /// A unique argument name that only the method to mangle has.
-    unique_arg: &'static str,
+    /// A unique part of the method signature.
+    signature: &'static str,
     /// The mangled name of the method.
     mangle: &'static str,
 }
@@ -159,42 +159,60 @@ const SPECIAL_CLASSES: &'static [&'static str] = &[
 
 /// Methods that we should not return because they are special.
 #[cfg_attr(rustfmt, rustfmt_skip)]
-const SPECIAL_METHODS: &'static [&'static str] = &[
-    "Compile", // Because ScriptOrigin param
-    "GetScriptOrigin", // Because ScriptOrigin
-    "SetAlignedPointerInInternalFields", // Because annoying-to-map signature
-    "CallAsFunction", // Because annoying-to-map signature
-    "CallAsConstructor", // Because annoying-to-map signature
-    "NewInstance", // Because annoying-to-map signature
-    "Call", // Because annoying-to-map signature
-    "CreateSnapshotDataBlob", // Because annoying-to-map signature
-    "WarmUpSnapshotDataBlob", // Because annoying-to-map signature
-    "WriteUtf8", // Because annoying-to-map signature
-    "Initialize", // V8::Initialize takes no context
-    "Dispose", // V8::Dispose takes no context
-    "InitializePlatform", // V8::InitializePlatform takes no context
-    "ShutdownPlatform", // V8::ShutdownPlatform takes no context
+const SPECIAL_METHODS: &'static [(&'static str, &'static str)] = &[
+    ("Script", "Compile"), // Because ScriptOrigin param
+    ("Message", "GetScriptOrigin"), // Because ScriptOrigin
+    ("String", "WriteUtf8"), // Because annoying-to-map signature
+    ("Object", "SetAlignedPointerInInternalFields"), // Because annoying-to-map signature
+    ("Object", "CallAsFunction"), // Because annoying-to-map signature
+    ("Object", "CallAsConstructor"), // Because annoying-to-map signature
+    ("Object", "NewInstance"), // Because annoying-to-map signature
+    ("Object", "Call"), // Because annoying-to-map signature
+    ("Function", "New"), // Because annoying-to-map signature
+    ("Function", "GetScriptOrigin"), // Because ScriptOrigin
+    ("Function", "NewInstance"), // Because annoying-to-map signature
+    ("Function", "Call"), // Because annoying-to-map signature
+    ("Template", "SetNativeDataProperty"), // Because annoying-to-map signature
+    ("FunctionTemplate", "New"), // Because annoying-to-map signature
+    ("ObjectTemplate", "SetAccessor"), // Because annoying-to-map signature
+    ("ObjectTemplate", "SetNamedPropertyHandler"), // Because annoying-to-map signature
+    ("ObjectTemplate", "SetIndexedPropertyHandler"), // Because annoying-to-map signature
+    ("ObjectTemplate", "SetCallAsFunctionHandler"), // Because annoying-to-map signature
+    ("ObjectTemplate", "SetAccessCheckCallback"), // Because annoying-to-map signature
+    ("ObjectTemplate", "SetAccessCheckCallbackAndHandler"), // Because annoying-to-map signature
+    ("V8", "CreateSnapshotDataBlob"), // Because annoying-to-map signature
+    ("V8", "WarmUpSnapshotDataBlob"), // Because annoying-to-map signature
+    ("V8", "Initialize"), // V8::Initialize takes no context
+    ("V8", "Dispose"), // V8::Dispose takes no context
+    ("V8", "InitializePlatform"), // V8::InitializePlatform takes no context
+    ("V8", "ShutdownPlatform"), // V8::ShutdownPlatform takes no context
 ];
 
 /// Default mangle rules.
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const METHOD_MANGLES: &'static [MethodMangle] = &[
-    MethodMangle { name: "Set", unique_arg: "index", mangle: "Set_Index"},
-    MethodMangle { name: "Set", unique_arg: "key", mangle: "Set_Key"},
-    MethodMangle { name: "CreateDataProperty", unique_arg: "index", mangle: "CreateDataProperty_Index"},
-    MethodMangle { name: "CreateDataProperty", unique_arg: "key", mangle: "CreateDataProperty_Key"},
-    MethodMangle { name: "Get", unique_arg: "index", mangle: "Get_Index"},
-    MethodMangle { name: "Get", unique_arg: "key", mangle: "Get_Key"},
-    MethodMangle { name: "Has", unique_arg: "index", mangle: "Has_Index"},
-    MethodMangle { name: "Has", unique_arg: "key", mangle: "Has_Key"},
-    MethodMangle { name: "Delete", unique_arg: "index", mangle: "Delete_Index"},
-    MethodMangle { name: "Delete", unique_arg: "key", mangle: "Delete_Key"},
-    MethodMangle { name: "HasOwnProperty", unique_arg: "index", mangle: "HasOwnProperty_Index"},
-    MethodMangle { name: "HasOwnProperty", unique_arg: "key", mangle: "HasOwnProperty_Key"},
-    MethodMangle { name: "InitializeExternalStartupData", unique_arg: "natives_blob", mangle: "InitializeExternalStartupData_Blobs"},
-    MethodMangle { name: "InitializeExternalStartupData", unique_arg: "directory_path", mangle: "InitializeExternalStartupData_Directory"},
-    MethodMangle { name: "New", unique_arg: "shared_array_buffer", mangle: "New_Shared"},
-    MethodMangle { name: "New", unique_arg: "array_buffer", mangle: "New_Owned"},
+    MethodMangle { name: "Set", signature: "index", mangle: "Set_Index"},
+    MethodMangle { name: "Set", signature: "key", mangle: "Set_Key"},
+    MethodMangle { name: "CreateDataProperty", signature: "index", mangle: "CreateDataProperty_Index"},
+    MethodMangle { name: "CreateDataProperty", signature: "key", mangle: "CreateDataProperty_Key"},
+    MethodMangle { name: "Get", signature: "index", mangle: "Get_Index"},
+    MethodMangle { name: "Get", signature: "key", mangle: "Get_Key"},
+    MethodMangle { name: "Has", signature: "index", mangle: "Has_Index"},
+    MethodMangle { name: "Has", signature: "key", mangle: "Has_Key"},
+    MethodMangle { name: "Delete", signature: "index", mangle: "Delete_Index"},
+    MethodMangle { name: "Delete", signature: "key", mangle: "Delete_Key"},
+    MethodMangle { name: "HasOwnProperty", signature: "index", mangle: "HasOwnProperty_Index"},
+    MethodMangle { name: "HasOwnProperty", signature: "key", mangle: "HasOwnProperty_Key"},
+    MethodMangle { name: "GetPropertyNames", signature: "mode", mangle: "GetPropertyNames_Filter"},
+    MethodMangle { name: "GetOwnPropertyNames", signature: "filter", mangle: "GetOwnPropertyNames_Filter"},
+    MethodMangle { name: "InitializeExternalStartupData", signature: "natives_blob", mangle: "InitializeExternalStartupData_Blobs"},
+    MethodMangle { name: "InitializeExternalStartupData", signature: "directory_path", mangle: "InitializeExternalStartupData_Directory"},
+    MethodMangle { name: "New", signature: "shared_array_buffer", mangle: "New_Shared"},
+    MethodMangle { name: "New", signature: "array_buffer", mangle: "New_Owned"},
+    MethodMangle { name: "Set", signature: "isolate", mangle: "Set_Raw"},
+    MethodMangle { name: "SetNativeDataProperty", signature: "v8::Name", mangle: "SetNativeDataProperty_Name"},
+    MethodMangle { name: "SetAccessor", signature: "v8::Name", mangle: "SetAccessor_Name"},
+    MethodMangle { name: "SetHandler", signature: "v8::Name", mangle: "SetHandler_Name"},
 ];
 
 /// Reads the V8 API from the given file path pointing to a `v8.h`
@@ -254,8 +272,8 @@ fn build_classes(entity: &clang::Entity) -> Vec<Class> {
 }
 
 fn build_class(entity: &clang::Entity) -> Class {
+    let name = entity.get_name().unwrap();
     Class {
-        name: entity.get_name().unwrap(),
         methods: entity.get_children()
             .into_iter()
             // Is a method
@@ -268,7 +286,9 @@ fn build_class(entity: &clang::Entity) -> Class {
             .filter(|e| {
                 e.get_name()
                     .map(|ref n| {
-                        !n.starts_with("operator") && !SPECIAL_METHODS.contains(&n.as_str())
+                        !n.starts_with("operator") &&
+                            !SPECIAL_METHODS.iter()
+                            .any(|m| m.0 == name &&  m.1 == n)
                     })
                     .unwrap_or(false)
             })
@@ -278,19 +298,27 @@ fn build_class(entity: &clang::Entity) -> Class {
                           err
                       }))
             .collect(),
+        name: name,
     }
 }
 
 fn build_method(entity: &clang::Entity) -> Result<Method, ()> {
+    let display_name = try!(entity.get_display_name().ok_or(()));
     let name = try!(entity.get_name().ok_or(()));
     let args = try!(entity.get_arguments().ok_or(()));
     let args: Vec<Arg> = try!(args.iter().map(|e| build_arg(&e)).collect());
 
-    let ret_type = try!(try!(entity.get_type().ok_or(())).get_result_type().ok_or(()));
+    let method_type = try!(entity.get_type().ok_or(()));
+    let method_type_display_name = method_type.get_display_name();
+    let ret_type = try!(method_type.get_result_type().ok_or(()));
     let ret_type = try!(build_ret_type(&ret_type));
 
     let mangled_name = METHOD_MANGLES.iter()
-        .find(|m| m.name == name && args.iter().any(|a| m.unique_arg == a.name))
+        .find(|m|
+              m.name == name &&
+              (args.iter().any(|a| a.name == m.signature) ||
+               display_name.contains(m.signature) ||
+               method_type_display_name.contains(m.signature)))
         .map(|m| m.mangle.to_owned());
 
     Ok(Method {
