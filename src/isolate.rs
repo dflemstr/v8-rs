@@ -6,6 +6,10 @@ use platform;
 
 static INITIALIZE: sync::Once = sync::ONCE_INIT;
 
+/// Isolate represents an isolated instance of the V8 engine.  V8 isolates have completely separate
+/// states.  Objects from one isolate must not be used in other isolates.  The embedder can create
+/// multiple isolates and use them in parallel in multiple threads.  An isolate can be entered by at
+/// most one thread at any given time.  The Locker/Unlocker API must be used to synchronize.
 #[derive(Debug)]
 pub struct Isolate(v8::IsolatePtr, allocator::Allocator);
 

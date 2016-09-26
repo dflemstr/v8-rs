@@ -6,6 +6,7 @@ use isolate;
 use value;
 use util;
 
+/// A compiled JavaScript script, tied to a Context which was active when the script was compiled.
 #[derive(Debug)]
 pub struct Script<'a>(&'a isolate::Isolate, v8::ScriptRef);
 

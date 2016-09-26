@@ -3,10 +3,12 @@ use isolate;
 use util;
 use value;
 
+/// A sandboxed execution context with its own set of built-in objects and functions.
 #[derive(Debug)]
 pub struct Context<'a>(&'a isolate::Isolate, v8::ContextRef);
 
 impl<'a> Context<'a> {
+    /// Creates a new context and returns a handle to the newly allocated context.
     pub fn new(isolate: &isolate::Isolate) -> Context {
         unsafe {
             Context(isolate,
@@ -14,6 +16,15 @@ impl<'a> Context<'a> {
         }
     }
 
+    /// Returns the global proxy object.
+    ///
+    /// Global proxy object is a thin wrapper whose prototype points to actual context's global
+    /// object with the properties like Object, etc. This is done that way for security reasons (for
+    /// more details see https://wiki.mozilla.org/Gecko:SplitWindow).
+    ///
+    /// Please note that changes to global proxy object prototype most probably would break VM---v8
+    /// expects only global object as a prototype of global proxy object.
+    ///
     pub fn global(&self) -> value::Object<'a> {
         unsafe {
             value::Object::from_raw(self.0,
