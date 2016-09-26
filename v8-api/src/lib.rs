@@ -209,6 +209,7 @@ const METHOD_MANGLES: &'static [MethodMangle] = &[
     MethodMangle { name: "InitializeExternalStartupData", signature: "directory_path", mangle: "InitializeExternalStartupData_Directory"},
     MethodMangle { name: "New", signature: "shared_array_buffer", mangle: "New_Shared"},
     MethodMangle { name: "New", signature: "array_buffer", mangle: "New_Owned"},
+    MethodMangle { name: "New", signature: "mode", mangle: "New_Mode"},
     MethodMangle { name: "Set", signature: "isolate", mangle: "Set_Raw"},
     MethodMangle { name: "SetNativeDataProperty", signature: "v8::Name", mangle: "SetNativeDataProperty_Name"},
     MethodMangle { name: "SetAccessor", signature: "v8::Name", mangle: "SetAccessor_Name"},
