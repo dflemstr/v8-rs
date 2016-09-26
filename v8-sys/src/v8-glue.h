@@ -169,6 +169,12 @@ enum Intrinsic {
 };
 typedef enum Intrinsic Intrinsic;
 
+enum ArrayBufferCreationMode {
+    ArrayBufferCreationMode_kInternalized,
+    ArrayBufferCreationMode_kExternalized
+};
+typedef enum ArrayBufferCreationMode ArrayBufferCreationMode;
+
 /* Auto-generated forward declarations for class pointers */
 #include "v8-glue-decl-generated.h"
 

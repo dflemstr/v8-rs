@@ -246,6 +246,16 @@ v8::Intrinsic wrap(v8::Isolate *isolate, Intrinsic value) {
     }
 }
 
+v8::ArrayBufferCreationMode wrap(v8::Isolate *isolate, ArrayBufferCreationMode value) {
+    switch (value) {
+    default:
+    case ArrayBufferCreationMode_kInternalized:
+        return v8::ArrayBufferCreationMode::kInternalized;
+    case ArrayBufferCreationMode_kExternalized:
+        return v8::ArrayBufferCreationMode::kExternalized;
+    }
+}
+
 template<typename A>
 PropertyCallbackInfo build_callback_info(
     const v8::PropertyCallbackInfo<A> &info,
