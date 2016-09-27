@@ -208,21 +208,6 @@ macro_rules! inherit {
             type Target = $parent<'a>;
 
             fn deref(&self) -> &Self::Target {
-                // SAFETY: This is unsafe because we assume all value `struct`s can be transmuted
-                // into each other.
-                //
-                // I think this is safe because:
-                //
-                //   - All the structs in this module purposefully have exactly the same fields: one
-                //     borrowed `Isolate` and one raw void pointer.
-                //
-                //   - The `Isolate` field is an immutable borrow and implements `Copy`, so it's
-                //     safe to reinterpret.
-                //
-                //   - The raw void pointers can be converted between each other because that's what
-                //     the `Cast` methods all do in `v8.h`.  This will not change because `Cast` is
-                //     `template`d and inlined, so it would be a breaking API change.
-                //
                 unsafe { mem::transmute(self) }
             }
         }
@@ -233,8 +218,6 @@ macro_rules! type_predicate {
     ($name:ident, $wrapped:expr, $doc:expr) => {
         #[doc=$doc]
         pub fn $name(&self) -> bool {
-// SAFETY: This is unsafe because it calls a native method with two void pointers.  It's
-// safe because the macro is only used with the Value class and one of its methods.
             unsafe { util::invoke(self.0, |i| $wrapped(i, self.1)).map(|r| 0 != r).unwrap_or(false) }
         }
     }
@@ -242,14 +225,11 @@ macro_rules! type_predicate {
 
 macro_rules! partial_conversion {
     ($name:ident, $wrapped:expr, $target:ident) => {
-        pub fn $name(&self, context: &context::Context) -> Option<$target> {
-            // SAFETY: This is unsafe because it calls a native method with two void pointers that
-            // returns a pointer.  It's safe because the method belongs to the class of the second
-            // pointer, and a null check is made on the returned pointer.
+        pub fn $name(&self, context: &context::Context) -> $target {
             unsafe {
-                util::invoke_nullable(self.0, |i| $wrapped(i, self.1, context.as_raw()))
-                    .unwrap()
+                util::invoke(self.0, |i| $wrapped(i, self.1, context.as_raw()))
                     .map(|p| $target(self.0, p))
+                    .unwrap()
             }
         }
     }
@@ -257,23 +237,16 @@ macro_rules! partial_conversion {
 
 macro_rules! partial_get {
     ($name:ident, $wrapped:expr, $target:ident) => {
-        pub fn $name(&self, context: &context::Context) -> Option<$target> {
-// SAFETY: This is unsafe because it calls a native method with two void pointers that
-// returns partially uninitialized memory.  It is safe because the pointers are of the
-// right types, and the `is_set` flag specifies whether the rest of the returned
-// `struct` is initialized.
+        pub fn $name(&self, context: &context::Context) -> $target {
             unsafe {
                 let maybe = util::invoke(self.0, |c| $wrapped(c, self.1, context.as_raw())).unwrap();
-                if 0 != maybe.is_set {
-                    Some(maybe.value)
-                } else {
-                    None
-                }
+                assert!(0 != maybe.is_set);
+
+                maybe.value
             }
         }
     }
 }
-
 
 impl<'a> Value<'a> {
     type_predicate!(is_undefined,
@@ -448,19 +421,14 @@ impl<'a> Value<'a> {
     partial_conversion!(to_int32, v8::Value_ToInt32, Int32);
     partial_conversion!(to_array_index, v8::Value_ToArrayIndex, Uint32);
 
-    pub fn boolean_value(&self, context: &context::Context) -> Option<bool> {
-        // SAFETY: This is unsafe for the same reason as `partial_conversion!`.  The only difference
-        // is that extra `0 != ` checks have been added.
+    pub fn boolean_value(&self, context: &context::Context) -> bool {
         unsafe {
             let m = util::invoke(self.0,
                                  |i| v8::Value_BooleanValue(i, self.1, context.as_raw()))
                 .unwrap();
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 
@@ -469,41 +437,30 @@ impl<'a> Value<'a> {
     partial_get!(uint32_value, v8::Value_Uint32Value, u32);
     partial_get!(int32_value, v8::Value_Int32Value, i32);
 
-    pub fn equals(&self, context: &context::Context, that: &Value) -> Option<bool> {
-        // SAFETY: This is unsafe for the same reason as `boolean_value`.  The only difference is
-        // that an additional pointer is involved.
+    pub fn equals(&self, context: &context::Context, that: &Value) -> bool {
         unsafe {
             let m = util::invoke(self.0,
                                  |c| v8::Value_Equals(c, self.1, context.as_raw(), that.as_raw()))
                 .unwrap();
+            assert!(0 != m.is_set);
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            0 != m.value
         }
     }
 
     pub fn strict_equals(&self, that: &Value) -> bool {
-        // SAFETY: This is unsafe for the same reason as `boolean_value`.  The only difference is
-        // that an additional pointer is involved.
         unsafe {
             0 != util::invoke(self.0, |c| v8::Value_StrictEquals(c, self.1, that.as_raw())).unwrap()
         }
     }
 
     pub fn same_value(&self, that: &Value) -> bool {
-        // SAFETY: This is unsafe for the same reason as `boolean_value`.  The only difference is
-        // that an additional pointer is involved.
         unsafe {
             0 != util::invoke(self.0, |c| v8::Value_SameValue(c, self.1, that.as_raw())).unwrap()
         }
     }
 
     /// Creates a value from a set of raw pointers.
-    // SAFETY: This is unsafe because the passed-in pointer actually has type `void *` and could be
-    // pointing to anything.
     pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::ValueRef) -> Value<'a> {
         Value(isolate, raw)
     }
@@ -586,8 +543,6 @@ impl<'a> String<'a> {
     pub fn from_str(isolate: &'a isolate::Isolate, str: &str) -> String<'a> {
         let ptr = str.as_ptr() as *const i8;
         let len = str.len() as os::raw::c_int;
-        // SAFETY: This is unsafe because a native method is called that reads from memory.  It is
-        // safe because the method only reads from the sent-in pointer up to the sent-in length.
         let raw = unsafe {
             util::invoke(isolate, |c| v8::String_NewFromUtf8_Normal(c, ptr, len)).unwrap()
         };
@@ -596,7 +551,6 @@ impl<'a> String<'a> {
 
     /// Allocates a new internalized string from UTF-8 data.
     pub fn internalized_from_str(isolate: &'a isolate::Isolate, str: &str) -> String<'a> {
-        // SAFETY: This is unsafe for the same reasons as `from_str`.
         unsafe {
             let ptr = str.as_ptr() as *const i8;
             let len = str.len() as os::raw::c_int;
@@ -634,15 +588,10 @@ impl<'a> String<'a> {
     }
 
     pub fn to_string(&self) -> ::std::string::String {
-        // SAFETY: This is unsafe because native code is getting called.  It is safe because the
-        // method is a member of the String class.
         let len =
             unsafe { util::invoke(self.0, |c| v8::String_Utf8Length(c, self.1)).unwrap() } as usize;
         let mut buf = vec![0u8; len];
 
-        // SAFETY: This is unsafe because native code writes to managed memory, and it might not be
-        // valid UTF-8.  It is safe because the underlying method should only write up to the
-        // specified length and valid UTF-8.
         unsafe {
             util::invoke(self.0, |c| {
                     v8::String_WriteUtf8(c, self.1, buf.as_mut_ptr() as *mut i8, len as i32)
@@ -870,33 +819,27 @@ impl<'a> Object<'a> {
         Object(isolate, raw)
     }
 
-    pub fn set(&self, context: &context::Context, key: &Value, value: &Value) -> Option<bool> {
+    pub fn set(&self, context: &context::Context, key: &Value, value: &Value) -> bool {
         unsafe {
             let m = util::invoke(self.0, |c| {
                     v8::Object_Set_Key(c, self.1, context.as_raw(), key.as_raw(), value.as_raw())
                 })
                 .unwrap();
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 
-    pub fn set_index(&self, context: &context::Context, index: u32, value: &Value) -> Option<bool> {
+    pub fn set_index(&self, context: &context::Context, index: u32, value: &Value) -> bool {
         unsafe {
             let m = util::invoke(self.0, |c| {
                     v8::Object_Set_Index(c, self.1, context.as_raw(), index, value.as_raw())
                 })
                 .unwrap();
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 
@@ -904,7 +847,7 @@ impl<'a> Object<'a> {
                                 context: &context::Context,
                                 key: &Name,
                                 value: &Value)
-                                -> Option<bool> {
+                                -> bool {
         unsafe {
             let m = util::invoke(self.0, |c| {
                     v8::Object_CreateDataProperty_Key(c,
@@ -915,11 +858,8 @@ impl<'a> Object<'a> {
                 })
                 .unwrap();
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 
@@ -927,7 +867,7 @@ impl<'a> Object<'a> {
                                       context: &context::Context,
                                       index: u32,
                                       value: &Value)
-                                      -> Option<bool> {
+                                      -> bool {
         unsafe {
             let m = util::invoke(self.0, |c| {
                     v8::Object_CreateDataProperty_Index(c,
@@ -938,92 +878,71 @@ impl<'a> Object<'a> {
                 })
                 .unwrap();
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 
-    pub fn get(&self, context: &context::Context, key: &Value) -> Option<Value> {
-        // SAFETY: This is unsafe because a native method is being called.  It is safe because the
-        // method is a member of the Object class, and a null check is performed on the returned
-        // pointer.
+    pub fn get(&self, context: &context::Context, key: &Value) -> Value {
         unsafe {
-            util::invoke_nullable(self.0,
-                                  |c| v8::Object_Get_Key(c, self.1, context.as_raw(), key.as_raw()))
-                .unwrap()
+            util::invoke(self.0,
+                         |c| v8::Object_Get_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .map(|p| Value(self.0, p))
+                .unwrap()
         }
     }
 
-    pub fn get_index(&self, context: &context::Context, index: u32) -> Option<Value> {
-        // SAFETY: This is unsafe because a native method is being called.  It is safe because the
-        // method is a member of the Object class, and a null check is performed on the returned
-        // pointer.
-        unsafe {
-            util::invoke_nullable(self.0,
+    pub fn get_index(&self, context: &context::Context, index: u32) -> Value {
+        let raw = unsafe {
+            util::invoke(self.0,
                                   |c| v8::Object_Get_Index(c, self.1, context.as_raw(), index))
                 .unwrap()
-                .map(|p| Value(self.0, p))
-        }
+        };
+        Value(self.0, raw)
     }
 
-    pub fn delete(&self, context: &context::Context, key: &Value) -> Option<bool> {
+    pub fn delete(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
             let m = util::invoke(self.0, |c| {
                     v8::Object_Delete_Key(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 
-    pub fn delete_index(&self, context: &context::Context, index: u32) -> Option<bool> {
+    pub fn delete_index(&self, context: &context::Context, index: u32) -> bool {
         unsafe {
             let m = util::invoke(self.0,
                                  |c| v8::Object_Delete_Index(c, self.1, context.as_raw(), index))
                 .unwrap();
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 
-    pub fn has(&self, context: &context::Context, key: &Value) -> Option<bool> {
+    pub fn has(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
             let m = util::invoke(self.0,
                                  |c| v8::Object_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap();
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 
-    pub fn has_index(&self, context: &context::Context, index: u32) -> Option<bool> {
+    pub fn has_index(&self, context: &context::Context, index: u32) -> bool {
         unsafe {
             let m = util::invoke(self.0,
                                  |c| v8::Object_Has_Index(c, self.1, context.as_raw(), index))
                 .unwrap();
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 
@@ -1032,23 +951,23 @@ impl<'a> Object<'a> {
     ///
     /// The array returned by this method contains the same values as would be enumerated by a
     /// for-in statement over this object.
-    pub fn get_property_names(&self, context: &context::Context) -> Option<Array> {
+    pub fn get_property_names(&self, context: &context::Context) -> Array {
         unsafe {
-            util::invoke_nullable(self.0,
-                                  |c| v8::Object_GetPropertyNames(c, self.1, context.as_raw()))
-                .unwrap()
+            util::invoke(self.0,
+                         |c| v8::Object_GetPropertyNames(c, self.1, context.as_raw()))
                 .map(|p| Array(self.0, p))
+                .unwrap()
         }
     }
 
     /// This function has the same functionality as `get_property_names` but the returned array
     /// doesn't contain the names of properties from prototype objects.
-    pub fn get_own_property_names(&self, context: &context::Context) -> Option<Array> {
+    pub fn get_own_property_names(&self, context: &context::Context) -> Array {
         unsafe {
-            util::invoke_nullable(self.0,
-                                  |c| v8::Object_GetOwnPropertyNames(c, self.1, context.as_raw()))
-                .unwrap()
+            util::invoke(self.0,
+                         |c| v8::Object_GetOwnPropertyNames(c, self.1, context.as_raw()))
                 .map(|p| Array(self.0, p))
+                .unwrap()
         }
     }
 
@@ -1065,33 +984,29 @@ impl<'a> Object<'a> {
     ///
     /// This does not skip objects marked to be skipped by `__proto__` and it does not consult the
     /// security handler.
-    pub fn set_prototype(&self, context: &context::Context, prototype: &Value) -> Option<bool> {
+    pub fn set_prototype(&self, context: &context::Context, prototype: &Value) -> bool {
         unsafe {
             let m = util::invoke(self.0, |c| {
                     v8::Object_SetPrototype(c, self.1, context.as_raw(), prototype.as_raw())
                 })
                 .unwrap();
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 
     /// Call builtin Object.prototype.toString on this object.
     ///
-    /// This is different from Value::ToString() that may call user-defined toString function. This
-    /// one does not.
-    pub fn object_proto_to_string(&self, context: &context::Context) -> Option<String> {
-        unsafe {
-            util::invoke_nullable(self.0,
+    /// This is different from `Value::to_string` that may call user-defined `toString`
+    /// function. This one does not.
+    pub fn object_proto_to_string(&self, context: &context::Context) -> String {
+        let raw = unsafe {
+            util::invoke(self.0,
                                   |c| v8::Object_ObjectProtoToString(c, self.1, context.as_raw()))
                 .unwrap()
-                .map(|p| String(self.0, p))
-        }
-
+        };
+        String(self.0, raw)
     }
 
     /// Returns the name of the function invoked as a constructor for this object.
@@ -1102,66 +1017,51 @@ impl<'a> Object<'a> {
         String(self.0, raw)
     }
 
-    pub fn has_own_property(&self, context: &context::Context, key: &Name) -> Option<bool> {
+    pub fn has_own_property(&self, context: &context::Context, key: &Name) -> bool {
         unsafe {
             let m = util::invoke(self.0, |c| {
                     v8::Object_HasOwnProperty_Key(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 
-    pub fn has_own_property_index(&self, context: &context::Context, index: u32) -> Option<bool> {
+    pub fn has_own_property_index(&self, context: &context::Context, index: u32) -> bool {
         unsafe {
             let m = util::invoke(self.0, |c| {
                     v8::Object_HasOwnProperty_Index(c, self.1, context.as_raw(), index)
                 })
                 .unwrap();
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 
-    pub fn has_real_named_property(&self, context: &context::Context, key: &Name) -> Option<bool> {
+    pub fn has_real_named_property(&self, context: &context::Context, key: &Name) -> bool {
         unsafe {
             let m = util::invoke(self.0, |c| {
                     v8::Object_HasRealNamedProperty(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 
-    pub fn has_real_indexed_property(&self,
-                                     context: &context::Context,
-                                     index: u32)
-                                     -> Option<bool> {
+    pub fn has_real_indexed_property(&self, context: &context::Context, index: u32) -> bool {
         unsafe {
             let m = util::invoke(self.0, |c| {
                     v8::Object_HasRealIndexedProperty(c, self.1, context.as_raw(), index)
                 })
                 .unwrap();
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 
@@ -1204,22 +1104,19 @@ impl<'a> Object<'a> {
 
     /// Call an Object as a function if a callback is set by the
     /// ObjectTemplate::SetCallAsFunctionHandler method.
-    pub fn call(&self,
-                context: &context::Context,
-                args: &[&Value])
-                -> error::Result<Option<Value>> {
+    pub fn call(&self, context: &context::Context, args: &[&Value]) -> error::Result<Value> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
-        unsafe {
-            Ok(try!(util::invoke_nullable(self.0, |c| {
-                    v8::Object_CallAsFunction(c,
-                                              self.1,
-                                              context.as_raw(),
-                                              ptr::null_mut(),
-                                              arg_ptrs.len() as i32,
-                                              arg_ptrs.as_mut_ptr())
-                }))
-                .map(|p| Value(self.0, p)))
-        }
+        let raw = unsafe {
+            try!(util::invoke(self.0, |c| {
+                v8::Object_CallAsFunction(c,
+                                          self.1,
+                                          context.as_raw(),
+                                          ptr::null_mut(),
+                                          arg_ptrs.len() as i32,
+                                          arg_ptrs.as_mut_ptr())
+            }))
+        };
+        Ok(Value(self.0, raw))
     }
 
     /// Call an Object as a function if a callback is set by the
@@ -1228,19 +1125,19 @@ impl<'a> Object<'a> {
                           context: &context::Context,
                           this: &Value,
                           args: &[&Value])
-                          -> error::Result<Option<Value>> {
+                          -> error::Result<Value> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
-        unsafe {
-            Ok(try!(util::invoke_nullable(self.0, |c| {
-                    v8::Object_CallAsFunction(c,
-                                              self.1,
-                                              context.as_raw(),
-                                              this.as_raw(),
-                                              arg_ptrs.len() as i32,
-                                              arg_ptrs.as_mut_ptr())
-                }))
-                .map(|p| Value(self.0, p)))
-        }
+        let raw = unsafe {
+            try!(util::invoke(self.0, |c| {
+                v8::Object_CallAsFunction(c,
+                                          self.1,
+                                          context.as_raw(),
+                                          this.as_raw(),
+                                          arg_ptrs.len() as i32,
+                                          arg_ptrs.as_mut_ptr())
+            }))
+        };
+        Ok(Value(self.0, raw))
     }
 
     /// Call an Object as a constructor if a callback is set by the
@@ -1250,18 +1147,18 @@ impl<'a> Object<'a> {
     pub fn call_as_constructor(&self,
                                context: &context::Context,
                                args: &[&Value])
-                               -> error::Result<Option<Value>> {
+                               -> error::Result<Value> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
-        unsafe {
-            Ok(try!(util::invoke_nullable(self.0, |c| {
-                    v8::Object_CallAsConstructor(c,
-                                                 self.1,
-                                                 context.as_raw(),
-                                                 arg_ptrs.len() as i32,
-                                                 arg_ptrs.as_mut_ptr())
-                }))
-                .map(|p| Value(self.0, p)))
-        }
+        let raw = unsafe {
+            try!(util::invoke(self.0, |c| {
+                v8::Object_CallAsConstructor(c,
+                                             self.1,
+                                             context.as_raw(),
+                                             arg_ptrs.len() as i32,
+                                             arg_ptrs.as_mut_ptr())
+            }))
+        };
+        Ok(Value(self.0, raw))
     }
 
     /// Creates an object from a set of raw pointers.
@@ -1310,13 +1207,13 @@ impl<'a> Map<'a> {
         unsafe { util::invoke(self.0, |c| v8::Map_Clear(c, self.1)).unwrap() }
     }
 
-    pub fn get(&self, context: &context::Context, key: &Value) -> Option<Value> {
-        unsafe {
-            util::invoke_nullable(self.0,
-                                  |c| v8::Map_Get_Key(c, self.1, context.as_raw(), key.as_raw()))
+    pub fn get(&self, context: &context::Context, key: &Value) -> Value {
+        let raw = unsafe {
+            util::invoke(self.0,
+                         |c| v8::Map_Get_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap()
-                .map(|p| Value(self.0, p))
-        }
+        };
+        Value(self.0, raw)
     }
 
     pub fn set(&self, context: &context::Context, key: &Value, value: &Value) {
@@ -1328,31 +1225,25 @@ impl<'a> Map<'a> {
         }
     }
 
-    pub fn has(&self, context: &context::Context, key: &Value) -> Option<bool> {
+    pub fn has(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
             let m = util::invoke(self.0,
                                  |c| v8::Map_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap();
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 
-    pub fn delete(&self, context: &context::Context, key: &Value) -> Option<bool> {
+    pub fn delete(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
             let m = util::invoke(self.0,
                                  |c| v8::Map_Delete_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap();
 
-            if 0 != m.is_set {
-                Some(0 != m.value)
-            } else {
-                None
-            }
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 

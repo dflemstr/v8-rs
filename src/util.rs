@@ -34,12 +34,6 @@ pub fn invoke<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<B>
     }
 }
 
-pub fn invoke_nullable<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<Option<*mut B>>
-    where F: FnOnce(v8::RustContext) -> *mut B
-{
-    invoke(isolate, func).map(|p| if p.is_null() { None } else { Some(p) })
-}
-
 macro_rules! drop {
     ($typ:ident, $dtor:expr) => {
         impl<'a> Drop for $typ<'a> {

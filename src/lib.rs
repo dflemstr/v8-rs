@@ -28,14 +28,12 @@
 //! // e.g. if there is a syntax  error.
 //! let script = v8::Script::compile(&isolate, &context, &source).unwrap();
 //!
-//! // Run the compiled script.  The first `unwrap()` panics if the code threw
-//! // an exception.  The second `unwrap()` is for if the script did not yield a
-//! // result.
-//! let result = script.run(&context).unwrap().unwrap();
+//! // Run the compiled script.  `unwrap()` panics if the code threw an
+//! // exception.
+//! let result = script.run(&context).unwrap();
 //!
-//! // Convert the result to a value::String.  `unwrap()` panics if the value is
-//! // not a string.
-//! let result_str = result.to_string(&context).unwrap();
+//! // Convert the result to a value::String.
+//! let result_str = result.to_string(&context);
 //!
 //! // Success!
 //! assert_eq!("Hello, World!", result_str.to_string());
@@ -77,7 +75,7 @@ mod tests {
         let name = value::String::from_str(&isolate, "test.js");
         let source = value::String::from_str(&isolate, source);
         let script = try!(Script::compile_with_name(&isolate, &context, &name, &source));
-        let result = try!(script.run(&context)).unwrap();
+        let result = try!(script.run(&context));
         Ok(with_result(&isolate, &context, &result))
     }
 
@@ -85,8 +83,8 @@ mod tests {
     fn hello_world() {
         eval("'Hello, ' + 'World!'", |_, c, v| {
                 assert!(v.is_string());
-                let result = v.to_string(c).map(|s| s.to_string());
-                assert_eq!(Some("Hello, World!".to_owned()), result);
+                let result = v.to_string(c).to_string();
+                assert_eq!("Hello, World!".to_owned(), result);
             })
             .unwrap();
     }
@@ -112,8 +110,7 @@ mod tests {
         eval("false", |_, c, v| {
                 assert!(v.is_boolean());
                 assert!(v.is_false());
-                let result = v.boolean_value(c);
-                assert_eq!(Some(false), result);
+            assert_eq!(false, v.boolean_value(c));
             })
             .unwrap();
     }
@@ -123,8 +120,7 @@ mod tests {
         eval("true", |_, c, v| {
                 assert!(v.is_boolean());
                 assert!(v.is_true());
-                let result = v.boolean_value(c);
-                assert_eq!(Some(true), result);
+            assert_eq!(true, v.boolean_value(c));
             })
             .unwrap();
     }
@@ -133,8 +129,7 @@ mod tests {
     fn eval_string() {
         eval("'foo'", |_, c, v| {
                 assert!(v.is_string());
-                let result = v.to_string(c).map(|s| s.to_string());
-                assert_eq!(Some("foo".to_owned()), result);
+                assert_eq!("foo".to_owned(), v.to_string(c).to_string());
             })
             .unwrap();
     }
@@ -143,8 +138,8 @@ mod tests {
     fn eval_string_edge_cases() {
         eval(r#"'foo\u0000\uffff௵𒀰\uD808\uDC30'"#, |_, c, v| {
                 assert!(v.is_string());
-                let result = v.to_string(c).map(|s| s.to_string());
-                assert_eq!(Some("foo\u{0000}\u{ffff}௵𒀰𒀰".to_owned()), result);
+                let result = v.to_string(c).to_string();
+                assert_eq!("foo\u{0000}\u{ffff}௵𒀰𒀰".to_owned(), result);
             })
             .unwrap();
     }
@@ -154,8 +149,7 @@ mod tests {
         eval("42", |_, c, v| {
                 assert!(v.is_number());
                 assert!(v.is_uint32());
-                let result = v.uint32_value(c);
-                assert_eq!(Some(42), result);
+            assert_eq!(42, v.uint32_value(c));
             })
             .unwrap();
     }
@@ -165,8 +159,7 @@ mod tests {
         eval("-42", |_, c, v| {
                 assert!(v.is_number());
                 assert!(v.is_int32());
-                let result = v.int32_value(c);
-                assert_eq!(Some(-42), result);
+            assert_eq!(-42, v.int32_value(c));
             })
             .unwrap();
     }
@@ -177,8 +170,7 @@ mod tests {
         // can be represented in Javascript
         eval("9007199254740992", |_, c, v| {
                 assert!(v.is_number());
-                let result = v.integer_value(c);
-                assert_eq!(Some(9007199254740992), result);
+            assert_eq!(9007199254740992, v.integer_value(c));
             })
             .unwrap();
     }
@@ -195,12 +187,11 @@ mod tests {
     fn eval_function_then_call() {
         eval("(function(a) { return a + a; })", |i, c, v| {
                 assert!(v.is_function());
-                let f = v.to_object(c).unwrap();
+                let f = v.to_object(c);
                 let s = value::String::from_str(i, "123");
-                let r = f.call(c, &[&s]).unwrap().unwrap();
+                let r = f.call(c, &[&s]).unwrap();
                 assert!(r.is_string());
-                let r = r.to_string(c).unwrap();
-                assert_eq!("123123", r.to_string());
+            assert_eq!("123123", r.to_string(c).to_string());
             })
             .unwrap();
     }
@@ -209,12 +200,11 @@ mod tests {
     fn eval_function_then_call_with_this() {
         eval("(function() { return this.length; })", |i, c, v| {
                 assert!(v.is_function());
-                let f = v.to_object(c).unwrap();
+                let f = v.to_object(c);
                 let s = value::String::from_str(i, "123");
-                let r = f.call_with_this(c, &s, &[]).unwrap().unwrap();
+                let r = f.call_with_this(c, &s, &[]).unwrap();
                 assert!(r.is_int32());
-                let r = r.int32_value(c).unwrap();
-                assert_eq!(3, r);
+            assert_eq!(3, r.int32_value(c));
             })
             .unwrap();
     }
@@ -223,15 +213,15 @@ mod tests {
     fn eval_function_then_construct() {
         eval("(function ctor(a) { this.a = a; })", |i, c, v| {
                 assert!(v.is_function());
-                let f = v.to_object(c).unwrap();
+                let f = v.to_object(c);
                 let a_key = value::String::from_str(i, "a");
                 let s = value::String::from_str(i, "123");
-                let r = f.call_as_constructor(c, &[&s]).unwrap().unwrap();
+                let r = f.call_as_constructor(c, &[&s]).unwrap();
                 assert!(r.is_object());
-                let r = r.to_object(c).unwrap();
-                let r = r.get(c, &a_key).unwrap();
+                let r = r.to_object(c);
+                let r = r.get(c, &a_key);
                 assert!(r.is_string());
-                let r = r.to_string(c).unwrap();
+                let r = r.to_string(c);
                 assert_eq!("123", r.to_string());
             })
             .unwrap();
@@ -239,9 +229,12 @@ mod tests {
 
     #[test]
     fn eval_array() {
-        eval("[1, true, null]", |_, _, v| {
-                assert!(v.is_array());
-                // TODO: Try indexing the array?
+        eval("[1, true, null]", |_, c, v| {
+            assert!(v.is_array());
+            let v = v.to_object(c);
+            assert!(v.get_index(c, 0).is_number());
+            assert!(v.get_index(c, 1).is_boolean());
+            assert!(v.get_index(c, 2).is_null());
             })
             .unwrap();
     }
@@ -250,15 +243,13 @@ mod tests {
     fn eval_object() {
         eval("({a: 2, b: true})", |i, c, v| {
                 assert!(v.is_object());
-                let result = v.to_object(c).unwrap();
+                let result = v.to_object(c);
                 let a_key = value::String::from_str(i, "a");
                 let b_key = value::String::from_str(i, "b");
-                assert_eq!(Some(2),
-                           result.get(c, &a_key)
-                               .and_then(|v| v.integer_value(c)));
-                assert_eq!(Some(true),
-                           result.get(c, &b_key)
-                               .and_then(|v| v.boolean_value(c)));
+                assert_eq!(2,
+                           result.get(c, &a_key).integer_value(c));
+                assert_eq!(true,
+                           result.get(c, &b_key).boolean_value(c));
             })
             .unwrap();
     }
@@ -409,13 +400,15 @@ mod tests {
   }
   x();
 })();
-"#, |_, _, _| {});
+"#,
+                          |_, _, _| {});
 
         let error = result.unwrap_err();
         match error.kind() {
             &error::ErrorKind::Javascript(ref msg, ref stack_trace) => {
                 assert_eq!("Uncaught Error: x", msg);
-                assert_eq!("    at new w (test.js:13:11)\n    at z (test.js:10:5)\n    at eval <unknown>:1:1\n    at y (test.js:7:5)\n    at x (test.js:4:5)\n    at test.js:15:3\n    at test.js:16:3\n", format!("{}", stack_trace));
+                assert_eq!("    at new w (test.js:13:11)\n    at z (test.js:10:5)\n    at eval <anon>:1:1\n    at y (test.js:7:5)\n    at x (test.js:4:5)\n    at test.js:15:3\n    at test.js:16:3\n",
+                           format!("{}", stack_trace));
             }
             x => panic!("Unexpected error kind: {:?}", x),
         }

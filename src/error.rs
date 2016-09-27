@@ -25,7 +25,7 @@ pub struct CapturedStackFrame {
     line: u32,
     column: u32,
     script_name: Option<String>,
-    function_name: String,
+    function_name: Option<String>,
     is_eval: bool,
     is_constructor: bool,
 }
@@ -100,9 +100,12 @@ impl<'a> StackFrame<'a> {
 
     pub fn get_script_name(&self) -> Option<value::String> {
         unsafe {
-            util::invoke_nullable(self.0, |c| v8::StackFrame_GetScriptName(c, self.1))
-                .unwrap()
-                .map(|p| value::String::from_raw(self.0, p))
+            let raw = util::invoke(self.0, |c| v8::StackFrame_GetScriptName(c, self.1)).unwrap();
+            if raw.is_null() {
+                None
+            } else {
+                Some(value::String::from_raw(self.0, raw))
+            }
         }
     }
 
@@ -122,11 +125,12 @@ impl<'a> StackFrame<'a> {
     }
 
     pub fn to_captured(&self) -> CapturedStackFrame {
+        let function_name = self.get_function_name().to_string();
         CapturedStackFrame {
             line: self.get_line_number(),
             column: self.get_column(),
-            script_name: self.get_script_name().map(|s| s.to_string()),
-            function_name: self.get_function_name().to_string(),
+            script_name: self.get_script_name().map(|ref s| s.to_string()),
+            function_name: if function_name.is_empty() { None } else { Some(function_name) },
             is_eval: self.is_eval(),
             is_constructor: self.is_constructor(),
         }
@@ -150,17 +154,8 @@ impl fmt::Display for CapturedStackFrame {
             try!(write!(f, "new "));
         }
 
-        if self.function_name.is_empty() {
-            if self.is_eval {
-                try!(write!(f, "eval "));
-            }
-            try!(write!(f,
-                        "{}:{}:{}",
-                        self.script_name.as_ref().map(|ref s| s.as_str()).unwrap_or("<unknown>"),
-                        self.line,
-                        self.column));
-        } else {
-            try!(write!(f, "{} (", self.function_name));
+        if let Some(ref function_name) = self.function_name {
+            try!(write!(f, "{} (", function_name));
 
             if self.is_eval {
                 try!(write!(f, "eval "));
@@ -168,7 +163,16 @@ impl fmt::Display for CapturedStackFrame {
 
             try!(write!(f,
                         "{}:{}:{})",
-                        self.script_name.as_ref().map(|ref s| s.as_str()).unwrap_or("<unknown>"),
+                        self.script_name.as_ref().map(|n| n.as_str()).unwrap_or("<anon>"),
+                        self.line,
+                        self.column));
+        } else {
+            if self.is_eval {
+                try!(write!(f, "eval "));
+            }
+            try!(write!(f,
+                        "{}:{}:{}",
+                        self.script_name.as_ref().map(|n| n.as_str()).unwrap_or("<anon>"),
                         self.line,
                         self.column));
         }
