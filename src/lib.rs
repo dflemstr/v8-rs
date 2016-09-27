@@ -135,6 +135,51 @@ mod tests {
     }
 
     #[test]
+    fn eval_string_length() {
+        eval("'foo'", |_, c, v| {
+            assert!(v.is_string());
+            assert_eq!(3, v.to_string(c).length());
+        })
+            .unwrap();
+    }
+
+    #[test]
+    fn eval_string_utf8_length_1() {
+        eval("'a'", |_, c, v| {
+            assert!(v.is_string());
+            assert_eq!(1, v.to_string(c).utf8_length());
+        })
+            .unwrap();
+    }
+
+    #[test]
+    fn eval_string_utf8_length_2() {
+        eval("'ä'", |_, c, v| {
+            assert!(v.is_string());
+            assert_eq!(2, v.to_string(c).utf8_length());
+        })
+            .unwrap();
+    }
+
+    #[test]
+    fn eval_string_utf8_length_3() {
+        eval("'௵'", |_, c, v| {
+            assert!(v.is_string());
+            assert_eq!(3, v.to_string(c).utf8_length());
+        })
+            .unwrap();
+    }
+
+    #[test]
+    fn eval_string_utf8_length_4() {
+        eval("'𒀰'", |_, c, v| {
+            assert!(v.is_string());
+            assert_eq!(4, v.to_string(c).utf8_length());
+        })
+            .unwrap();
+    }
+
+    #[test]
     fn eval_string_edge_cases() {
         eval(r#"'foo\u0000\uffff௵𒀰\uD808\uDC30'"#, |_, c, v| {
                 assert!(v.is_string());
@@ -180,6 +225,78 @@ mod tests {
         eval("(function() {})", |_, _, v| {
                 assert!(v.is_function());
             })
+            .unwrap();
+    }
+
+    #[test]
+    fn eval_equals_true() {
+        eval("({a: '', b: []})", |i, c, v| {
+            assert!(v.is_object());
+            let v = v.to_object(c);
+            let a_key = value::String::from_str(i, "a");
+            let b_key = value::String::from_str(i, "b");
+            assert!(v.get(c, &a_key).equals(c, &v.get(c, &b_key)))
+        })
+            .unwrap();
+    }
+
+    #[test]
+    fn eval_equals_false() {
+        eval("({a: '', b: 1})", |i, c, v| {
+            assert!(v.is_object());
+            let v = v.to_object(c);
+            let a_key = value::String::from_str(i, "a");
+            let b_key = value::String::from_str(i, "b");
+            assert!(!v.get(c, &a_key).equals(c, &v.get(c, &b_key)))
+        })
+            .unwrap();
+    }
+
+    #[test]
+    fn eval_strict_equals_true() {
+        eval("({a: 2, b: 2})", |i, c, v| {
+            assert!(v.is_object());
+            let v = v.to_object(c);
+            let a_key = value::String::from_str(i, "a");
+            let b_key = value::String::from_str(i, "b");
+            assert!(v.get(c, &a_key).strict_equals(&v.get(c, &b_key)))
+        })
+            .unwrap();
+    }
+
+    #[test]
+    fn eval_strict_equals_false() {
+        eval("({a: '', b: []})", |i, c, v| {
+            assert!(v.is_object());
+            let v = v.to_object(c);
+            let a_key = value::String::from_str(i, "a");
+            let b_key = value::String::from_str(i, "b");
+            assert!(!v.get(c, &a_key).strict_equals(&v.get(c, &b_key)))
+        })
+            .unwrap();
+    }
+
+    #[test]
+    fn eval_same_value_true() {
+        eval("(function() { var a = {}; return {a: a, b: a}; })()", |i, c, v| {
+            assert!(v.is_object());
+            let v = v.to_object(c);
+            let a_key = value::String::from_str(i, "a");
+            let b_key = value::String::from_str(i, "b");
+            assert!(v.get(c, &a_key).same_value(&v.get(c, &b_key)))
+        })
+            .unwrap();
+    }
+
+    #[test]
+    fn eval_same_value_false() {
+        eval("({a: {}, b: {}})", |i, c, v| {
+            assert!(v.is_object());
+            let v = v.to_object(c);
+            let a_key = value::String::from_str(i, "a");
+            let b_key = value::String::from_str(i, "b");
+            assert!(!v.get(c, &a_key).same_value(&v.get(c, &b_key)))
+        })
             .unwrap();
     }
 
@@ -413,6 +530,4 @@ mod tests {
             x => panic!("Unexpected error kind: {:?}", x),
         }
     }
-
-    // TODO: test more types
 }
