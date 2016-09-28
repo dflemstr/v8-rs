@@ -189,14 +189,14 @@ struct PropertyCallbackInfo {
 
 struct FunctionCallbackInfo {
     int Length;
-    ValueRef Args;
+    ValueRef *Args;
     ObjectRef This;
     ObjectRef Holder;
     ValueRef NewTarget;
     bool IsConstructCall;
     ValueRef Data;
     IsolatePtr GetIsolate;
-    void (*SetReturnValue)(ValueRef);
+    ValueRef ReturnValue;
 };
 
 /* These typedefs are just here to give a nicer hint to the user as to
@@ -364,6 +364,17 @@ ScriptRef v8_Script_Compile_Origin(RustContext c, ContextRef context, StringRef 
 ValueRef v8_Object_CallAsFunction(RustContext c, ObjectRef self, ContextRef context, ValueRef recv, int argc, ValueRef argv[]);
 
 ValueRef v8_Object_CallAsConstructor(RustContext c, ObjectRef self, ContextRef context, int argc, ValueRef argv[]);
+
+FunctionRef v8_Function_New(RustContext c, ContextRef context, FunctionCallback callback, ValueRef data, int length, ConstructorBehavior behavior);
+ObjectRef v8_Function_NewInstance(RustContext c, FunctionRef self, ContextRef context, int argc, ValueRef argv[]);
+ValueRef v8_Function_Call(RustContext c, FunctionRef self, ContextRef context, ValueRef recv, int argc, ValueRef argv[]);
+
+void v8_Template_SetNativeDataProperty(RustContext c, TemplateRef self, StringRef name, AccessorGetterCallback getter, AccessorSetterCallback setter, ValueRef data, PropertyAttribute attribute, AccessorSignatureRef signature, AccessControl settings);
+
+void v8_ObjectTemplate_SetAccessor(RustContext c, ObjectTemplateRef self, StringRef name, AccessorGetterCallback getter, AccessorSetterCallback setter, ValueRef data, AccessControl settings, PropertyAttribute attribute, AccessorSignatureRef signature);
+void v8_ObjectTemplate_SetAccessor_Name(RustContext c, ObjectTemplateRef self, StringRef name, AccessorNameGetterCallback getter, AccessorNameSetterCallback setter, ValueRef data, AccessControl settings, PropertyAttribute attribute, AccessorSignatureRef signature);
+void v8_ObjectTemplate_SetCallAsFunctionHandler(RustContext c, ObjectTemplateRef self, FunctionCallback callback, ValueRef data);
+void v8_ObjectTemplate_SetAccessCheckCallback(RustContext c, ObjectTemplateRef self, AccessCheckCallback callback, ValueRef data);
 
 struct RustContext {
     IsolatePtr isolate;
