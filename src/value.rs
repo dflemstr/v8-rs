@@ -6,7 +6,9 @@ use util;
 use std::mem;
 use std::ops;
 use std::os;
+use std::panic;
 use std::ptr;
+use template;
 
 /// The superclass of all JavaScript values and objects.
 #[derive(Debug)]
@@ -202,8 +204,34 @@ pub struct RegExp<'a>(&'a isolate::Isolate, v8::RegExpRef);
 #[derive(Debug)]
 pub struct External<'a>(&'a isolate::Isolate, v8::ExternalRef);
 
+pub struct PropertyCallbackInfo<'a> {
+    this: Object<'a>,
+    holder: Object<'a>,
+}
+
+pub struct FunctionCallbackInfo<'a> {
+    pub length: isize,
+    pub args: Vec<Value<'a>>,
+    pub this: Object<'a>,
+    pub holder: Object<'a>,
+    pub new_target: Value<'a>,
+    pub is_construct_call: bool,
+}
+
+macro_rules! subtype {
+    ($child:ident, $parent:ident) => {
+        impl<'a> From<$child<'a>> for $parent<'a> {
+            fn from(child: $child<'a>) -> $parent<'a> {
+                unsafe { mem::transmute(child) }
+            }
+        }
+    }
+}
+
 macro_rules! inherit {
     ($child:ident, $parent:ident) => {
+        subtype!($child, $parent);
+
         impl<'a> ops::Deref for $child<'a> {
             type Target = $parent<'a>;
 
@@ -813,10 +841,13 @@ impl<'a> Uint32<'a> {
 }
 
 impl<'a> Object<'a> {
-    pub fn new(isolate: &'a isolate::Isolate) -> Object<'a> {
+    pub fn new(isolate: &'a isolate::Isolate, context: &context::Context) -> Object<'a> {
+        let g = context.make_current();
         let raw =
             unsafe { util::invoke(isolate, |c| v8::Object_New(c, isolate.as_raw())).unwrap() };
-        Object(isolate, raw)
+        let result = Object(isolate, raw);
+        drop(g);
+        result
     }
 
     pub fn set(&self, context: &context::Context, key: &Value, value: &Value) -> bool {
@@ -895,7 +926,7 @@ impl<'a> Object<'a> {
     pub fn get_index(&self, context: &context::Context, index: u32) -> Value {
         let raw = unsafe {
             util::invoke(self.0,
-                                  |c| v8::Object_Get_Index(c, self.1, context.as_raw(), index))
+                         |c| v8::Object_Get_Index(c, self.1, context.as_raw(), index))
                 .unwrap()
         };
         Value(self.0, raw)
@@ -1003,7 +1034,7 @@ impl<'a> Object<'a> {
     pub fn object_proto_to_string(&self, context: &context::Context) -> String {
         let raw = unsafe {
             util::invoke(self.0,
-                                  |c| v8::Object_ObjectProtoToString(c, self.1, context.as_raw()))
+                         |c| v8::Object_ObjectProtoToString(c, self.1, context.as_raw()))
                 .unwrap()
         };
         String(self.0, raw)
@@ -1015,6 +1046,54 @@ impl<'a> Object<'a> {
             unsafe { util::invoke(self.0, |c| v8::Object_GetConstructorName(c, self.1)).unwrap() };
 
         String(self.0, raw)
+    }
+
+    /// Gets the number of internal fields for this Object
+    pub fn internal_field_count(&self) -> u32 {
+        unsafe {
+            util::invoke(self.0, |c| v8::Object_InternalFieldCount(c, self.1)).unwrap() as u32
+        }
+    }
+
+    /// Gets the value from an internal field.
+    pub unsafe fn get_internal_field(&self, index: u32) -> Value<'a> {
+        let raw = util::invoke(self.0,
+                               |c| v8::Object_GetInternalField(c, self.1, index as os::raw::c_int))
+            .unwrap();
+        Value(self.0, raw)
+    }
+
+    /// Sets the value in an internal field.
+    pub unsafe fn set_internal_field(&self, index: u32, value: &Value<'a>) {
+        util::invoke(self.0, |c| {
+                v8::Object_SetInternalField(c, self.1, index as os::raw::c_int, value.as_raw())
+            })
+            .unwrap()
+    }
+
+    /// Gets a 2-byte-aligned native pointer from an internal field.
+    ///
+    /// This field must have been set by `set_aligned_pointer_in_internal_field`, everything else
+    /// leads to undefined behavior.
+    pub unsafe fn get_aligned_pointer_from_internal_field<A>(&self, index: u32) -> *mut A {
+        util::invoke(self.0, |c| {
+                v8::Object_GetAlignedPointerFromInternalField(c, self.1, index as os::raw::c_int)
+            })
+            .unwrap() as *mut A
+    }
+
+    /// Sets a 2-byte-aligned native pointer in an internal field.
+    ///
+    /// To retrieve such a field, `get_aligned_pointer_from_internal_field` must be used, everything
+    /// else leads to undefined behavior.
+    pub unsafe fn set_aligned_pointer_in_internal_field<A>(&self, index: u32, value: *mut A) {
+        util::invoke(self.0, |c| {
+                v8::Object_SetAlignedPointerInInternalField(c,
+                                                            self.1,
+                                                            index as os::raw::c_int,
+                                                            value as *mut os::raw::c_void)
+            })
+            .unwrap()
     }
 
     pub fn has_own_property(&self, context: &context::Context, key: &Name) -> bool {
@@ -1265,45 +1344,277 @@ impl<'a> Map<'a> {
     }
 }
 
+impl<'a> Set<'a> {
+    /// Creates a new empty Set.
+    pub fn new(isolate: &'a isolate::Isolate) -> Set<'a> {
+        let raw = unsafe { util::invoke(isolate, |c| v8::Set_New(c, isolate.as_raw())).unwrap() };
+        Set(isolate, raw)
+    }
+
+    pub fn size(&self) -> usize {
+        unsafe { util::invoke(self.0, |c| v8::Set_Size(c, self.1)).unwrap() as usize }
+    }
+
+    pub fn clear(&self) {
+        unsafe { util::invoke(self.0, |c| v8::Set_Clear(c, self.1)).unwrap() }
+    }
+
+    pub fn add(&self, context: &context::Context, key: &Value) {
+        unsafe {
+            util::invoke(self.0,
+                         |c| v8::Set_Add(c, self.1, context.as_raw(), key.as_raw()))
+                .unwrap();
+        }
+    }
+
+    pub fn has(&self, context: &context::Context, key: &Value) -> bool {
+        unsafe {
+            let m = util::invoke(self.0,
+                                 |c| v8::Set_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
+                .unwrap();
+
+            assert!(0 != m.is_set);
+            0 != m.value
+        }
+    }
+
+    pub fn delete(&self, context: &context::Context, key: &Value) -> bool {
+        unsafe {
+            let m = util::invoke(self.0,
+                                 |c| v8::Set_Delete_Key(c, self.1, context.as_raw(), key.as_raw()))
+                .unwrap();
+
+            assert!(0 != m.is_set);
+            0 != m.value
+        }
+    }
+
+    /// Returns an array of the keys in this Set.
+    pub fn as_array(&self) -> Array {
+        let raw = unsafe { util::invoke(self.0, |c| v8::Set_AsArray(c, self.1)).unwrap() };
+        Array(self.0, raw)
+    }
+
+    /// Creates a set from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::SetRef) -> Set<'a> {
+        Set(isolate, raw)
+    }
+
+    /// Returns the underlying raw pointer behind this set.
+    pub fn as_raw(&self) -> v8::SetRef {
+        self.1
+    }
+}
+
+impl<'a> Function<'a> {
+    /// Create a function in the current execution context for a given callback.
+    pub fn new(isolate: &'a isolate::Isolate,
+               context: &context::Context<'a>,
+               length: usize,
+               callback: &Fn(&'a FunctionCallbackInfo) -> Value<'a>)
+               -> Function<'a> {
+        unsafe {
+            let callback = Box::into_raw(Box::new(callback));
+            let template = template::ObjectTemplate::new(isolate);
+            template.set_internal_field_count(1);
+            let closure = template.new_instance(context);
+            closure.set_aligned_pointer_in_internal_field(0, callback);
+
+            let raw = util::invoke(isolate, |c| {
+                    v8::Function_New(c,
+                                     context.as_raw(),
+                                     Some(Function::callback),
+                                     (&closure as &Value).as_raw(),
+                                     length as os::raw::c_int,
+                                     v8::ConstructorBehavior::ConstructorBehavior_kAllow)
+                })
+                .unwrap();
+            Function(isolate, raw)
+        }
+    }
+
+    extern "C" fn callback(callback_info: v8::FunctionCallbackInfoPtr_Value) {
+        unsafe {
+            let callback_info = callback_info.as_mut().unwrap();
+            let isolate = isolate::Isolate::from_raw(callback_info.GetIsolate);
+            let data = Object(&isolate, callback_info.Data as v8::ObjectRef);
+
+            let length = callback_info.Length as isize;
+            let args = (0..length)
+                .map(|i| Value(&isolate, *callback_info.Args.offset(i)))
+                .collect();
+            let info = FunctionCallbackInfo {
+                length: length,
+                args: args,
+                this: Object(&isolate, callback_info.This),
+                holder: Object(&isolate, callback_info.Holder),
+                new_target: Value(&isolate, callback_info.NewTarget),
+                is_construct_call: 0 != callback_info.IsConstructCall,
+            };
+            // TODO: Here, we coerce 'b to essentially be 'a, which we know is the case, but it
+            // could probably be expressed better.
+            let callback: Box<Box<for<'b> Fn(&'b FunctionCallbackInfo) -> Value<'b>>> =
+                Box::from_raw(data.get_aligned_pointer_from_internal_field(0));
+
+            let r = callback(&info);
+
+            mem::forget(callback);
+
+            callback_info.ReturnValue = r.as_raw();
+            mem::forget(r);
+        }
+    }
+
+    /// Creates a function from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::FunctionRef) -> Function<'a> {
+        Function(isolate, raw)
+    }
+
+    /// Returns the underlying raw pointer behind this function.
+    pub fn as_raw(&self) -> v8::FunctionRef {
+        self.1
+    }
+}
+
 // unsafe: Don't add another `inherit!` line if you don't know the implications (see the comments
 // around the macro declaration).
 inherit!(Primitive, Value);
+
 inherit!(Boolean, Primitive);
+subtype!(Boolean, Value);
+
 inherit!(Name, Primitive);
+subtype!(Name, Value);
+
 inherit!(String, Name);
+subtype!(String, Primitive);
+subtype!(String, Value);
+
 inherit!(Symbol, Name);
+subtype!(Symbol, Primitive);
+subtype!(Symbol, Value);
+
 inherit!(Private, Name);
+subtype!(Private, Primitive);
+subtype!(Private, Value);
+
 inherit!(Number, Primitive);
+subtype!(Number, Value);
+
 inherit!(Integer, Number);
+subtype!(Integer, Primitive);
+subtype!(Integer, Value);
+
 inherit!(Int32, Integer);
+subtype!(Int32, Number);
+subtype!(Int32, Primitive);
+subtype!(Int32, Value);
+
 inherit!(Uint32, Integer);
+subtype!(Uint32, Number);
+subtype!(Uint32, Primitive);
+subtype!(Uint32, Value);
+
 inherit!(Object, Value);
+
 inherit!(Array, Object);
+subtype!(Array, Value);
+
 inherit!(Map, Object);
+subtype!(Map, Value);
+
 inherit!(Set, Object);
+subtype!(Set, Value);
+
 inherit!(Function, Object);
+subtype!(Function, Value);
+
 inherit!(Promise, Object);
+subtype!(Promise, Value);
+
 inherit!(Proxy, Object);
+subtype!(Proxy, Value);
+
 inherit!(ArrayBuffer, Object);
+subtype!(ArrayBuffer, Value);
+
 inherit!(ArrayBufferView, Object);
+subtype!(ArrayBufferView, Value);
+
 inherit!(TypedArray, ArrayBufferView);
+subtype!(TypedArray, Object);
+subtype!(TypedArray, Value);
+
 inherit!(Uint8Array, TypedArray);
+subtype!(Uint8Array, ArrayBufferView);
+subtype!(Uint8Array, Object);
+subtype!(Uint8Array, Value);
+
 inherit!(Uint8ClampedArray, TypedArray);
+subtype!(Uint8ClampedArray, ArrayBufferView);
+subtype!(Uint8ClampedArray, Object);
+subtype!(Uint8ClampedArray, Value);
+
 inherit!(Int8Array, TypedArray);
+subtype!(Int8Array, ArrayBufferView);
+subtype!(Int8Array, Object);
+subtype!(Int8Array, Value);
+
 inherit!(Uint16Array, TypedArray);
+subtype!(Uint16Array, ArrayBufferView);
+subtype!(Uint16Array, Object);
+subtype!(Uint16Array, Value);
+
 inherit!(Int16Array, TypedArray);
+subtype!(Int16Array, ArrayBufferView);
+subtype!(Int16Array, Object);
+subtype!(Int16Array, Value);
+
 inherit!(Uint32Array, TypedArray);
+subtype!(Uint32Array, ArrayBufferView);
+subtype!(Uint32Array, Object);
+subtype!(Uint32Array, Value);
+
 inherit!(Int32Array, TypedArray);
+subtype!(Int32Array, ArrayBufferView);
+subtype!(Int32Array, Object);
+subtype!(Int32Array, Value);
+
 inherit!(Float32Array, TypedArray);
+subtype!(Float32Array, ArrayBufferView);
+subtype!(Float32Array, Object);
+subtype!(Float32Array, Value);
+
 inherit!(Float64Array, TypedArray);
+subtype!(Float64Array, ArrayBufferView);
+subtype!(Float64Array, Object);
+subtype!(Float64Array, Value);
+
 inherit!(DataView, ArrayBufferView);
+subtype!(DataView, Object);
+subtype!(DataView, Value);
+
 inherit!(SharedArrayBuffer, Object);
+subtype!(SharedArrayBuffer, Value);
+
 inherit!(Date, Object);
+subtype!(Date, Value);
+
 inherit!(NumberObject, Object);
+subtype!(NumberObject, Value);
+
 inherit!(BooleanObject, Object);
+subtype!(BooleanObject, Value);
+
 inherit!(StringObject, Object);
+subtype!(StringObject, Value);
+
 inherit!(SymbolObject, Object);
+subtype!(SymbolObject, Value);
+
 inherit!(RegExp, Object);
+subtype!(RegExp, Value);
+
 inherit!(External, Value);
 
 // unsafe: Don't add another `drop!` line if you don't know the implications (see the comments

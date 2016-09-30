@@ -130,7 +130,11 @@ impl<'a> StackFrame<'a> {
             line: self.get_line_number(),
             column: self.get_column(),
             script_name: self.get_script_name().map(|ref s| s.to_string()),
-            function_name: if function_name.is_empty() { None } else { Some(function_name) },
+            function_name: if function_name.is_empty() {
+                None
+            } else {
+                Some(function_name)
+            },
             is_eval: self.is_eval(),
             is_constructor: self.is_constructor(),
         }

@@ -11,7 +11,13 @@ static INITIALIZE: sync::Once = sync::ONCE_INIT;
 /// multiple isolates and use them in parallel in multiple threads.  An isolate can be entered by at
 /// most one thread at any given time.  The Locker/Unlocker API must be used to synchronize.
 #[derive(Debug)]
-pub struct Isolate(v8::IsolatePtr, allocator::Allocator);
+pub struct Isolate(IsolateHolder);
+
+#[derive(Debug)]
+enum IsolateHolder {
+    Owned(v8::IsolatePtr, allocator::Allocator),
+    Borrowed(v8::IsolatePtr),
+}
 
 impl Isolate {
     pub fn new() -> Isolate {
@@ -26,18 +32,28 @@ impl Isolate {
 
         unsafe { v8::Isolate_SetCaptureStackTraceForUncaughtExceptions_Detailed(raw, 1, 1024) };
 
-        Isolate(raw, allocator)
+        Isolate(IsolateHolder::Owned(raw, allocator))
+    }
+
+    pub unsafe fn from_raw(raw: v8::IsolatePtr) -> Isolate {
+        Isolate(IsolateHolder::Borrowed(raw))
     }
 
     pub fn as_raw(&self) -> v8::IsolatePtr {
-        self.0
+        match self.0 {
+            IsolateHolder::Owned(p, _) => p,
+            IsolateHolder::Borrowed(p) => p,
+        }
     }
 }
 
 impl Drop for Isolate {
     fn drop(&mut self) {
         unsafe {
-            v8::Isolate_Dispose(self.0);
+            match self.0 {
+                IsolateHolder::Owned(p, _) => v8::Isolate_Dispose(p),
+                _ => (),
+            }
         }
     }
 }

@@ -56,6 +56,7 @@ pub mod context;
 pub mod error;
 pub mod isolate;
 pub mod script;
+pub mod template;
 pub mod value;
 
 pub use context::Context;
@@ -110,7 +111,7 @@ mod tests {
         eval("false", |_, c, v| {
                 assert!(v.is_boolean());
                 assert!(v.is_false());
-            assert_eq!(false, v.boolean_value(c));
+                assert_eq!(false, v.boolean_value(c));
             })
             .unwrap();
     }
@@ -120,7 +121,7 @@ mod tests {
         eval("true", |_, c, v| {
                 assert!(v.is_boolean());
                 assert!(v.is_true());
-            assert_eq!(true, v.boolean_value(c));
+                assert_eq!(true, v.boolean_value(c));
             })
             .unwrap();
     }
@@ -137,45 +138,45 @@ mod tests {
     #[test]
     fn eval_string_length() {
         eval("'foo'", |_, c, v| {
-            assert!(v.is_string());
-            assert_eq!(3, v.to_string(c).length());
-        })
+                assert!(v.is_string());
+                assert_eq!(3, v.to_string(c).length());
+            })
             .unwrap();
     }
 
     #[test]
     fn eval_string_utf8_length_1() {
         eval("'a'", |_, c, v| {
-            assert!(v.is_string());
-            assert_eq!(1, v.to_string(c).utf8_length());
-        })
+                assert!(v.is_string());
+                assert_eq!(1, v.to_string(c).utf8_length());
+            })
             .unwrap();
     }
 
     #[test]
     fn eval_string_utf8_length_2() {
         eval("'ä'", |_, c, v| {
-            assert!(v.is_string());
-            assert_eq!(2, v.to_string(c).utf8_length());
-        })
+                assert!(v.is_string());
+                assert_eq!(2, v.to_string(c).utf8_length());
+            })
             .unwrap();
     }
 
     #[test]
     fn eval_string_utf8_length_3() {
         eval("'௵'", |_, c, v| {
-            assert!(v.is_string());
-            assert_eq!(3, v.to_string(c).utf8_length());
-        })
+                assert!(v.is_string());
+                assert_eq!(3, v.to_string(c).utf8_length());
+            })
             .unwrap();
     }
 
     #[test]
     fn eval_string_utf8_length_4() {
         eval("'𒀰'", |_, c, v| {
-            assert!(v.is_string());
-            assert_eq!(4, v.to_string(c).utf8_length());
-        })
+                assert!(v.is_string());
+                assert_eq!(4, v.to_string(c).utf8_length());
+            })
             .unwrap();
     }
 
@@ -194,7 +195,7 @@ mod tests {
         eval("42", |_, c, v| {
                 assert!(v.is_number());
                 assert!(v.is_uint32());
-            assert_eq!(42, v.uint32_value(c));
+                assert_eq!(42, v.uint32_value(c));
             })
             .unwrap();
     }
@@ -204,7 +205,7 @@ mod tests {
         eval("-42", |_, c, v| {
                 assert!(v.is_number());
                 assert!(v.is_int32());
-            assert_eq!(-42, v.int32_value(c));
+                assert_eq!(-42, v.int32_value(c));
             })
             .unwrap();
     }
@@ -215,7 +216,7 @@ mod tests {
         // can be represented in Javascript
         eval("9007199254740992", |_, c, v| {
                 assert!(v.is_number());
-            assert_eq!(9007199254740992, v.integer_value(c));
+                assert_eq!(9007199254740992, v.integer_value(c));
             })
             .unwrap();
     }
@@ -231,54 +232,55 @@ mod tests {
     #[test]
     fn eval_equals_true() {
         eval("({a: '', b: []})", |i, c, v| {
-            assert!(v.is_object());
-            let v = v.to_object(c);
-            let a_key = value::String::from_str(i, "a");
-            let b_key = value::String::from_str(i, "b");
-            assert!(v.get(c, &a_key).equals(c, &v.get(c, &b_key)))
-        })
+                assert!(v.is_object());
+                let v = v.to_object(c);
+                let a_key = value::String::from_str(i, "a");
+                let b_key = value::String::from_str(i, "b");
+                assert!(v.get(c, &a_key).equals(c, &v.get(c, &b_key)))
+            })
             .unwrap();
     }
 
     #[test]
     fn eval_equals_false() {
         eval("({a: '', b: 1})", |i, c, v| {
-            assert!(v.is_object());
-            let v = v.to_object(c);
-            let a_key = value::String::from_str(i, "a");
-            let b_key = value::String::from_str(i, "b");
-            assert!(!v.get(c, &a_key).equals(c, &v.get(c, &b_key)))
-        })
+                assert!(v.is_object());
+                let v = v.to_object(c);
+                let a_key = value::String::from_str(i, "a");
+                let b_key = value::String::from_str(i, "b");
+                assert!(!v.get(c, &a_key).equals(c, &v.get(c, &b_key)))
+            })
             .unwrap();
     }
 
     #[test]
     fn eval_strict_equals_true() {
         eval("({a: 2, b: 2})", |i, c, v| {
-            assert!(v.is_object());
-            let v = v.to_object(c);
-            let a_key = value::String::from_str(i, "a");
-            let b_key = value::String::from_str(i, "b");
-            assert!(v.get(c, &a_key).strict_equals(&v.get(c, &b_key)))
-        })
+                assert!(v.is_object());
+                let v = v.to_object(c);
+                let a_key = value::String::from_str(i, "a");
+                let b_key = value::String::from_str(i, "b");
+                assert!(v.get(c, &a_key).strict_equals(&v.get(c, &b_key)))
+            })
             .unwrap();
     }
 
     #[test]
     fn eval_strict_equals_false() {
         eval("({a: '', b: []})", |i, c, v| {
-            assert!(v.is_object());
-            let v = v.to_object(c);
-            let a_key = value::String::from_str(i, "a");
-            let b_key = value::String::from_str(i, "b");
-            assert!(!v.get(c, &a_key).strict_equals(&v.get(c, &b_key)))
-        })
+                assert!(v.is_object());
+                let v = v.to_object(c);
+                let a_key = value::String::from_str(i, "a");
+                let b_key = value::String::from_str(i, "b");
+                assert!(!v.get(c, &a_key).strict_equals(&v.get(c, &b_key)))
+            })
             .unwrap();
     }
 
     #[test]
     fn eval_same_value_true() {
-        eval("(function() { var a = {}; return {a: a, b: a}; })()", |i, c, v| {
+        eval("(function() { var a = {}; return {a: a, b: a}; })()",
+             |i, c, v| {
             assert!(v.is_object());
             let v = v.to_object(c);
             let a_key = value::String::from_str(i, "a");
@@ -291,12 +293,12 @@ mod tests {
     #[test]
     fn eval_same_value_false() {
         eval("({a: {}, b: {}})", |i, c, v| {
-            assert!(v.is_object());
-            let v = v.to_object(c);
-            let a_key = value::String::from_str(i, "a");
-            let b_key = value::String::from_str(i, "b");
-            assert!(!v.get(c, &a_key).same_value(&v.get(c, &b_key)))
-        })
+                assert!(v.is_object());
+                let v = v.to_object(c);
+                let a_key = value::String::from_str(i, "a");
+                let b_key = value::String::from_str(i, "b");
+                assert!(!v.get(c, &a_key).same_value(&v.get(c, &b_key)))
+            })
             .unwrap();
     }
 
@@ -308,7 +310,7 @@ mod tests {
                 let s = value::String::from_str(i, "123");
                 let r = f.call(c, &[&s]).unwrap();
                 assert!(r.is_string());
-            assert_eq!("123123", r.to_string(c).to_string());
+                assert_eq!("123123", r.to_string(c).to_string());
             })
             .unwrap();
     }
@@ -321,7 +323,7 @@ mod tests {
                 let s = value::String::from_str(i, "123");
                 let r = f.call_with_this(c, &s, &[]).unwrap();
                 assert!(r.is_int32());
-            assert_eq!(3, r.int32_value(c));
+                assert_eq!(3, r.int32_value(c));
             })
             .unwrap();
     }
@@ -347,11 +349,11 @@ mod tests {
     #[test]
     fn eval_array() {
         eval("[1, true, null]", |_, c, v| {
-            assert!(v.is_array());
-            let v = v.to_object(c);
-            assert!(v.get_index(c, 0).is_number());
-            assert!(v.get_index(c, 1).is_boolean());
-            assert!(v.get_index(c, 2).is_null());
+                assert!(v.is_array());
+                let v = v.to_object(c);
+                assert!(v.get_index(c, 0).is_number());
+                assert!(v.get_index(c, 1).is_boolean());
+                assert!(v.get_index(c, 2).is_null());
             })
             .unwrap();
     }
@@ -363,10 +365,8 @@ mod tests {
                 let result = v.to_object(c);
                 let a_key = value::String::from_str(i, "a");
                 let b_key = value::String::from_str(i, "b");
-                assert_eq!(2,
-                           result.get(c, &a_key).integer_value(c));
-                assert_eq!(true,
-                           result.get(c, &b_key).boolean_value(c));
+                assert_eq!(2, result.get(c, &a_key).integer_value(c));
+                assert_eq!(true, result.get(c, &b_key).boolean_value(c));
             })
             .unwrap();
     }
@@ -524,10 +524,41 @@ mod tests {
         match error.kind() {
             &error::ErrorKind::Javascript(ref msg, ref stack_trace) => {
                 assert_eq!("Uncaught Error: x", msg);
-                assert_eq!("    at new w (test.js:13:11)\n    at z (test.js:10:5)\n    at eval <anon>:1:1\n    at y (test.js:7:5)\n    at x (test.js:4:5)\n    at test.js:15:3\n    at test.js:16:3\n",
+                assert_eq!("    at new w (test.js:13:11)\n    at z (test.js:10:5)\n    at eval \
+                            <anon>:1:1\n    at y (test.js:7:5)\n    at x (test.js:4:5)\n    at \
+                            test.js:15:3\n    at test.js:16:3\n",
                            format!("{}", stack_trace));
             }
             x => panic!("Unexpected error kind: {:?}", x),
         }
+    }
+
+    #[test]
+    fn run_defined_function() {
+        let i = Isolate::new();
+        let c = Context::new(&i);
+        let f = |info: &value::FunctionCallbackInfo| {
+            assert_eq!(2, info.length);
+            let ref a = info.args[0];
+            assert!(a.is_int32());
+            let a = a.int32_value(&c);
+            let ref b = info.args[1];
+            assert!(b.is_int32());
+            let b = b.int32_value(&c);
+
+            value::Integer::new(&i, a + b).into()
+        };
+        let f = value::Function::new(&i, &c, 2, &f);
+
+        let k = value::String::from_str(&i, "f");
+        c.global().set(&c, &k, &f);
+
+        let name = value::String::from_str(&i, "test.js");
+        let source = value::String::from_str(&i, "f(2, 3)");
+        let script = Script::compile_with_name(&i, &c, &name, &source).unwrap();
+        let result = script.run(&c).unwrap();
+
+        assert!(result.is_int32());
+        assert_eq!(5, result.int32_value(&c));
     }
 }

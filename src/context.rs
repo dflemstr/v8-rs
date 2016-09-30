@@ -7,6 +7,8 @@ use value;
 #[derive(Debug)]
 pub struct Context<'a>(&'a isolate::Isolate, v8::ContextRef);
 
+pub struct ContextGuard<'a>(&'a Context<'a>);
+
 impl<'a> Context<'a> {
     /// Creates a new context and returns a handle to the newly allocated context.
     pub fn new(isolate: &isolate::Isolate) -> Context {
@@ -14,6 +16,19 @@ impl<'a> Context<'a> {
             Context(isolate,
                     util::invoke(isolate, |c| v8::Context_New(c)).unwrap())
         }
+    }
+
+    pub fn make_current(&self) -> ContextGuard {
+        self.enter();
+        ContextGuard(self)
+    }
+
+    fn enter(&self) {
+        unsafe { util::invoke(self.0, |c| v8::Context_Enter(c, self.1)).unwrap() }
+    }
+
+    fn exit(&self) {
+        unsafe { util::invoke(self.0, |c| v8::Context_Exit(c, self.1)).unwrap() }
     }
 
     /// Returns the global proxy object.
@@ -45,5 +60,11 @@ impl<'a> Context<'a> {
 impl<'a> Drop for Context<'a> {
     fn drop(&mut self) {
         unsafe { v8::Context_DestroyRef(self.1) }
+    }
+}
+
+impl<'a> Drop for ContextGuard<'a> {
+    fn drop(&mut self) {
+        self.0.exit()
     }
 }
