@@ -241,9 +241,15 @@ fn write_cc_file<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
             try!(writeln!(out, "  v8::HandleScope __handle_scope(c.isolate);"));
             try!(writeln!(out, "  v8::TryCatch __try_catch(c.isolate);"));
 
-            if let Some(arg) = method.args.iter().find(|ref a| a.arg_type == v8_api::Type::Ptr(Box::new(v8_api::Type::Class("Context".to_owned())))) {
+            let context_type = v8_api::Type::Ref(Box::new(v8_api::Type::Class("Context".to_owned())));
+            if let Some(arg) = method.args.iter().find(|ref a| a.arg_type == context_type) {
                 // There should only be one context but who knows
-                try!(writeln!(out, "  v8::Context::Scope {ctx}_scope(wrap(c.isolate, {ctx}));", ctx=arg.name));
+                try!(writeln!(out, "  auto wrapped_{ctx} = wrap(c.isolate, {ctx});", ctx=arg.name));
+                try!(writeln!(out, "  v8::Context::Scope {ctx}_scope(wrapped_{ctx});", ctx=arg.name));
+            }
+
+            for arg in method.args.iter() {
+                try!(writeln!(out, "  auto {arg}_wrapped = wrap(c.isolate, {arg});", arg = arg.name));
             }
 
             if let v8_api::RetType::Direct(v8_api::Type::Void) = method.ret_type {
@@ -268,7 +274,7 @@ fn write_cc_file<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
                     try!(write!(out, ", "));
                 }
                 needs_sep = true;
-                try!(write!(out, "wrap(c.isolate, {arg})", arg = arg.name));
+                try!(write!(out, "{arg}_wrapped", arg = arg.name));
             }
             try!(writeln!(out, ");"));
             if let v8_api::RetType::Direct(v8_api::Type::Void) = method.ret_type {

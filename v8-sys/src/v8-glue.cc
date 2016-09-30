@@ -283,10 +283,12 @@ FunctionCallbackInfo build_callback_info(
     v8::Isolate *isolate = info.GetIsolate();
 
     int length = info.Length();
-    ValueRef args[length];
+    ValueRef *args = new ValueRef[length];
 
     for (int i = 0; i < length; i++) {
-        args[i] = unwrap(isolate, info[i]);
+        v8::Local<v8::Value> arg = info[i];
+        ValueRef unwrapped_arg = unwrap(isolate, arg);
+        args[i] = unwrapped_arg;
     }
 
     FunctionCallbackInfo result = FunctionCallbackInfo {
@@ -305,14 +307,16 @@ FunctionCallbackInfo build_callback_info(
 }
 
 enum class PropertyHandlerFields {
-    Getter, Setter, Query, Deleter, Enumerator, Data, Flags
+    Getter, Setter, Query, Deleter, Enumerator, Data, Flags, Max
 };
 
 void generic_named_property_handler_getter(
     v8::Local<v8::Name> property,
     const v8::PropertyCallbackInfo<v8::Value> &info) {
     v8::Isolate *isolate = info.GetIsolate();
-    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    v8::HandleScope scope(isolate);
+    v8::Local<v8::Object> outer_data =
+        v8::Local<v8::Object>::Cast(info.Data());
     GenericNamedPropertyGetterCallback getter =
         (GenericNamedPropertyGetterCallback)
         outer_data->GetAlignedPointerFromInternalField((int) PropertyHandlerFields::Getter);
@@ -331,7 +335,9 @@ void generic_named_property_handler_setter(
     v8::Local<v8::Value> value,
     const v8::PropertyCallbackInfo<v8::Value> &info) {
     v8::Isolate *isolate = info.GetIsolate();
-    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    v8::HandleScope scope(isolate);
+    v8::Local<v8::Object> outer_data =
+        v8::Local<v8::Object>::Cast(info.Data());
     GenericNamedPropertySetterCallback setter =
         (GenericNamedPropertySetterCallback)
         outer_data->GetAlignedPointerFromInternalField((int) PropertyHandlerFields::Setter);
@@ -349,7 +355,9 @@ void generic_named_property_handler_query(
     v8::Local<v8::Name> property,
     const v8::PropertyCallbackInfo<v8::Integer> &info) {
     v8::Isolate *isolate = info.GetIsolate();
-    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    v8::HandleScope scope(isolate);
+    v8::Local<v8::Object> outer_data =
+        v8::Local<v8::Object>::Cast(info.Data());
     GenericNamedPropertyQueryCallback query =
         (GenericNamedPropertyQueryCallback)
         outer_data->GetAlignedPointerFromInternalField((int) PropertyHandlerFields::Query);
@@ -367,7 +375,9 @@ void generic_named_property_handler_deleter(
     v8::Local<v8::Name> property,
     const v8::PropertyCallbackInfo<v8::Boolean> &info) {
     v8::Isolate *isolate = info.GetIsolate();
-    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    v8::HandleScope scope(isolate);
+    v8::Local<v8::Object> outer_data =
+        v8::Local<v8::Object>::Cast(info.Data());
     GenericNamedPropertyDeleterCallback deleter =
         (GenericNamedPropertyDeleterCallback)
         outer_data->GetAlignedPointerFromInternalField((int) PropertyHandlerFields::Deleter);
@@ -384,7 +394,9 @@ void generic_named_property_handler_deleter(
 void generic_named_property_handler_enumerator(
     const v8::PropertyCallbackInfo<v8::Array> &info) {
     v8::Isolate *isolate = info.GetIsolate();
-    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    v8::HandleScope scope(isolate);
+    v8::Local<v8::Object> outer_data =
+        v8::Local<v8::Object>::Cast(info.Data());
     GenericNamedPropertyEnumeratorCallback enumerator =
         (GenericNamedPropertyEnumeratorCallback)
         outer_data->GetAlignedPointerFromInternalField((int) PropertyHandlerFields::Enumerator);
@@ -401,7 +413,10 @@ void generic_named_property_handler_enumerator(
 v8::NamedPropertyHandlerConfiguration wrap(
     v8::Isolate *isolate,
     NamedPropertyHandlerConfiguration value) {
-    v8::Local<v8::Object> outer_data = v8::Object::New(isolate);
+    v8::Local<v8::ObjectTemplate> outer_data_template =
+        v8::ObjectTemplate::New(isolate);
+    outer_data_template->SetInternalFieldCount((int) PropertyHandlerFields::Max);
+    v8::Local<v8::Object> outer_data = outer_data_template->NewInstance();
 
     v8::GenericNamedPropertyGetterCallback getter;
     v8::GenericNamedPropertySetterCallback setter;
@@ -460,7 +475,9 @@ void indexed_property_handler_getter(
     uint32_t index,
     const v8::PropertyCallbackInfo<v8::Value> &info) {
     v8::Isolate *isolate = info.GetIsolate();
-    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    v8::HandleScope scope(isolate);
+    v8::Local<v8::Object> outer_data =
+        v8::Local<v8::Object>::Cast(info.Data());
     IndexedPropertyGetterCallback getter =
         (IndexedPropertyGetterCallback)
         outer_data->GetAlignedPointerFromInternalField((int) PropertyHandlerFields::Getter);
@@ -479,7 +496,9 @@ void indexed_property_handler_setter(
     v8::Local<v8::Value> value,
     const v8::PropertyCallbackInfo<v8::Value> &info) {
     v8::Isolate *isolate = info.GetIsolate();
-    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    v8::HandleScope scope(isolate);
+    v8::Local<v8::Object> outer_data =
+        v8::Local<v8::Object>::Cast(info.Data());
     IndexedPropertySetterCallback setter =
         (IndexedPropertySetterCallback)
         outer_data->GetAlignedPointerFromInternalField((int) PropertyHandlerFields::Setter);
@@ -497,7 +516,9 @@ void indexed_property_handler_query(
     uint32_t index,
     const v8::PropertyCallbackInfo<v8::Integer> &info) {
     v8::Isolate *isolate = info.GetIsolate();
-    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    v8::HandleScope scope(isolate);
+    v8::Local<v8::Object> outer_data =
+        v8::Local<v8::Object>::Cast(info.Data());
     IndexedPropertyQueryCallback query =
         (IndexedPropertyQueryCallback)
         outer_data->GetAlignedPointerFromInternalField((int) PropertyHandlerFields::Query);
@@ -515,7 +536,9 @@ void indexed_property_handler_deleter(
     uint32_t index,
     const v8::PropertyCallbackInfo<v8::Boolean> &info) {
     v8::Isolate *isolate = info.GetIsolate();
-    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    v8::HandleScope scope(isolate);
+    v8::Local<v8::Object> outer_data =
+        v8::Local<v8::Object>::Cast(info.Data());
     IndexedPropertyDeleterCallback deleter =
         (IndexedPropertyDeleterCallback)
         outer_data->GetAlignedPointerFromInternalField((int) PropertyHandlerFields::Deleter);
@@ -532,7 +555,9 @@ void indexed_property_handler_deleter(
 void indexed_property_handler_enumerator(
     const v8::PropertyCallbackInfo<v8::Array> &info) {
     v8::Isolate *isolate = info.GetIsolate();
-    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    v8::HandleScope scope(isolate);
+    v8::Local<v8::Object> outer_data =
+        v8::Local<v8::Object>::Cast(info.Data());
     IndexedPropertyEnumeratorCallback enumerator =
         (IndexedPropertyEnumeratorCallback)
         outer_data->GetAlignedPointerFromInternalField((int) PropertyHandlerFields::Enumerator);
@@ -549,7 +574,10 @@ void indexed_property_handler_enumerator(
 v8::IndexedPropertyHandlerConfiguration wrap(
     v8::Isolate *isolate,
     IndexedPropertyHandlerConfiguration value) {
-    v8::Local<v8::Object> outer_data = v8::Object::New(isolate);
+    v8::Local<v8::ObjectTemplate> outer_data_template =
+        v8::ObjectTemplate::New(isolate);
+    outer_data_template->SetInternalFieldCount((int) PropertyHandlerFields::Max);
+    v8::Local<v8::Object> outer_data = outer_data_template->NewInstance();
 
     v8::IndexedPropertyGetterCallback getter;
     v8::IndexedPropertySetterCallback setter;
@@ -604,7 +632,7 @@ v8::IndexedPropertyHandlerConfiguration wrap(
         wrap(isolate, value.flags));
 }
 
-template<typename A> A wrap(v8::Isolate *isolate, A &&value) {
+template<typename A> A wrap(v8::Isolate *isolate, A value) {
     return value;
 }
 
@@ -873,13 +901,15 @@ ValueRef v8_Object_CallAsConstructor(RustContext c, ObjectRef self, ContextRef c
 }
 
 enum class FunctionHandlerFields {
-    Callback, Data
+    Callback, Data, Max
 };
 
 
 void function_callback(const v8::FunctionCallbackInfo<v8::Value> &info) {
     v8::Isolate *isolate = info.GetIsolate();
-    v8::Local<v8::Object> outer_data = info.Data()->ToObject();
+    v8::HandleScope scope(isolate);
+    v8::Local<v8::Object> outer_data =
+        v8::Local<v8::Object>::Cast(info.Data());
 
     FunctionCallback callback =
         (FunctionCallback)
@@ -888,6 +918,8 @@ void function_callback(const v8::FunctionCallbackInfo<v8::Value> &info) {
     FunctionCallbackInfo callback_info = build_callback_info(info, data);
 
     callback(&callback_info);
+
+    delete[] callback_info.Args;
 
     if (callback_info.ReturnValue) {
         info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
@@ -903,8 +935,11 @@ FunctionRef v8_Function_New(
     ConstructorBehavior behavior) {
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
-
-    v8::Local<v8::Object> outer_data = v8::Object::New(c.isolate);
+    v8::Local<v8::ObjectTemplate> outer_data_template =
+        v8::ObjectTemplate::New(c.isolate);
+    outer_data_template->SetInternalFieldCount((int) FunctionHandlerFields::Max);
+    v8::Local<v8::Object> outer_data =
+        outer_data_template->NewInstance(wrap(c.isolate, context)).ToLocalChecked();
 
     v8::FunctionCallback callback;
 
