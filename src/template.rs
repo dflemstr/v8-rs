@@ -37,7 +37,7 @@ impl<'a> ObjectTemplate<'a> {
         };
     }
 
-    pub fn new_instance(&self, context: &context::Context) -> value::Object {
+    pub fn new_instance(&self, context: &context::Context) -> value::Object<'a> {
         unsafe {
             let raw = util::invoke(self.0,
                                    |c| v8::ObjectTemplate_NewInstance(c, self.1, context.as_raw()))

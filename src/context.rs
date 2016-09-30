@@ -11,7 +11,7 @@ pub struct ContextGuard<'a>(&'a Context<'a>);
 
 impl<'a> Context<'a> {
     /// Creates a new context and returns a handle to the newly allocated context.
-    pub fn new(isolate: &isolate::Isolate) -> Context {
+    pub fn new(isolate: &'a isolate::Isolate) -> Context<'a> {
         unsafe {
             Context(isolate,
                     util::invoke(isolate, |c| v8::Context_New(c)).unwrap())
@@ -48,7 +48,7 @@ impl<'a> Context<'a> {
         }
     }
 
-    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::ContextRef) -> Context {
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::ContextRef) -> Context<'a> {
         Context(isolate, raw)
     }
 

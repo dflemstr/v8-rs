@@ -43,14 +43,14 @@ pub struct StackFrame<'a>(&'a isolate::Isolate, v8::StackFrameRef);
 impl<'a> Message<'a> {
     // TODO: pub fn get_script_origin(&self)
 
-    pub fn get(&self) -> value::String {
+    pub fn get(&self) -> value::String<'a> {
         unsafe {
             value::String::from_raw(self.0,
                                     util::invoke(self.0, |c| v8::Message_Get(c, self.1)).unwrap())
         }
     }
 
-    pub fn get_stack_trace(&self) -> StackTrace {
+    pub fn get_stack_trace(&self) -> StackTrace<'a> {
         let raw =
             unsafe { util::invoke(self.0, |c| v8::Message_GetStackTrace(c, self.1)).unwrap() };
 
@@ -63,7 +63,7 @@ impl<'a> Message<'a> {
 }
 
 impl<'a> StackTrace<'a> {
-    pub fn get_frames(&self) -> Vec<StackFrame> {
+    pub fn get_frames(&self) -> Vec<StackFrame<'a>> {
         let count =
             unsafe { util::invoke(self.0, |c| v8::StackTrace_GetFrameCount(c, self.1)).unwrap() };
         let mut result = Vec::with_capacity(count as usize);
@@ -98,7 +98,7 @@ impl<'a> StackFrame<'a> {
         unsafe { util::invoke(self.0, |c| v8::StackFrame_GetColumn(c, self.1)).unwrap() as u32 }
     }
 
-    pub fn get_script_name(&self) -> Option<value::String> {
+    pub fn get_script_name(&self) -> Option<value::String<'a>> {
         unsafe {
             let raw = util::invoke(self.0, |c| v8::StackFrame_GetScriptName(c, self.1)).unwrap();
             if raw.is_null() {
@@ -109,7 +109,7 @@ impl<'a> StackFrame<'a> {
         }
     }
 
-    pub fn get_function_name(&self) -> value::String {
+    pub fn get_function_name(&self) -> value::String<'a> {
         unsafe {
             let raw = util::invoke(self.0, |c| v8::StackFrame_GetFunctionName(c, self.1)).unwrap();
             value::String::from_raw(self.0, raw)

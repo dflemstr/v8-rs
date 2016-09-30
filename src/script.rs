@@ -46,7 +46,7 @@ impl<'a> Script<'a> {
         Ok(Script(isolate, raw))
     }
 
-    pub fn run(&self, context: &context::Context) -> error::Result<value::Value> {
+    pub fn run(&self, context: &context::Context) -> error::Result<value::Value<'a>> {
         unsafe {
             let raw = try!(util::invoke(self.0, |c| v8::Script_Run(c, self.1, context.as_raw())));
             Ok(value::Value::from_raw(self.0, raw))

@@ -6,7 +6,6 @@ use util;
 use std::mem;
 use std::ops;
 use std::os;
-use std::panic;
 use std::ptr;
 use template;
 
@@ -205,8 +204,8 @@ pub struct RegExp<'a>(&'a isolate::Isolate, v8::RegExpRef);
 pub struct External<'a>(&'a isolate::Isolate, v8::ExternalRef);
 
 pub struct PropertyCallbackInfo<'a> {
-    this: Object<'a>,
-    holder: Object<'a>,
+    pub this: Object<'a>,
+    pub holder: Object<'a>,
 }
 
 pub struct FunctionCallbackInfo<'a> {
