@@ -241,13 +241,27 @@ macro_rules! inherit {
     }
 }
 
-macro_rules! type_predicate {
-    ($name:ident, $wrapped:expr, $doc:expr) => {
-        #[doc=$doc]
-        pub fn $name(&self) -> bool {
+macro_rules! downcast {
+    ($predicate:ident, $predicate_doc:expr, $wrapped:expr) => {
+        #[doc=$predicate_doc]
+        pub fn $predicate(&self) -> bool {
             unsafe { util::invoke(self.0, |i| $wrapped(i, self.1)).map(|r| 0 != r).unwrap_or(false) }
         }
-    }
+    };
+    ($predicate:ident, $predicate_doc:expr,
+     $conversion:ident, $conversion_doc:expr,
+     $wrapped:expr, $result:ident) => {
+        downcast!($predicate, $predicate_doc, $wrapped);
+
+        #[doc=$conversion_doc]
+        pub fn $conversion(self) -> Option<$result<'a>> {
+            if self.$predicate() {
+                Some(unsafe { mem::transmute(self) })
+            } else {
+                None
+            }
+        }
+    };
 }
 
 macro_rules! partial_conversion {
@@ -276,167 +290,259 @@ macro_rules! partial_get {
 }
 
 impl<'a> Value<'a> {
-    type_predicate!(is_undefined,
-                    v8::Value_IsUndefined,
-                    "Returns true if this value is the undefined value.  See ECMA-262 4.3.10.");
-    type_predicate!(is_null,
-                    v8::Value_IsNull,
-                    "Returns true if this value is the null value.  See ECMA-262 4.3.11.");
-    type_predicate!(is_true,
-                    v8::Value_IsTrue,
-                    "Returns true if this value is true.");
-    type_predicate!(is_false,
-                    v8::Value_IsFalse,
-                    "Returns true if this value is false.");
-    type_predicate!(is_name,
-                    v8::Value_IsName,
-                    "Returns true if this value is a symbol or a string.\n\nThis is an \
-                     experimental feature.");
-    type_predicate!(is_string,
-                    v8::Value_IsString,
-                    "Returns true if this value is an instance of the String type.  See ECMA-262 \
-                     8.4.");
-    type_predicate!(is_symbol,
-                    v8::Value_IsSymbol,
-                    "Returns true if this value is a symbol.\n\nThis is an experimental feature.");
-    type_predicate!(is_function,
-                    v8::Value_IsFunction,
-                    "Returns true if this value is a function.");
-    type_predicate!(is_array,
-                    v8::Value_IsArray,
-                    "Returns true if this value is an array.  Note that it will return false for \
-                     an Proxy for an array.");
-    type_predicate!(is_object,
-                    v8::Value_IsObject,
-                    "Returns true if this value is an object.");
-    type_predicate!(is_boolean,
-                    v8::Value_IsBoolean,
-                    "Returns true if this value is boolean.");
-    type_predicate!(is_number,
-                    v8::Value_IsNumber,
-                    "Returns true if this value is a number.");
-    type_predicate!(is_external,
-                    v8::Value_IsExternal,
-                    "Returns true if this value is external.");
-    type_predicate!(is_int32,
-                    v8::Value_IsInt32,
-                    "Returns true if this value is a 32-bit signed integer.");
-    type_predicate!(is_uint32,
-                    v8::Value_IsUint32,
-                    "Returns true if this value is a 32-bit unsigned integer.");
-    type_predicate!(is_date,
-                    v8::Value_IsDate,
-                    "Returns true if this value is a Date.");
-    type_predicate!(is_arguments_object,
-                    v8::Value_IsArgumentsObject,
-                    "Returns true if this value is an Arguments object.");
-    type_predicate!(is_boolean_object,
-                    v8::Value_IsBooleanObject,
-                    "Returns true if this value is a Boolean object.");
-    type_predicate!(is_number_object,
-                    v8::Value_IsNumberObject,
-                    "Returns true if this value is a Number object.");
-    type_predicate!(is_string_object,
-                    v8::Value_IsStringObject,
-                    "Returns true if this value is a String object.");
-    type_predicate!(is_symbol_object,
-                    v8::Value_IsSymbolObject,
-                    "Returns true if this value is a Symbol object.\n\nThis is an experimental \
-                     feature.");
-    type_predicate!(is_native_error,
-                    v8::Value_IsNativeError,
-                    "Returns true if this value is a NativeError.");
-    type_predicate!(is_reg_exp,
-                    v8::Value_IsRegExp,
-                    "Returns true if this value is a RegExp.");
-    type_predicate!(is_generator_function,
-                    v8::Value_IsGeneratorFunction,
-                    "Returns true if this value is a Generator function.\n\nThis is an \
-                     experimental feature.");
-    type_predicate!(is_generator_object,
-                    v8::Value_IsGeneratorObject,
-                    "Returns true if this value is a Generator object (iterator).\n\nThis is an \
-                     experimental feature.");
-    type_predicate!(is_promise,
-                    v8::Value_IsPromise,
-                    "Returns true if this value is a Promise.\n\nThis is an experimental feature.");
-    type_predicate!(is_map,
-                    v8::Value_IsMap,
-                    "Returns true if this value is a Map.");
-    type_predicate!(is_set,
-                    v8::Value_IsSet,
-                    "Returns true if this value is a Set.");
-    type_predicate!(is_map_iterator,
-                    v8::Value_IsMapIterator,
-                    "Returns true if this value is a Map Iterator.");
-    type_predicate!(is_set_iterator,
-                    v8::Value_IsSetIterator,
-                    "Returns true if this value is a Set Iterator.");
-    type_predicate!(is_weak_map,
-                    v8::Value_IsWeakMap,
-                    "Returns true if this value is a WeakMap.");
-    type_predicate!(is_weak_set,
-                    v8::Value_IsWeakSet,
-                    "Returns true if this value is a WeakSet.");
-    type_predicate!(is_array_buffer,
-                    v8::Value_IsArrayBuffer,
-                    "Returns true if this value is an ArrayBuffer.\n\nThis is an experimental \
-                     feature.");
-    type_predicate!(is_array_buffer_view,
-                    v8::Value_IsArrayBufferView,
-                    "Returns true if this value is an ArrayBufferView.\n\nThis is an \
-                     experimental feature.");
-    type_predicate!(is_typed_array,
-                    v8::Value_IsTypedArray,
-                    "Returns true if this value is one of TypedArrays.\n\nThis is an \
-                     experimental feature.");
-    type_predicate!(is_uint8_array,
-                    v8::Value_IsUint8Array,
-                    "Returns true if this value is an Uint8Array.\n\nThis is an experimental \
-                     feature.");
-    type_predicate!(is_uint8_clamped_array,
-                    v8::Value_IsUint8ClampedArray,
-                    "Returns true if this value is an Uint8ClampedArray.\n\nThis is an \
-                     experimental feature.");
-    type_predicate!(is_int8_array,
-                    v8::Value_IsInt8Array,
-                    "Returns true if this value is an Int8Array.\n\nThis is an experimental \
-                     feature.");
-    type_predicate!(is_uint16_array,
-                    v8::Value_IsUint16Array,
-                    "Returns true if this value is an Uint16Array.\n\nThis is an experimental \
-                     feature.");
-    type_predicate!(is_int16_array,
-                    v8::Value_IsInt16Array,
-                    "Returns true if this value is an Int16Array.\n\nThis is an experimental \
-                     feature.");
-    type_predicate!(is_uint32_array,
-                    v8::Value_IsUint32Array,
-                    "Returns true if this value is an Uint32Array.\n\nThis is an experimental \
-                     feature.");
-    type_predicate!(is_int32_array,
-                    v8::Value_IsInt32Array,
-                    "Returns true if this value is an Int32Array.\n\nThis is an experimental \
-                     feature.");
-    type_predicate!(is_float32_array,
-                    v8::Value_IsFloat32Array,
-                    "Returns true if this value is a Float32Array.\n\nThis is an experimental \
-                     feature.");
-    type_predicate!(is_float64_array,
-                    v8::Value_IsFloat64Array,
-                    "Returns true if this value is a Float64Array.\n\nThis is an experimental \
-                     feature.");
-    type_predicate!(is_data_view,
-                    v8::Value_IsDataView,
-                    "Returns true if this value is a DataView.\n\nThis is an experimental \
-                     feature.");
-    type_predicate!(is_shared_array_buffer,
-                    v8::Value_IsSharedArrayBuffer,
-                    "Returns true if this value is a SharedArrayBuffer.\n\nThis is an \
-                     experimental feature.");
-    type_predicate!(is_proxy,
-                    v8::Value_IsProxy,
-                    "Returns true if this value is a JavaScript Proxy.");
+    downcast!(is_undefined,
+              "Returns true if this value is the undefined value.  See ECMA-262 4.3.10.",
+              v8::Value_IsUndefined);
+    downcast!(is_null,
+              "Returns true if this value is the null value.  See ECMA-262 4.3.11.",
+              v8::Value_IsNull);
+    downcast!(is_true,
+              "Returns true if this value is true.",
+              v8::Value_IsTrue);
+    downcast!(is_false,
+              "Returns true if this value is false.",
+              v8::Value_IsFalse);
+    downcast!(is_name,
+              "Returns true if this value is a symbol or a string.\n\nThis is an experimental \
+               feature.",
+              into_name,
+              "",
+              v8::Value_IsName,
+              Name);
+    downcast!(is_string,
+              "Returns true if this value is an instance of the String type.  See ECMA-262 8.4.",
+              into_string,
+              "",
+              v8::Value_IsString,
+              String);
+    downcast!(is_symbol,
+              "Returns true if this value is a symbol.\n\nThis is an experimental feature.",
+              into_symbol,
+              "",
+              v8::Value_IsSymbol,
+              Symbol);
+    downcast!(is_function,
+              "Returns true if this value is a function.",
+              into_function,
+              "",
+              v8::Value_IsFunction,
+              Function);
+    downcast!(is_array,
+              "Returns true if this value is an array.  Note that it will return false for an \
+               Proxy for an array.",
+              into_array,
+              "",
+              v8::Value_IsArray,
+              Array);
+    downcast!(is_object,
+              "Returns true if this value is an object.",
+              into_object,
+              "",
+              v8::Value_IsObject,
+              Object);
+    downcast!(is_boolean,
+              "Returns true if this value is boolean.",
+              into_boolean,
+              "",
+              v8::Value_IsBoolean,
+              Boolean);
+    downcast!(is_number,
+              "Returns true if this value is a number.",
+              into_number,
+              "",
+              v8::Value_IsNumber,
+              Number);
+    downcast!(is_external,
+              "Returns true if this value is external.",
+              into_external,
+              "",
+              v8::Value_IsExternal,
+              External);
+    downcast!(is_int32,
+              "Returns true if this value is a 32-bit signed integer.",
+              into_int32,
+              "",
+              v8::Value_IsInt32,
+              Int32);
+    downcast!(is_uint32,
+              "Returns true if this value is a 32-bit unsigned integer.",
+              into_uint32,
+              "",
+              v8::Value_IsUint32,
+              Uint32);
+    downcast!(is_date,
+              "Returns true if this value is a Date.",
+              into_date,
+              "",
+              v8::Value_IsDate,
+              Date);
+    downcast!(is_arguments_object,
+              "Returns true if this value is an Arguments object.",
+              v8::Value_IsArgumentsObject);
+    downcast!(is_boolean_object,
+              "Returns true if this value is a Boolean object.",
+              into_boolean_object,
+              "",
+              v8::Value_IsBooleanObject,
+              BooleanObject);
+    downcast!(is_number_object,
+              "Returns true if this value is a Number object.",
+              into_number_object,
+              "",
+              v8::Value_IsNumberObject,
+              NumberObject);
+    downcast!(is_string_object,
+              "Returns true if this value is a String object.",
+              into_string_object,
+              "",
+              v8::Value_IsStringObject,
+              StringObject);
+    downcast!(is_symbol_object,
+              "Returns true if this value is a Symbol object.\n\nThis is an experimental feature.",
+              into_symbol_object,
+              "",
+              v8::Value_IsSymbolObject,
+              Symbol);
+    downcast!(is_native_error,
+              "Returns true if this value is a NativeError.",
+              v8::Value_IsNativeError);
+    downcast!(is_reg_exp,
+              "Returns true if this value is a RegExp.",
+              into_reg_exp,
+              "",
+              v8::Value_IsRegExp,
+              RegExp);
+    downcast!(is_generator_function,
+              "Returns true if this value is a Generator function.\n\nThis is an experimental \
+               feature.",
+              v8::Value_IsGeneratorFunction);
+    downcast!(is_generator_object,
+              "Returns true if this value is a Generator object (iterator).\n\nThis is an experimental feature.",
+              v8::Value_IsGeneratorObject);
+    downcast!(is_promise,
+              "Returns true if this value is a Promise.\n\nThis is an experimental feature.",
+              into_promise,
+              "",
+              v8::Value_IsPromise,
+              Promise);
+    downcast!(is_map,
+              "Returns true if this value is a Map.",
+              into_map,
+              "",
+              v8::Value_IsMap,
+              Map);
+    downcast!(is_set,
+              "Returns true if this value is a Set.",
+              into_set,
+              "",
+              v8::Value_IsSet,
+              Set);
+    downcast!(is_map_iterator,
+              "Returns true if this value is a Map Iterator.",
+              v8::Value_IsMapIterator);
+    downcast!(is_set_iterator,
+              "Returns true if this value is a Set Iterator.",
+              v8::Value_IsSetIterator);
+    downcast!(is_weak_map,
+              "Returns true if this value is a WeakMap.",
+              v8::Value_IsWeakMap);
+    downcast!(is_weak_set,
+              "Returns true if this value is a WeakSet.",
+              v8::Value_IsWeakSet);
+    downcast!(is_array_buffer,
+              "Returns true if this value is an ArrayBuffer.\n\nThis is an experimental feature.",
+              into_array_buffer,
+              "",
+              v8::Value_IsArrayBuffer,
+              ArrayBuffer);
+    downcast!(is_array_buffer_view,
+              "Returns true if this value is an ArrayBufferView.\n\nThis is an experimental \
+               feature.",
+              into_array_buffer_view,
+              "",
+              v8::Value_IsArrayBufferView,
+              ArrayBufferView);
+    downcast!(is_typed_array,
+              "Returns true if this value is one of TypedArrays.\n\nThis is an experimental \
+               feature.",
+              into_typed_array,
+              "",
+              v8::Value_IsTypedArray,
+              TypedArray);
+    downcast!(is_uint8_array,
+              "Returns true if this value is an Uint8Array.\n\nThis is an experimental feature.",
+              into_uint8_array,
+              "",
+              v8::Value_IsUint8Array,
+              Uint8Array);
+    downcast!(is_uint8_clamped_array,
+              "Returns true if this value is an Uint8ClampedArray.\n\nThis is an experimental \
+               feature.",
+              into_uint8_clamped_array,
+              "",
+              v8::Value_IsUint8ClampedArray,
+              Uint8ClampedArray);
+    downcast!(is_int8_array,
+              "Returns true if this value is an Int8Array.\n\nThis is an experimental feature.",
+              into_int8_array,
+              "",
+              v8::Value_IsInt8Array,
+              Int8Array);
+    downcast!(is_uint16_array,
+              "Returns true if this value is an Uint16Array.\n\nThis is an experimental feature.",
+              into_uint16_array,
+              "",
+              v8::Value_IsUint16Array,
+              Uint16Array);
+    downcast!(is_int16_array,
+              "Returns true if this value is an Int16Array.\n\nThis is an experimental feature.",
+              into_int16_array,
+              "",
+              v8::Value_IsInt16Array,
+              Int16Array);
+    downcast!(is_uint32_array,
+              "Returns true if this value is an Uint32Array.\n\nThis is an experimental feature.",
+              into_uint32_array,
+              "",
+              v8::Value_IsUint32Array,
+              Uint32Array);
+    downcast!(is_int32_array,
+              "Returns true if this value is an Int32Array.\n\nThis is an experimental feature.",
+              into_int32_array,
+              "",
+              v8::Value_IsInt32Array,
+              Int32Array);
+    downcast!(is_float32_array,
+              "Returns true if this value is a Float32Array.\n\nThis is an experimental feature.",
+              into_float32_array,
+              "",
+              v8::Value_IsFloat32Array,
+              Float32Array);
+    downcast!(is_float64_array,
+              "Returns true if this value is a Float64Array.\n\nThis is an experimental feature.",
+              into_float64_array,
+              "",
+              v8::Value_IsFloat64Array,
+              Float64Array);
+    downcast!(is_data_view,
+              "Returns true if this value is a DataView.\n\nThis is an experimental feature.",
+              into_data_view,
+              "",
+              v8::Value_IsDataView,
+              DataView);
+    downcast!(is_shared_array_buffer,
+              "Returns true if this value is a SharedArrayBuffer.\n\nThis is an experimental \
+               feature.",
+              into_shared_array_buffer,
+              "",
+              v8::Value_IsSharedArrayBuffer,
+              SharedArrayBuffer);
+    downcast!(is_proxy,
+              "Returns true if this value is a JavaScript Proxy.",
+              into_proxy,
+              "",
+              v8::Value_IsProxy,
+              Proxy);
 
     partial_conversion!(to_boolean, v8::Value_ToBoolean, Boolean);
     partial_conversion!(to_number, v8::Value_ToNumber, Number);
