@@ -1570,6 +1570,44 @@ impl<'a> Function<'a> {
         }
     }
 
+    /// Call an Object as a function if a callback is set by the
+    /// ObjectTemplate::SetCallAsFunctionHandler method.
+    pub fn call(&self, context: &context::Context, args: &[&Value]) -> error::Result<Value> {
+        let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
+        let raw = unsafe {
+            try!(util::invoke(self.0, |c| {
+                v8::Function_Call(c,
+                                  self.1,
+                                  context.as_raw(),
+                                  ptr::null_mut(),
+                                  arg_ptrs.len() as i32,
+                                  arg_ptrs.as_mut_ptr())
+            }))
+        };
+        Ok(Value(self.0, raw))
+    }
+
+    /// Call an Object as a function if a callback is set by the
+    /// ObjectTemplate::SetCallAsFunctionHandler method.
+    pub fn call_with_this(&self,
+                          context: &context::Context,
+                          this: &Value,
+                          args: &[&Value])
+                          -> error::Result<Value> {
+        let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
+        let raw = unsafe {
+            try!(util::invoke(self.0, |c| {
+                v8::Function_Call(c,
+                                  self.1,
+                                  context.as_raw(),
+                                  this.as_raw(),
+                                  arg_ptrs.len() as i32,
+                                  arg_ptrs.as_mut_ptr())
+            }))
+        };
+        Ok(Value(self.0, raw))
+    }
+
     /// Creates a function from a set of raw pointers.
     pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::FunctionRef) -> Function<'a> {
         Function(isolate, raw)
