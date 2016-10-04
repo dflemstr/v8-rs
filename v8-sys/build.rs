@@ -100,7 +100,6 @@ fn link_v8() {
         if cfg!(all(windows, target_env="msvc")) {
             println!("cargo:rustc-link-lib=dylib=v8.dll");
             println!("cargo:rustc-link-lib=static=v8_base");
-            println!("cargo:rustc-link-lib=static=v8_platform");
         } else {
             println!("cargo:rustc-link-lib=dylib=v8");
             println!("cargo:rustc-link-lib=dylib=icui18n");

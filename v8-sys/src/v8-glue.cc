@@ -2,7 +2,6 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <vector>
 
 
 template<typename A> v8::Persistent<A> *unwrap(v8::Isolate *isolate,
@@ -900,11 +899,11 @@ ValueRef v8_Object_CallAsFunction(RustContext c, ObjectRef self, ContextRef cont
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
-    std::vector<v8::Local<v8::Value>> argv_wrapped(argc);
+    v8::Local<v8::Value> *argv_wrapped = static_cast<v8::Local<v8::Value>*>(alloca(sizeof(v8::Local<v8::Value>) * argc));
     v8::Local<v8::Value> recv_wrapped;
 
     for (int i = 0; i < argc; i++) {
-        argv_wrapped.push_back(wrap(c.isolate, argv[i]));
+        argv_wrapped[i] = wrap(c.isolate, argv[i]);
     }
 
     if (recv == nullptr) {
@@ -913,7 +912,7 @@ ValueRef v8_Object_CallAsFunction(RustContext c, ObjectRef self, ContextRef cont
         recv_wrapped = wrap(c.isolate, recv);
     }
 
-    auto result = wrap(c.isolate, self)->CallAsFunction(wrap(c.isolate, context), recv_wrapped, argc, argv_wrapped.data());
+    auto result = wrap(c.isolate, self)->CallAsFunction(wrap(c.isolate, context), recv_wrapped, argc, argv_wrapped);
     handle_exception(c, try_catch);
     return unwrap(c.isolate, result);
 }
@@ -922,13 +921,13 @@ ValueRef v8_Object_CallAsConstructor(RustContext c, ObjectRef self, ContextRef c
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
-    std::vector<v8::Local<v8::Value>> argv_wrapped(argc);
+    v8::Local<v8::Value> *argv_wrapped = static_cast<v8::Local<v8::Value>*>(alloca(sizeof(v8::Local<v8::Value>) * argc));
 
     for (int i = 0; i < argc; i++) {
-        argv_wrapped.push_back(wrap(c.isolate, argv[i]));
+        argv_wrapped[i] = wrap(c.isolate, argv[i]);
     }
 
-    auto result = wrap(c.isolate, self)->CallAsConstructor(wrap(c.isolate, context), argc, argv_wrapped.data());
+    auto result = wrap(c.isolate, self)->CallAsConstructor(wrap(c.isolate, context), argc, argv_wrapped);
     handle_exception(c, try_catch);
     return unwrap(c.isolate, result);
 }
@@ -999,13 +998,13 @@ ObjectRef v8_Function_NewInstance(
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
 
-    std::vector<v8::Local<v8::Value>> argv_wrapped(argc);
+    v8::Local<v8::Value> *argv_wrapped = static_cast<v8::Local<v8::Value>*>(alloca(sizeof(v8::Local<v8::Value>) * argc));
 
     for (int i = 0; i < argc; i++) {
-        argv_wrapped.push_back(wrap(c.isolate, argv[i]));
+        argv_wrapped[i] = wrap(c.isolate, argv[i]);
     }
 
-    auto result = wrap(c.isolate, self)->NewInstance(wrap(c.isolate, context), argc, argv_wrapped.data());
+    auto result = wrap(c.isolate, self)->NewInstance(wrap(c.isolate, context), argc, argv_wrapped);
 
     handle_exception(c, try_catch);
     return unwrap(c.isolate, result);
@@ -1022,11 +1021,11 @@ ValueRef v8_Function_Call(
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
 
-    std::vector<v8::Local<v8::Value>> argv_wrapped(argc);
+    v8::Local<v8::Value> *argv_wrapped = static_cast<v8::Local<v8::Value>*>(alloca(sizeof(v8::Local<v8::Value>) * argc));
     v8::Local<v8::Value> recv_wrapped;
 
     for (int i = 0; i < argc; i++) {
-        argv_wrapped.push_back(wrap(c.isolate, argv[i]));
+        argv_wrapped[i] = wrap(c.isolate, argv[i]);
     }
 
     if (recv == nullptr) {
@@ -1035,7 +1034,7 @@ ValueRef v8_Function_Call(
         recv_wrapped = wrap(c.isolate, recv);
     }
 
-    auto result = wrap(c.isolate, self)->Call(wrap(c.isolate, context), recv_wrapped, argc, argv_wrapped.data());
+    auto result = wrap(c.isolate, self)->Call(wrap(c.isolate, context), recv_wrapped, argc, argv_wrapped);
 
     handle_exception(c, try_catch);
     return unwrap(c.isolate, result);
