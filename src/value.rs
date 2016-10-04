@@ -217,6 +217,34 @@ pub struct FunctionCallbackInfo<'a> {
     pub is_construct_call: bool,
 }
 
+pub fn undefined(isolate: &isolate::Isolate) -> Primitive {
+    let raw = unsafe {
+        util::invoke(isolate, |c| v8::Undefined(c)).unwrap()
+    };
+    Primitive(isolate, raw)
+}
+
+pub fn null(isolate: &isolate::Isolate) -> Primitive {
+    let raw = unsafe {
+        util::invoke(isolate, |c| v8::Null(c)).unwrap()
+    };
+    Primitive(isolate, raw)
+}
+
+pub fn true_(isolate: &isolate::Isolate) -> Boolean {
+    let raw = unsafe {
+        util::invoke(isolate, |c| v8::True(c)).unwrap()
+    };
+    Boolean(isolate, raw)
+}
+
+pub fn false_(isolate: &isolate::Isolate) -> Boolean {
+    let raw = unsafe {
+        util::invoke(isolate, |c| v8::False(c)).unwrap()
+    };
+    Boolean(isolate, raw)
+}
+
 macro_rules! subtype {
     ($child:ident, $parent:ident) => {
         impl<'a> From<$child<'a>> for $parent<'a> {
