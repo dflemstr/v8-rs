@@ -97,9 +97,15 @@ fn link_v8() {
     }
 
     if cfg!(feature = "shared") {
-        println!("cargo:rustc-link-lib=dylib=v8");
-        println!("cargo:rustc-link-lib=dylib=icui18n");
-        println!("cargo:rustc-link-lib=dylib=icuuc");
+        if cfg!(all(windows, target_env="msvc")) {
+            println!("cargo:rustc-link-lib=dylib=v8.dll");
+            println!("cargo:rustc-link-lib=static=v8_base");
+            println!("cargo:rustc-link-lib=static=v8_platform");
+        } else {
+            println!("cargo:rustc-link-lib=dylib=v8");
+            println!("cargo:rustc-link-lib=dylib=icui18n");
+            println!("cargo:rustc-link-lib=dylib=icuuc");
+        }
     } else {
         for lib in LIBS.iter() {
             println!("cargo:rustc-link-lib=static={}", lib);
@@ -367,6 +373,7 @@ impl DisplayAsC for v8_api::Type {
             Type::U64 => write!(f, "uint64_t"),
             Type::I64 => write!(f, "int64_t"),
             Type::F64 => write!(f, "double"),
+            Type::USize => write!(f, "size_t"),
             Type::Class(ref name) => write!(f, "{}", name),
             Type::Enum(ref name) => write!(f, "{}", name),
             Type::Callback(ref name) => write!(f, "{}", name),
