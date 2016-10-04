@@ -351,6 +351,11 @@ void v8_IdleTask_Run(IdleTaskPtr task, double deadline_in_seconds);
 
 #include "v8-glue-generated.h"
 
+PrimitiveRef v8_Undefined(RustContext c);
+PrimitiveRef v8_Null(RustContext c);
+BooleanRef v8_True(RustContext c);
+BooleanRef v8_False(RustContext c);
+
 ContextRef v8_Context_New(RustContext c);
 
 StringRef v8_String_NewFromUtf8_Normal(RustContext c, const char *data, int length);

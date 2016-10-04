@@ -786,6 +786,38 @@ void v8_IdleTask_Run(IdleTaskPtr task, double deadline_in_seconds) {
 
 #include "v8-glue-generated.cc"
 
+PrimitiveRef v8_Undefined(RustContext c) {
+    v8::HandleScope scope(c.isolate);
+    v8::TryCatch try_catch(c.isolate);
+    auto result = v8::Undefined(c.isolate);
+    handle_exception(c, try_catch);
+    return unwrap(c.isolate, result);
+}
+
+PrimitiveRef v8_Null(RustContext c) {
+    v8::HandleScope scope(c.isolate);
+    v8::TryCatch try_catch(c.isolate);
+    auto result = v8::Null(c.isolate);
+    handle_exception(c, try_catch);
+    return unwrap(c.isolate, result);
+}
+
+BooleanRef v8_True(RustContext c) {
+    v8::HandleScope scope(c.isolate);
+    v8::TryCatch try_catch(c.isolate);
+    auto result = v8::True(c.isolate);
+    handle_exception(c, try_catch);
+    return unwrap(c.isolate, result);
+}
+
+BooleanRef v8_False(RustContext c) {
+    v8::HandleScope scope(c.isolate);
+    v8::TryCatch try_catch(c.isolate);
+    auto result = v8::False(c.isolate);
+    handle_exception(c, try_catch);
+    return unwrap(c.isolate, result);
+}
+
 ContextRef v8_Context_New(RustContext c) {
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
