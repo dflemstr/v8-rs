@@ -35,8 +35,8 @@ template<typename A> v8::Persistent<A> *unwrap(v8::Isolate *isolate,
         bool is_set = maybe_value.To(&value);   \
                                                 \
         return MAYBE {                          \
-            .is_set = is_set,                   \
-            .value = value,                     \
+            is_set,                             \
+            value,                              \
         };                                      \
     }
 
@@ -264,12 +264,12 @@ PropertyCallbackInfo build_callback_info(
     v8::Isolate *isolate = info.GetIsolate();
 
     PropertyCallbackInfo result = PropertyCallbackInfo {
-        .GetIsolate = isolate,
-        .Data = unwrap(isolate, data),
-        .This = unwrap(isolate, info.This()),
-        .Holder = unwrap(isolate, info.Holder()),
-        .ReturnValue = nullptr,
-        .ShouldThrowOnError = info.ShouldThrowOnError(),
+        isolate,
+        unwrap(isolate, data),
+        unwrap(isolate, info.This()),
+        unwrap(isolate, info.Holder()),
+        nullptr,
+        info.ShouldThrowOnError(),
     };
 
     return result;
@@ -292,15 +292,15 @@ FunctionCallbackInfo build_callback_info(
     }
 
     FunctionCallbackInfo result = FunctionCallbackInfo {
-        .Length = length,
-        .Args = args,
-        .This = unwrap(isolate, info.This()),
-        .Holder = unwrap(isolate, info.Holder()),
-        .NewTarget = unwrap(isolate, info.NewTarget()),
-        .IsConstructCall = info.IsConstructCall(),
-        .Data = unwrap(isolate, data),
-        .GetIsolate = isolate,
-        .ReturnValue = nullptr,
+        length,
+        args,
+        unwrap(isolate, info.This()),
+        unwrap(isolate, info.Holder()),
+        unwrap(isolate, info.NewTarget()),
+        info.IsConstructCall(),
+        unwrap(isolate, data),
+        isolate,
+        nullptr,
     };
 
     return result;
@@ -899,7 +899,7 @@ ValueRef v8_Object_CallAsFunction(RustContext c, ObjectRef self, ContextRef cont
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
-    v8::Local<v8::Value> argv_wrapped[argc];
+    v8::Local<v8::Value> *argv_wrapped = static_cast<v8::Local<v8::Value>*>(alloca(sizeof(v8::Local<v8::Value>) * argc));
     v8::Local<v8::Value> recv_wrapped;
 
     for (int i = 0; i < argc; i++) {
@@ -921,7 +921,7 @@ ValueRef v8_Object_CallAsConstructor(RustContext c, ObjectRef self, ContextRef c
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
-    v8::Local<v8::Value> argv_wrapped[argc];
+    v8::Local<v8::Value> *argv_wrapped = static_cast<v8::Local<v8::Value>*>(alloca(sizeof(v8::Local<v8::Value>) * argc));
 
     for (int i = 0; i < argc; i++) {
         argv_wrapped[i] = wrap(c.isolate, argv[i]);
@@ -998,7 +998,7 @@ ObjectRef v8_Function_NewInstance(
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
 
-    v8::Local<v8::Value> argv_wrapped[argc];
+    v8::Local<v8::Value> *argv_wrapped = static_cast<v8::Local<v8::Value>*>(alloca(sizeof(v8::Local<v8::Value>) * argc));
 
     for (int i = 0; i < argc; i++) {
         argv_wrapped[i] = wrap(c.isolate, argv[i]);
@@ -1021,7 +1021,7 @@ ValueRef v8_Function_Call(
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
 
-    v8::Local<v8::Value> argv_wrapped[argc];
+    v8::Local<v8::Value> *argv_wrapped = static_cast<v8::Local<v8::Value>*>(alloca(sizeof(v8::Local<v8::Value>) * argc));
     v8::Local<v8::Value> recv_wrapped;
 
     for (int i = 0; i < argc; i++) {

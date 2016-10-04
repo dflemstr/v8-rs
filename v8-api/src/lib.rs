@@ -101,6 +101,9 @@ pub enum Type {
     /// The `double` type.
     F64,
 
+    /// The `size_t` type.
+    USize,
+
     /// A class with the specified name, without the `v8::` prefix.
     Class(String),
     /// An enum with the specified name, without the `v8::` prefix.
@@ -148,6 +151,7 @@ const SPECIAL_CLASSES: &'static [&'static str] = &[
     "ValueDeserializer", // Weird API and only on modern V8's
     "ExtensionConfiguration", // Weird API
     "Module", // Too experimental
+    "SnapshotCreator", // Snapshots not supported
 
     // v8-platform.h
     // These are all pre-requisites for creating an Isolate so
@@ -180,6 +184,7 @@ const SPECIAL_METHODS: &'static [(&'static str, &'static str)] = &[
     ("ObjectTemplate", "SetCallAsFunctionHandler"), // Because annoying-to-map signature
     ("ObjectTemplate", "SetAccessCheckCallback"), // Because annoying-to-map signature
     ("ObjectTemplate", "SetAccessCheckCallbackAndHandler"), // Because annoying-to-map signature
+    ("Value", "IsFloat32x4"), // Too experimental
     ("V8", "CreateSnapshotDataBlob"), // Because annoying-to-map signature
     ("V8", "WarmUpSnapshotDataBlob"), // Because annoying-to-map signature
     ("V8", "Initialize"), // V8::Initialize takes no context
@@ -237,8 +242,16 @@ pub fn read<P1, P2>(file_path: P1, extra_includes: &[P2]) -> Api
                         "-DV8_DEPRECATION_WARNINGS".to_owned(),
                         "-DV8_IMMINENT_DEPRECATION_WARNINGS".to_owned()];
 
+    if cfg!(all(windows, target_env="msvc")) {
+        args.push("-fms-compatibility-version=19".to_owned());
+    }
+    
+
     for include in extra_includes {
-        args.push(format!("-I{:?}", include.as_ref()));
+        println!("-I{:?}", include.as_ref());
+        if let Some(include_str) = include.as_ref().to_str() {
+            args.push(format!("-I{}", include_str));
+        }
     }
 
     let translation_unit = index.parser(file_path.as_ref())
@@ -372,6 +385,8 @@ fn build_type(typ: &clang::Type) -> Result<Type, ()> {
         clang::TypeKind::ULong => Ok(Type::ULong),
         clang::TypeKind::Long => Ok(Type::Long),
         clang::TypeKind::Double => Ok(Type::F64),
+        clang::TypeKind::LongLong => Ok(Type::I64),
+        clang::TypeKind::ULongLong => Ok(Type::U64),
         clang::TypeKind::Pointer => {
             let inner = try!(typ.get_pointee_type().ok_or(()));
             let inner = try!(build_type(&inner));
@@ -414,6 +429,7 @@ fn build_type(typ: &clang::Type) -> Result<Type, ()> {
                 "uint64_t" | "const uint64_t" => Ok(Type::U64),
                 "int64_t" | "const int64_t" => Ok(Type::I64),
                 "double" | "const double" => Ok(Type::F64),
+                "size_t" | "const size_t" => Ok(Type::USize),
                 s if s.ends_with("Callback") => {
                     Ok(Type::Callback(s.to_owned()))
                 }
@@ -549,6 +565,7 @@ impl fmt::Display for Type {
             Type::U64 => write!(f, "u64"),
             Type::I64 => write!(f, "i64"),
             Type::F64 => write!(f, "f64"),
+            Type::USize => write!(f, "usize"),
             Type::Enum(ref e) => write!(f, "enum {}", e),
             Type::Class(ref class) => write!(f, "class {}", class),
             Type::Callback(ref callback) => write!(f, "callback {}", callback),
