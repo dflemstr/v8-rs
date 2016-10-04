@@ -1516,7 +1516,7 @@ impl<'a> Function<'a> {
     pub fn new(isolate: &'a isolate::Isolate,
                context: &context::Context<'a>,
                length: usize,
-               callback: &Fn(&'a FunctionCallbackInfo) -> Value<'a>)
+               callback: &'a Fn(&'a FunctionCallbackInfo) -> Value<'a>)
                -> Function<'a> {
         unsafe {
             let callback = Box::into_raw(Box::new(callback));
