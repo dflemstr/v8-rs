@@ -49,9 +49,9 @@ impl<'a> Signature<'a> {
 /// Any modification of a FunctionTemplate after first instantiation will trigger a crash.
 /// A FunctionTemplate can have properties, these properties are added to the function object when it is created.
 impl<'a> FunctionTemplate<'a> {
-    pub fn new<'b>(isolate: &'a isolate::Isolate,
+    pub fn new(isolate: &'a isolate::Isolate,
                context: &context::Context<'a>,
-               callback: &'b Fn(&'a value::FunctionCallbackInfo) -> value::Value<'a>)
+               callback: &'a Fn(&'a value::FunctionCallbackInfo) -> value::Value<'a>)
                 -> FunctionTemplate<'a> {
         let raw = unsafe {
             let callback = Box::into_raw(Box::new(callback));

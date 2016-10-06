@@ -47,10 +47,10 @@ impl Isolate {
         }
     }
 
-    pub fn current_context(&self) -> context::Context {
+    pub fn current_context(&self) -> Option<context::Context> {
         unsafe { 
-            let raw = v8::Isolate_GetCurrentContext(self.as_raw());
-            context::Context::from_raw(self, raw)
+            let raw = v8::Isolate_GetCurrentContext(self.as_raw()).as_mut();
+            raw.map(|r| context::Context::from_raw(self, r))
         }
     }
 }

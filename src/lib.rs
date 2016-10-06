@@ -569,7 +569,7 @@ mod tests {
 
     fn test_function<'a>(info: &'a value::FunctionCallbackInfo) -> value::Value<'a> {
         let i = info.isolate;
-        let c = i.current_context();
+        let c = i.current_context().unwrap();
 
         assert_eq!(2, info.length);
         let ref a = info.args[0];
@@ -586,7 +586,8 @@ mod tests {
     fn run_defined_static_function() {
         let i = Isolate::new();
         let c = Context::new(&i);
-        let f = value::Function::new(&i, &c, 2, &test_function);
+        let fr = &test_function;
+        let f = value::Function::new(&i, &c, 2, fr);
 
         let k = value::String::from_str(&i, "f");
         c.global().set(&c, &k, &f);
@@ -604,7 +605,8 @@ mod tests {
     fn run_defined_function_template_instance() {
         let i = Isolate::new();
         let c = Context::new(&i);
-        let ft = template::FunctionTemplate::new(&i, &c, &test_function);
+        let fr = &test_function;
+        let ft = template::FunctionTemplate::new(&i, &c, fr);
         let f = ft.get_function(&c);
 
         let k = value::String::from_str(&i, "f");
@@ -644,7 +646,8 @@ mod tests {
         let i = Isolate::new();
         let c = Context::new(&i);
         let ot = template::ObjectTemplate::new(&i);
-        let ft = template::FunctionTemplate::new(&i, &c, &test_function);
+        let fr = &test_function;
+        let ft = template::FunctionTemplate::new(&i, &c, fr);
         ot.set("f", &ft);
 
         let o = ot.new_instance(&c);
