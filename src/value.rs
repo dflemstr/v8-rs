@@ -218,30 +218,22 @@ pub struct FunctionCallbackInfo<'a> {
 }
 
 pub fn undefined(isolate: &isolate::Isolate) -> Primitive {
-    let raw = unsafe {
-        util::invoke(isolate, |c| v8::Undefined(c)).unwrap()
-    };
+    let raw = unsafe { util::invoke(isolate, |c| v8::Undefined(c)).unwrap() };
     Primitive(isolate, raw)
 }
 
 pub fn null(isolate: &isolate::Isolate) -> Primitive {
-    let raw = unsafe {
-        util::invoke(isolate, |c| v8::Null(c)).unwrap()
-    };
+    let raw = unsafe { util::invoke(isolate, |c| v8::Null(c)).unwrap() };
     Primitive(isolate, raw)
 }
 
 pub fn true_(isolate: &isolate::Isolate) -> Boolean {
-    let raw = unsafe {
-        util::invoke(isolate, |c| v8::True(c)).unwrap()
-    };
+    let raw = unsafe { util::invoke(isolate, |c| v8::True(c)).unwrap() };
     Boolean(isolate, raw)
 }
 
 pub fn false_(isolate: &isolate::Isolate) -> Boolean {
-    let raw = unsafe {
-        util::invoke(isolate, |c| v8::False(c)).unwrap()
-    };
+    let raw = unsafe { util::invoke(isolate, |c| v8::False(c)).unwrap() };
     Boolean(isolate, raw)
 }
 
@@ -445,7 +437,8 @@ impl<'a> Value<'a> {
                feature.",
               v8::Value_IsGeneratorFunction);
     downcast!(is_generator_object,
-              "Returns true if this value is a Generator object (iterator).\n\nThis is an experimental feature.",
+              "Returns true if this value is a Generator object (iterator).\n\nThis is an \
+               experimental feature.",
               v8::Value_IsGeneratorObject);
     downcast!(is_promise,
               "Returns true if this value is a Promise.\n\nThis is an experimental feature.",

@@ -224,12 +224,12 @@ mod tests {
     #[test]
     fn eval_function() {
         eval("(function(a, b) { return a + b; })", |i, c, v| {
-            let a = value::Integer::new(&i, 3);
-            let b = value::Integer::new(&i, 4);
-            let f = v.into_function().unwrap();
-            let r = f.call(&c, &[&a, &b]).unwrap();
-            assert!(r.is_int32());
-            assert_eq!(7, r.int32_value(&c));
+                let a = value::Integer::new(&i, 3);
+                let b = value::Integer::new(&i, 4);
+                let f = v.into_function().unwrap();
+                let r = f.call(&c, &[&a, &b]).unwrap();
+                assert!(r.is_int32());
+                assert_eq!(7, r.int32_value(&c));
             })
             .unwrap();
     }

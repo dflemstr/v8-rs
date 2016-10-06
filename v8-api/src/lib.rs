@@ -242,10 +242,10 @@ pub fn read<P1, P2>(file_path: P1, extra_includes: &[P2]) -> Api
                         "-DV8_DEPRECATION_WARNINGS".to_owned(),
                         "-DV8_IMMINENT_DEPRECATION_WARNINGS".to_owned()];
 
-    if cfg!(all(windows, target_env="msvc")) {
+    if cfg!(all(windows, target_env = "msvc")) {
         args.push("-fms-compatibility-version=19".to_owned());
     }
-    
+
 
     for include in extra_includes {
         println!("-I{:?}", include.as_ref());
@@ -328,11 +328,11 @@ fn build_method(entity: &clang::Entity) -> Result<Method, ()> {
     let ret_type = try!(build_ret_type(&ret_type));
 
     let mangled_name = METHOD_MANGLES.iter()
-        .find(|m|
-              m.name == name &&
-              (args.iter().any(|a| a.name == m.signature) ||
-               display_name.contains(m.signature) ||
-               method_type_display_name.contains(m.signature)))
+        .find(|m| {
+            m.name == name &&
+            (args.iter().any(|a| a.name == m.signature) || display_name.contains(m.signature) ||
+             method_type_display_name.contains(m.signature))
+        })
         .map(|m| m.mangle.to_owned());
 
     Ok(Method {
@@ -430,9 +430,7 @@ fn build_type(typ: &clang::Type) -> Result<Type, ()> {
                 "int64_t" | "const int64_t" => Ok(Type::I64),
                 "double" | "const double" => Ok(Type::F64),
                 "size_t" | "const size_t" => Ok(Type::USize),
-                s if s.ends_with("Callback") => {
-                    Ok(Type::Callback(s.to_owned()))
-                }
+                s if s.ends_with("Callback") => Ok(Type::Callback(s.to_owned())),
                 s => {
                     warn!("Unmapped type {:?} (a typedef)", s);
                     Err(())
@@ -449,10 +447,16 @@ fn build_type(typ: &clang::Type) -> Result<Type, ()> {
                     "v8::Isolate" => Ok(Type::Class("Isolate".to_owned())),
                     "v8::ObjectTemplate" => Ok(Type::Class("ObjectTemplate".to_owned())),
                     "v8::Value" => Ok(Type::Class("Value".to_owned())),
-                    "v8::Local<v8::String>" => Ok(Type::Ref(Box::new(Type::Class("String".to_owned())))),
-                    "v8::Local<v8::FunctionTemplate>" => Ok(Type::Ref(Box::new(Type::Class("FunctionTemplate".to_owned())))),
+                    "v8::Local<v8::String>" => {
+                        Ok(Type::Ref(Box::new(Type::Class("String".to_owned()))))
+                    }
+                    "v8::Local<v8::FunctionTemplate>" => {
+                        Ok(Type::Ref(Box::new(Type::Class("FunctionTemplate".to_owned()))))
+                    }
                     n => {
-                        warn!("Unmapped type {:?} of kind {:?} (in unexposed exception table)", n, typ.get_kind());
+                        warn!("Unmapped type {:?} of kind {:?} (in unexposed exception table)",
+                              n,
+                              typ.get_kind());
                         Err(())
                     }
                 }
@@ -460,12 +464,16 @@ fn build_type(typ: &clang::Type) -> Result<Type, ()> {
         }
         clang::TypeKind::LValueReference => {
             match typ.get_display_name().as_str() {
-                "const v8::NamedPropertyHandlerConfiguration &" =>
-                    Ok(Type::CallbackLValue("NamedPropertyHandlerConfiguration".to_owned())),
-                "const v8::IndexedPropertyHandlerConfiguration &" =>
-                    Ok(Type::CallbackLValue("IndexedPropertyHandlerConfiguration".to_owned())),
+                "const v8::NamedPropertyHandlerConfiguration &" => {
+                    Ok(Type::CallbackLValue("NamedPropertyHandlerConfiguration".to_owned()))
+                }
+                "const v8::IndexedPropertyHandlerConfiguration &" => {
+                    Ok(Type::CallbackLValue("IndexedPropertyHandlerConfiguration".to_owned()))
+                }
                 n => {
-                    warn!("Unmapped type {:?} of kind {:?} (in lvalue reference exception table)", n, typ.get_kind());
+                    warn!("Unmapped type {:?} of kind {:?} (in lvalue reference exception table)",
+                          n,
+                          typ.get_kind());
                     Err(())
                 }
             }
