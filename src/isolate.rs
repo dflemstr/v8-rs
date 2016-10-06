@@ -2,6 +2,7 @@ use std::mem;
 use std::sync;
 use v8_sys as v8;
 use allocator;
+use context;
 use platform;
 
 static INITIALIZE: sync::Once = sync::ONCE_INIT;
@@ -43,6 +44,13 @@ impl Isolate {
         match self.0 {
             IsolateHolder::Owned(p, _) => p,
             IsolateHolder::Borrowed(p) => p,
+        }
+    }
+
+    pub fn current_context(&self) -> Option<context::Context> {
+        unsafe { 
+            let raw = v8::Isolate_GetCurrentContext(self.as_raw()).as_mut();
+            raw.map(|r| context::Context::from_raw(self, r))
         }
     }
 }

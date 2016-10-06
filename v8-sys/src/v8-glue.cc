@@ -764,6 +764,10 @@ IsolatePtr v8_Isolate_New(ArrayBuffer_AllocatorPtr allocator) {
     return v8::Isolate::New(params);
 }
 
+ContextRef v8_Isolate_GetCurrentContext(IsolatePtr self) {
+    return unwrap(self, self->GetCurrentContext());
+}
+
 void v8_Isolate_SetCaptureStackTraceForUncaughtExceptions_Overview(IsolatePtr self, bool capture, int frame_limit) {
     self->SetCaptureStackTraceForUncaughtExceptions(capture, frame_limit, v8::StackTrace::kOverview);
 }
@@ -1054,6 +1058,37 @@ void v8_Template_SetNativeDataProperty(
     v8::TryCatch try_catch(c.isolate);
 
     handle_exception(c, try_catch);
+}
+
+FunctionTemplateRef v8_FunctionTemplate_New(
+    RustContext c,
+    ContextRef context,
+    FunctionCallback wrapped_callback,
+    ValueRef data,
+    SignatureRef signature,
+    int length,
+    ConstructorBehavior behavior) {
+    v8::HandleScope scope(c.isolate);
+    v8::TryCatch try_catch(c.isolate);
+    v8::Local<v8::ObjectTemplate> outer_data_template =
+        v8::ObjectTemplate::New(c.isolate);
+    outer_data_template->SetInternalFieldCount((int) FunctionHandlerFields::Max);
+    v8::Local<v8::Object> outer_data =
+        outer_data_template->NewInstance(wrap(c.isolate, context)).ToLocalChecked();
+
+    v8::FunctionCallback callback;
+
+    if (wrapped_callback) {
+        outer_data->SetAlignedPointerInInternalField((int) FunctionHandlerFields::Callback, (void *) wrapped_callback);
+        callback = function_callback;
+    }
+
+    outer_data->SetInternalField((int) FunctionHandlerFields::Data, wrap(c.isolate, data));
+
+    auto result = v8::FunctionTemplate::New(c.isolate, callback, outer_data, wrap(c.isolate, signature), length, wrap(c.isolate, behavior));
+
+    handle_exception(c, try_catch);
+    return unwrap(c.isolate, result);
 }
 
 void v8_ObjectTemplate_SetAccessor(

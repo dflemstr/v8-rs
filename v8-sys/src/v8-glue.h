@@ -342,6 +342,7 @@ ArrayBuffer_AllocatorPtr v8_ArrayBuffer_Allocator_Create(v8_AllocatorFunctions a
 void v8_ArrayBuffer_Allocator_Destroy(ArrayBuffer_AllocatorPtr allocator);
 
 IsolatePtr v8_Isolate_New(ArrayBuffer_AllocatorPtr allocator);
+ContextRef v8_Isolate_GetCurrentContext(IsolatePtr self);
 void v8_Isolate_SetCaptureStackTraceForUncaughtExceptions_Overview(IsolatePtr self, bool capture, int frame_limit);
 void v8_Isolate_SetCaptureStackTraceForUncaughtExceptions_Detailed(IsolatePtr self, bool capture, int frame_limit);
 void v8_Isolate_Dispose(IsolatePtr isolate);
@@ -375,6 +376,8 @@ ObjectRef v8_Function_NewInstance(RustContext c, FunctionRef self, ContextRef co
 ValueRef v8_Function_Call(RustContext c, FunctionRef self, ContextRef context, ValueRef recv, int argc, ValueRef argv[]);
 
 void v8_Template_SetNativeDataProperty(RustContext c, TemplateRef self, StringRef name, AccessorGetterCallback getter, AccessorSetterCallback setter, ValueRef data, PropertyAttribute attribute, AccessorSignatureRef signature, AccessControl settings);
+
+FunctionTemplateRef v8_FunctionTemplate_New(RustContext c, ContextRef context, FunctionCallback wrapped_callback, ValueRef data, SignatureRef signature, int length, ConstructorBehavior behavior);
 
 void v8_ObjectTemplate_SetAccessor(RustContext c, ObjectTemplateRef self, StringRef name, AccessorGetterCallback getter, AccessorSetterCallback setter, ValueRef data, AccessControl settings, PropertyAttribute attribute, AccessorSignatureRef signature);
 void v8_ObjectTemplate_SetAccessor_Name(RustContext c, ObjectTemplateRef self, StringRef name, AccessorNameGetterCallback getter, AccessorNameSetterCallback setter, ValueRef data, AccessControl settings, PropertyAttribute attribute, AccessorSignatureRef signature);

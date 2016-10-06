@@ -10,7 +10,7 @@ version = "0.5.8"
 [dependencies]
 error-chain = "0.5.0"
 lazy_static = "0.2.1"
-v8-sys = "0.10.0"
+v8-sys = { version = "0.10.0", path = "v8-sys" }
 
 [features]
 shared = ["v8-sys/shared"]

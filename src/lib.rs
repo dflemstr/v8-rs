@@ -566,4 +566,100 @@ mod tests {
         assert!(result.is_int32());
         assert_eq!(5, result.int32_value(&c));
     }
+
+    fn test_function<'a>(info: &'a value::FunctionCallbackInfo) -> value::Value<'a> {
+        let i = info.isolate;
+        let c = i.current_context().unwrap();
+
+        assert_eq!(2, info.length);
+        let ref a = info.args[0];
+        assert!(a.is_int32());
+        let a = a.int32_value(&c);
+        let ref b = info.args[1];
+        assert!(b.is_int32());
+        let b = b.int32_value(&c);
+
+        value::Integer::new(&i, a + b).into()
+    }
+
+    #[test]
+    fn run_defined_static_function() {
+        let i = Isolate::new();
+        let c = Context::new(&i);
+        let fr = &test_function;
+        let f = value::Function::new(&i, &c, 2, fr);
+
+        let k = value::String::from_str(&i, "f");
+        c.global().set(&c, &k, &f);
+
+        let name = value::String::from_str(&i, "test.js");
+        let source = value::String::from_str(&i, "f(2, 3)");
+        let script = Script::compile_with_name(&i, &c, &name, &source).unwrap();
+        let result = script.run(&c).unwrap();
+
+        assert!(result.is_int32());
+        assert_eq!(5, result.int32_value(&c));
+    }
+
+    #[test]
+    fn run_defined_function_template_instance() {
+        let i = Isolate::new();
+        let c = Context::new(&i);
+        let fr = &test_function;
+        let ft = template::FunctionTemplate::new(&i, &c, fr);
+        let f = ft.get_function(&c);
+
+        let k = value::String::from_str(&i, "f");
+        c.global().set(&c, &k, &f);
+
+        let name = value::String::from_str(&i, "test.js");
+        let source = value::String::from_str(&i, "f(2, 3)");
+        let script = Script::compile_with_name(&i, &c, &name, &source).unwrap();
+        let result = script.run(&c).unwrap();
+
+        assert!(result.is_int32());
+        assert_eq!(5, result.int32_value(&c));
+    }
+
+    #[test]
+    fn create_object_template_instance() {
+        let i = Isolate::new();
+        let c = Context::new(&i);
+        let ot = template::ObjectTemplate::new(&i);
+        ot.set("test", &value::Integer::new(&i, 5));
+
+        let o = ot.new_instance(&c);
+        let k = value::String::from_str(&i, "o");
+        c.global().set(&c, &k, &o);
+
+        let name = value::String::from_str(&i, "test.js");
+        let source = value::String::from_str(&i, "o.test");
+        let script = Script::compile_with_name(&i, &c, &name, &source).unwrap();
+        let result = script.run(&c).unwrap();
+
+        assert!(result.is_int32());
+        assert_eq!(5, result.int32_value(&c));
+    }
+
+    #[test]
+    fn run_object_template_instance_function() {
+        let i = Isolate::new();
+        let c = Context::new(&i);
+        let ot = template::ObjectTemplate::new(&i);
+        let fr = &test_function;
+        let ft = template::FunctionTemplate::new(&i, &c, fr);
+        ot.set("f", &ft);
+
+        let o = ot.new_instance(&c);
+        let k = value::String::from_str(&i, "o");
+        c.global().set(&c, &k, &o);
+
+        let name = value::String::from_str(&i, "test.js");
+        let source = value::String::from_str(&i, "o.f(2, 3)");
+        let script = Script::compile_with_name(&i, &c, &name, &source).unwrap();
+        let result = script.run(&c).unwrap();
+
+        assert!(result.is_int32());
+        assert_eq!(5, result.int32_value(&c));
+    }
 }

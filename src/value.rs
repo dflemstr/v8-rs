@@ -9,6 +9,10 @@ use std::os;
 use std::ptr;
 use template;
 
+/// The superclass of values and API object templates.
+#[derive(Debug)]
+pub struct Data<'a>(&'a isolate::Isolate, v8::DataRef);
+
 /// The superclass of all JavaScript values and objects.
 #[derive(Debug)]
 pub struct Value<'a>(&'a isolate::Isolate, v8::ValueRef);
@@ -209,6 +213,7 @@ pub struct PropertyCallbackInfo<'a> {
 }
 
 pub struct FunctionCallbackInfo<'a> {
+    pub isolate: &'a isolate::Isolate,
     pub length: isize,
     pub args: Vec<Value<'a>>,
     pub this: Object<'a>,
@@ -235,30 +240,6 @@ pub fn true_(isolate: &isolate::Isolate) -> Boolean {
 pub fn false_(isolate: &isolate::Isolate) -> Boolean {
     let raw = unsafe { util::invoke(isolate, |c| v8::False(c)).unwrap() };
     Boolean(isolate, raw)
-}
-
-macro_rules! subtype {
-    ($child:ident, $parent:ident) => {
-        impl<'a> From<$child<'a>> for $parent<'a> {
-            fn from(child: $child<'a>) -> $parent<'a> {
-                unsafe { mem::transmute(child) }
-            }
-        }
-    }
-}
-
-macro_rules! inherit {
-    ($child:ident, $parent:ident) => {
-        subtype!($child, $parent);
-
-        impl<'a> ops::Deref for $child<'a> {
-            type Target = $parent<'a>;
-
-            fn deref(&self) -> &Self::Target {
-                unsafe { mem::transmute(self) }
-            }
-        }
-    }
 }
 
 macro_rules! downcast {
@@ -306,6 +287,18 @@ macro_rules! partial_get {
                 maybe.value
             }
         }
+    }
+}
+
+impl<'a> Data<'a> {
+    /// Creates a data from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::DataRef) -> Data<'a> {
+        Data(isolate, raw)
+    }
+
+    /// Returns the underlying raw pointer behind this primitive.
+    pub fn as_raw(&self) -> v8::DataRef {
+        self.1
     }
 }
 
@@ -1549,45 +1542,13 @@ impl<'a> Function<'a> {
             let raw = util::invoke(isolate, |c| {
                     v8::Function_New(c,
                                      context.as_raw(),
-                                     Some(Function::callback),
+                                     Some(util::callback),
                                      (&closure as &Value).as_raw(),
                                      length as os::raw::c_int,
                                      v8::ConstructorBehavior::ConstructorBehavior_kAllow)
                 })
                 .unwrap();
             Function(isolate, raw)
-        }
-    }
-
-    extern "C" fn callback(callback_info: v8::FunctionCallbackInfoPtr_Value) {
-        unsafe {
-            let callback_info = callback_info.as_mut().unwrap();
-            let isolate = isolate::Isolate::from_raw(callback_info.GetIsolate);
-            let data = Object(&isolate, callback_info.Data as v8::ObjectRef);
-
-            let length = callback_info.Length as isize;
-            let args = (0..length)
-                .map(|i| Value(&isolate, *callback_info.Args.offset(i)))
-                .collect();
-            let info = FunctionCallbackInfo {
-                length: length,
-                args: args,
-                this: Object(&isolate, callback_info.This),
-                holder: Object(&isolate, callback_info.Holder),
-                new_target: Value(&isolate, callback_info.NewTarget),
-                is_construct_call: 0 != callback_info.IsConstructCall,
-            };
-            // TODO: Here, we coerce 'b to essentially be 'a, which we know is the case, but it
-            // could probably be expressed better.
-            let callback: Box<Box<for<'b> Fn(&'b FunctionCallbackInfo) -> Value<'b>>> =
-                Box::from_raw(data.get_aligned_pointer_from_internal_field(0));
-
-            let r = callback(&info);
-
-            mem::forget(callback);
-
-            callback_info.ReturnValue = r.as_raw();
-            mem::forget(r);
         }
     }
 
@@ -1642,6 +1603,8 @@ impl<'a> Function<'a> {
 
 // unsafe: Don't add another `inherit!` line if you don't know the implications (see the comments
 // around the macro declaration).
+inherit!(Value, Data);
+
 inherit!(Primitive, Value);
 
 inherit!(Boolean, Primitive);
@@ -1783,6 +1746,7 @@ inherit!(External, Value);
 
 // unsafe: Don't add another `drop!` line if you don't know the implications (see the comments
 // around the macro declaration).
+drop!(Data, v8::Data_DestroyRef);
 drop!(Value, v8::Value_DestroyRef);
 drop!(Primitive, v8::Primitive_DestroyRef);
 drop!(Boolean, v8::Boolean_DestroyRef);
