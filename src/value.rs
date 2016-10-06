@@ -1527,10 +1527,10 @@ impl<'a> Set<'a> {
 
 impl<'a> Function<'a> {
     /// Create a function in the current execution context for a given callback.
-    pub fn new(isolate: &'a isolate::Isolate,
+    pub fn new<'b>(isolate: &'a isolate::Isolate,
                context: &context::Context<'a>,
                length: usize,
-               callback: &'a Fn(&'a FunctionCallbackInfo) -> Value<'a>)
+               callback: &'b Fn(&'a FunctionCallbackInfo) -> Value<'a>)
                -> Function<'a> {
         unsafe {
             let callback = Box::into_raw(Box::new(callback));
