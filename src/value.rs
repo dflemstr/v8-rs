@@ -1534,7 +1534,7 @@ impl Function {
                   -> Function
         where F: Fn(FunctionCallbackInfo) -> Value {
         unsafe {
-            let callback_ptr: *mut F = Box::into_raw(Box::new(callback));
+            let callback_ptr: *mut Box<F> = Box::into_raw(Box::new(Box::new(callback)));
             let template = template::ObjectTemplate::new(isolate);
             template.set_internal_field_count(1);
             let closure = template.new_instance(context);

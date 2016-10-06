@@ -35,7 +35,7 @@ pub fn invoke<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<B>
     }
 }
 
-pub extern "C" fn callback<'a, F>(callback_info: v8::FunctionCallbackInfoPtr_Value) where F: Fn(value::FunctionCallbackInfo) -> value::Value {
+pub extern "C" fn callback<F>(callback_info: v8::FunctionCallbackInfoPtr_Value) where F: Fn(value::FunctionCallbackInfo) -> value::Value {
     unsafe {
         let callback_info = callback_info.as_mut().unwrap();
         let isolate = isolate::Isolate::from_raw(callback_info.GetIsolate);
@@ -55,7 +55,7 @@ pub extern "C" fn callback<'a, F>(callback_info: v8::FunctionCallbackInfoPtr_Val
             is_construct_call: 0 != callback_info.IsConstructCall,
         };
 
-        let callback_ptr: *mut F = data.get_aligned_pointer_from_internal_field(0);
+        let callback_ptr: *mut Box<F> = data.get_aligned_pointer_from_internal_field(0);
         let callback = Box::from_raw(callback_ptr);
 
         let r = callback(info);

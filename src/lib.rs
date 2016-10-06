@@ -541,6 +541,20 @@ mod tests {
     }
 
     #[test]
+    fn run_native_function_call() {
+        let isolate = Isolate::new();
+        let context = Context::new(&isolate);
+
+        let function = value::Function::new(&isolate, &context, 1, |mut info: value::FunctionCallbackInfo| {
+            info.args.remove(0)
+        });
+        let param = value::Integer::new(&isolate, 42);
+
+        let result = function.call(&context, &[&param]).unwrap();
+        assert_eq!(42, result.uint32_value(&context));
+    }
+
+    #[test]
     fn run_defined_function() {
         let i = Isolate::new();
         let c = Context::new(&i);
