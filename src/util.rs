@@ -2,6 +2,7 @@ use v8_sys as v8;
 use error;
 use isolate;
 use std::ptr;
+use std::mem;
 use value;
 
 pub fn invoke<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<B>
@@ -34,6 +35,39 @@ pub fn invoke<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<B>
     }
 }
 
+pub extern "C" fn callback(callback_info: v8::FunctionCallbackInfoPtr_Value) {
+    unsafe {
+        let callback_info = callback_info.as_mut().unwrap();
+        let isolate = isolate::Isolate::from_raw(callback_info.GetIsolate);
+        let data = value::Object::from_raw(&isolate, callback_info.Data as v8::ObjectRef);
+
+        let length = callback_info.Length as isize;
+        let args = (0..length)
+            .map(|i| value::Value::from_raw(&isolate, *callback_info.Args.offset(i)))
+            .collect();
+        let info = value::FunctionCallbackInfo {
+            isolate: &isolate,
+            length: length,
+            args: args,
+            this: value::Object::from_raw(&isolate, callback_info.This),
+            holder: value::Object::from_raw(&isolate, callback_info.Holder),
+            new_target: value::Value::from_raw(&isolate, callback_info.NewTarget),
+            is_construct_call: 0 != callback_info.IsConstructCall,
+        };
+        // TODO: Here, we coerce 'b to essentially be 'a, which we know is the case, but it
+        // could probably be expressed better.
+        let callback: Box<Box<for<'b> Fn(&'b value::FunctionCallbackInfo) -> value::Value<'b>>> =
+            Box::from_raw(data.get_aligned_pointer_from_internal_field(0));
+
+        let r = callback(&info);
+
+        mem::forget(callback);
+
+        callback_info.ReturnValue = r.as_raw();
+        mem::forget(r);
+    }
+}
+
 macro_rules! drop {
     ($typ:ident, $dtor:expr) => {
         impl<'a> Drop for $typ<'a> {
@@ -44,6 +78,30 @@ macro_rules! drop {
                 unsafe {
                     $dtor(self.1)
                 }
+            }
+        }
+    }
+}
+
+macro_rules! subtype {
+    ($child:ident, $parent:ident) => {
+        impl<'a> From<$child<'a>> for $parent<'a> {
+            fn from(child: $child<'a>) -> $parent<'a> {
+                unsafe { mem::transmute(child) }
+            }
+        }
+    }
+}
+
+macro_rules! inherit {
+    ($child:ident, $parent:ident) => {
+        subtype!($child, $parent);
+
+        impl<'a> ops::Deref for $child<'a> {
+            type Target = $parent<'a>;
+
+            fn deref(&self) -> &Self::Target {
+                unsafe { mem::transmute(self) }
             }
         }
     }
