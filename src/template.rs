@@ -73,7 +73,7 @@ impl<'a> FunctionTemplate<'a> {
         FunctionTemplate(isolate, raw)
     }
 
-    pub fn get_function(&self, context: &context::Context) -> value::Function<'a> {
+    pub fn get_function(self, context: &context::Context) -> value::Function<'a> {
         unsafe {
             let raw = util::invoke(self.0,
                                    |c| v8::FunctionTemplate_GetFunction(c, self.1, context.as_raw()))
