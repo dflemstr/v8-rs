@@ -41,6 +41,8 @@
 //!
 //! [1]: https://developers.google.com/v8/
 
+#![cfg_attr(all(feature="unstable", test), feature(test))]
+
 #[macro_use]
 extern crate error_chain;
 #[macro_use]
@@ -69,7 +71,7 @@ mod tests {
     use super::*;
 
     fn eval<F, A>(source: &str, with_result: F) -> error::Result<A>
-        where F: FnOnce(&Isolate, Context, Value) -> A
+        where F: FnOnce(Isolate, Context, Value) -> A
     {
         let isolate = Isolate::new();
         let context = Context::new(&isolate);
@@ -77,7 +79,7 @@ mod tests {
         let source = value::String::from_str(&isolate, source);
         let script = try!(Script::compile_with_name(&isolate, &context, &name, &source));
         let result = try!(script.run(&context));
-        Ok(with_result(&isolate, context, result))
+        Ok(with_result(isolate, context, result))
     }
 
     #[test]
@@ -542,7 +544,8 @@ mod tests {
     fn run_defined_function() {
         let i = Isolate::new();
         let c = Context::new(&i);
-        let f = |info: &value::FunctionCallbackInfo| {
+
+        let f = value::Function::new(&i, &c, 2, |info: value::FunctionCallbackInfo| {
             assert_eq!(2, info.length);
             let ref a = info.args[0];
             assert!(a.is_int32());
@@ -552,8 +555,7 @@ mod tests {
             let b = b.int32_value(&c);
 
             value::Integer::new(&i, a + b).into()
-        };
-        let f = value::Function::new(&i, &c, 2, &f);
+        });
 
         let k = value::String::from_str(&i, "f");
         c.global().set(&c, &k, &f);
@@ -567,7 +569,7 @@ mod tests {
         assert_eq!(5, result.int32_value(&c));
     }
 
-    fn test_function<'a>(info: &'a value::FunctionCallbackInfo) -> value::Value<'a> {
+    fn test_function(info: value::FunctionCallbackInfo) -> value::Value {
         let i = info.isolate;
         let c = i.current_context().unwrap();
 
@@ -661,5 +663,44 @@ mod tests {
 
         assert!(result.is_int32());
         assert_eq!(5, result.int32_value(&c));
+    }
+}
+
+#[cfg(all(feature="unstable", test))]
+mod benches {
+    extern crate test;
+
+    use super::*;
+
+    #[bench]
+    fn js_function_call(bencher: &mut test::Bencher) {
+        let isolate = Isolate::new();
+        let context = Context::new(&isolate);
+        let name = value::String::from_str(&isolate, "test.js");
+        let source = value::String::from_str(&isolate, "(function(a) { return a; })");
+        let script = Script::compile_with_name(&isolate, &context, &name, &source).unwrap();
+        let result = script.run(&context).unwrap();
+
+        let function = result.into_function().unwrap();
+        let param = value::Integer::new(&isolate, 42);
+
+        bencher.iter(|| {
+            function.call(&context, &[&param]).unwrap()
+        });
+    }
+
+    #[bench]
+    fn native_function_call(bencher: &mut test::Bencher) {
+        let isolate = Isolate::new();
+        let context = Context::new(&isolate);
+
+        let function = value::Function::new(&isolate, &context, 1, |mut info: value::FunctionCallbackInfo| {
+            info.args.remove(0)
+        });
+        let param = value::Integer::new(&isolate, 42);
+
+        bencher.iter(|| {
+            function.call(&context, &[&param]).unwrap()
+        });
     }
 }

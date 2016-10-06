@@ -11,48 +11,48 @@ use std::ops;
 use std::ffi;
 
 #[derive(Debug)]
-pub struct Template<'a>(&'a isolate::Isolate, v8::TemplateRef);
+pub struct Template(isolate::Isolate, v8::TemplateRef);
 
 #[derive(Debug)]
-pub struct FunctionTemplate<'a>(&'a isolate::Isolate, v8::FunctionTemplateRef);
+pub struct FunctionTemplate(isolate::Isolate, v8::FunctionTemplateRef);
 
 #[derive(Debug)]
-pub struct ObjectTemplate<'a>(&'a isolate::Isolate, v8::ObjectTemplateRef);
+pub struct ObjectTemplate(isolate::Isolate, v8::ObjectTemplateRef);
 
 #[derive(Debug)]
-pub struct Signature<'a>(&'a isolate::Isolate, v8::SignatureRef);
+pub struct Signature(isolate::Isolate, v8::SignatureRef);
 
 /// A Signature specifies which receiver is valid for a function.
-impl<'a> Signature<'a> {
-    pub fn new(isolate: &'a isolate::Isolate) -> Signature<'a> {
+impl Signature {
+    pub fn new(isolate: &isolate::Isolate) -> Signature {
         let raw = unsafe {
             util::invoke(isolate,
                          |c| v8::Signature_New(c, isolate.as_raw(), ptr::null_mut()))
                 .unwrap()
         };
-        Signature(isolate, raw)
+        Signature(isolate.clone(), raw)
     }
 
-    pub fn new_with_receiver(isolate: &'a isolate::Isolate, receiver: &FunctionTemplate) -> Signature<'a> {
+    pub fn new_with_receiver(isolate: &isolate::Isolate, receiver: &FunctionTemplate) -> Signature {
         let raw = unsafe {
             util::invoke(isolate,
                          |c| v8::Signature_New(c, isolate.as_raw(), receiver.1))
                 .unwrap()
         };
-        Signature(isolate, raw)
+        Signature(isolate.clone(), raw)
     }
 }
 
-/// A FunctionTemplate is used to create functions at runtime. 
+/// A FunctionTemplate is used to create functions at runtime.
 /// There can only be one function created from a FunctionTemplate in a context.
 ///
 /// Any modification of a FunctionTemplate after first instantiation will trigger a crash.
 /// A FunctionTemplate can have properties, these properties are added to the function object when it is created.
-impl<'a> FunctionTemplate<'a> {
-    pub fn new(isolate: &'a isolate::Isolate,
-               context: &context::Context<'a>,
-               callback: &'a Fn(&'a value::FunctionCallbackInfo) -> value::Value<'a>)
-                -> FunctionTemplate<'a> {
+impl FunctionTemplate {
+    pub fn new<F>(isolate: &isolate::Isolate,
+                  context: &context::Context,
+                  callback: F) -> FunctionTemplate
+        where F: Fn(value::FunctionCallbackInfo) -> value::Value {
         let raw = unsafe {
             let callback = Box::into_raw(Box::new(callback));
             let template = ObjectTemplate::new(isolate);
@@ -63,22 +63,22 @@ impl<'a> FunctionTemplate<'a> {
             util::invoke(isolate,
                          |c| v8::FunctionTemplate_New(c,
                                                       context.as_raw(),
-                                                      Some(util::callback),
+                                                      Some(util::callback::<F>),
                                                       (&closure as &value::Value).as_raw(),
                                                       ptr::null_mut(),
                                                       0,
                                                       v8::ConstructorBehavior::ConstructorBehavior_kAllow))
                 .unwrap()
         };
-        FunctionTemplate(isolate, raw)
+        FunctionTemplate(isolate.clone(), raw)
     }
 
-    pub fn get_function(self, context: &context::Context) -> value::Function<'a> {
+    pub fn get_function(self, context: &context::Context) -> value::Function {
         unsafe {
-            let raw = util::invoke(self.0,
+            let raw = util::invoke(&self.0,
                                    |c| v8::FunctionTemplate_GetFunction(c, self.1, context.as_raw()))
                 .unwrap();
-            value::Function::from_raw(self.0, raw)
+            value::Function::from_raw(&self.0, raw)
         }
     }
 }
@@ -87,19 +87,19 @@ impl<'a> FunctionTemplate<'a> {
 /// An ObjectTemplate is used to create objects at runtime.
 ///
 /// Properties added to an ObjectTemplate are added to each object created from the ObjectTemplate.
-impl<'a> ObjectTemplate<'a> {
-    pub fn new(isolate: &'a isolate::Isolate) -> ObjectTemplate<'a> {
+impl ObjectTemplate {
+    pub fn new(isolate: &isolate::Isolate) -> ObjectTemplate {
         let raw = unsafe {
             util::invoke(isolate,
                          |c| v8::ObjectTemplate_New(c, isolate.as_raw(), ptr::null_mut()))
                 .unwrap()
         };
-        ObjectTemplate(isolate, raw)
+        ObjectTemplate(isolate.clone(), raw)
     }
 
     pub fn set_internal_field_count(&self, value: usize) {
         unsafe {
-            util::invoke(self.0, |c| {
+            util::invoke(&self.0, |c| {
                     v8::ObjectTemplate_SetInternalFieldCount(c, self.1, value as os::raw::c_int)
                 })
                 .unwrap()
@@ -110,27 +110,27 @@ impl<'a> ObjectTemplate<'a> {
         let cname = ffi::CString::new(name).unwrap();
         let template: &Template = self;
         unsafe {
-            util::invoke(self.0, |c| {
+            util::invoke(&self.0, |c| {
                 v8::Template_Set_Raw(c, template.1, self.0.as_raw(), cname.as_ptr(), value.as_raw())
             })
-            .unwrap()  
+            .unwrap()
         };
     }
 
-    pub fn new_instance(&self, context: &context::Context) -> value::Object<'a> {
+    pub fn new_instance(&self, context: &context::Context) -> value::Object {
         unsafe {
-            let raw = util::invoke(self.0,
+            let raw = util::invoke(&self.0,
                                    |c| v8::ObjectTemplate_NewInstance(c, self.1, context.as_raw()))
                 .unwrap();
-            value::Object::from_raw(self.0, raw)
+            value::Object::from_raw(&self.0, raw)
         }
     }
 
     /// Creates an object template from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate,
+    pub unsafe fn from_raw(isolate: &isolate::Isolate,
                            raw: v8::ObjectTemplateRef)
-                           -> ObjectTemplate<'a> {
-        ObjectTemplate(isolate, raw)
+                           -> ObjectTemplate {
+        ObjectTemplate(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this object template.

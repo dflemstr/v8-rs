@@ -11,242 +11,242 @@ use template;
 
 /// The superclass of values and API object templates.
 #[derive(Debug)]
-pub struct Data<'a>(&'a isolate::Isolate, v8::DataRef);
+pub struct Data(isolate::Isolate, v8::DataRef);
 
 /// The superclass of all JavaScript values and objects.
 #[derive(Debug)]
-pub struct Value<'a>(&'a isolate::Isolate, v8::ValueRef);
+pub struct Value(isolate::Isolate, v8::ValueRef);
 
 /// The superclass of primitive values.  See ECMA-262 4.3.2.
 #[derive(Debug)]
-pub struct Primitive<'a>(&'a isolate::Isolate, v8::PrimitiveRef);
+pub struct Primitive(isolate::Isolate, v8::PrimitiveRef);
 
 /// A primitive boolean value (ECMA-262, 4.3.14).  Either the true or false value.
 #[derive(Debug)]
-pub struct Boolean<'a>(&'a isolate::Isolate, v8::BooleanRef);
+pub struct Boolean(isolate::Isolate, v8::BooleanRef);
 
 /// A superclass for symbols and strings.
 #[derive(Debug)]
-pub struct Name<'a>(&'a isolate::Isolate, v8::NameRef);
+pub struct Name(isolate::Isolate, v8::NameRef);
 
 /// A JavaScript string value (ECMA-262, 4.3.17).
 #[derive(Debug)]
-pub struct String<'a>(&'a isolate::Isolate, v8::StringRef);
+pub struct String(isolate::Isolate, v8::StringRef);
 
 /// A JavaScript symbol (ECMA-262 edition 6)
 ///
 /// This is an experimental feature. Use at your own risk.
 #[derive(Debug)]
-pub struct Symbol<'a>(&'a isolate::Isolate, v8::SymbolRef);
+pub struct Symbol(isolate::Isolate, v8::SymbolRef);
 
 /// A private symbol
 ///
 /// This is an experimental feature. Use at your own risk.
 #[derive(Debug)]
-pub struct Private<'a>(&'a isolate::Isolate, v8::PrivateRef);
+pub struct Private(isolate::Isolate, v8::PrivateRef);
 
 /// A JavaScript number value (ECMA-262, 4.3.20)
 #[derive(Debug)]
-pub struct Number<'a>(&'a isolate::Isolate, v8::NumberRef);
+pub struct Number(isolate::Isolate, v8::NumberRef);
 
 /// A JavaScript value representing a signed integer.
 #[derive(Debug)]
-pub struct Integer<'a>(&'a isolate::Isolate, v8::IntegerRef);
+pub struct Integer(isolate::Isolate, v8::IntegerRef);
 
 /// A JavaScript value representing a 32-bit signed integer.
 #[derive(Debug)]
-pub struct Int32<'a>(&'a isolate::Isolate, v8::Int32Ref);
+pub struct Int32(isolate::Isolate, v8::Int32Ref);
 
 /// A JavaScript value representing a 32-bit unsigned integer.
 #[derive(Debug)]
-pub struct Uint32<'a>(&'a isolate::Isolate, v8::Uint32Ref);
+pub struct Uint32(isolate::Isolate, v8::Uint32Ref);
 
 /// A JavaScript object (ECMA-262, 4.3.3)
 #[derive(Debug)]
-pub struct Object<'a>(&'a isolate::Isolate, v8::ObjectRef);
+pub struct Object(isolate::Isolate, v8::ObjectRef);
 
 /// An instance of the built-in array constructor (ECMA-262, 15.4.2).
 #[derive(Debug)]
-pub struct Array<'a>(&'a isolate::Isolate, v8::ArrayRef);
+pub struct Array(isolate::Isolate, v8::ArrayRef);
 
 /// An instance of the built-in Map constructor (ECMA-262, 6th Edition, 23.1.1).
 #[derive(Debug)]
-pub struct Map<'a>(&'a isolate::Isolate, v8::MapRef);
+pub struct Map(isolate::Isolate, v8::MapRef);
 
 /// An instance of the built-in Set constructor (ECMA-262, 6th Edition, 23.2.1).
 #[derive(Debug)]
-pub struct Set<'a>(&'a isolate::Isolate, v8::SetRef);
+pub struct Set(isolate::Isolate, v8::SetRef);
 
 /// A JavaScript function object (ECMA-262, 15.3).
 #[derive(Debug)]
-pub struct Function<'a>(&'a isolate::Isolate, v8::FunctionRef);
+pub struct Function(isolate::Isolate, v8::FunctionRef);
 
 /// An instance of the built-in Promise constructor (ES6 draft).
 ///
 /// This API is experimental. Only works with --harmony flag.
 #[derive(Debug)]
-pub struct Promise<'a>(&'a isolate::Isolate, v8::PromiseRef);
+pub struct Promise(isolate::Isolate, v8::PromiseRef);
 
 /// An instance of the built-in Proxy constructor (ECMA-262, 6th Edition, 26.2.1).
 #[derive(Debug)]
-pub struct Proxy<'a>(&'a isolate::Isolate, v8::ProxyRef);
+pub struct Proxy(isolate::Isolate, v8::ProxyRef);
 
 /// An instance of the built-in ArrayBuffer constructor (ES6 draft 15.13.5).
 ///
 /// This API is experimental and may change significantly.
 #[derive(Debug)]
-pub struct ArrayBuffer<'a>(&'a isolate::Isolate, v8::ArrayBufferRef);
+pub struct ArrayBuffer(isolate::Isolate, v8::ArrayBufferRef);
 
 /// A base class for an instance of one of "views" over ArrayBuffer, including TypedArrays and
 /// DataView (ES6 draft 15.13).
 ///
 /// This API is experimental and may change significantly.
 #[derive(Debug)]
-pub struct ArrayBufferView<'a>(&'a isolate::Isolate, v8::ArrayBufferViewRef);
+pub struct ArrayBufferView(isolate::Isolate, v8::ArrayBufferViewRef);
 
 /// A base class for an instance of TypedArray series of constructors (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
 #[derive(Debug)]
-pub struct TypedArray<'a>(&'a isolate::Isolate, v8::TypedArrayRef);
+pub struct TypedArray(isolate::Isolate, v8::TypedArrayRef);
 
 /// An instance of Uint8Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
 #[derive(Debug)]
-pub struct Uint8Array<'a>(&'a isolate::Isolate, v8::Uint8ArrayRef);
+pub struct Uint8Array(isolate::Isolate, v8::Uint8ArrayRef);
 
 /// An instance of Uint8ClampedArray constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
 #[derive(Debug)]
-pub struct Uint8ClampedArray<'a>(&'a isolate::Isolate, v8::Uint8ClampedArrayRef);
+pub struct Uint8ClampedArray(isolate::Isolate, v8::Uint8ClampedArrayRef);
 
 /// An instance of Int8Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
 #[derive(Debug)]
-pub struct Int8Array<'a>(&'a isolate::Isolate, v8::Int8ArrayRef);
+pub struct Int8Array(isolate::Isolate, v8::Int8ArrayRef);
 
 /// An instance of Uint16Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
 #[derive(Debug)]
-pub struct Uint16Array<'a>(&'a isolate::Isolate, v8::Uint16ArrayRef);
+pub struct Uint16Array(isolate::Isolate, v8::Uint16ArrayRef);
 
 /// An instance of Int16Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
 #[derive(Debug)]
-pub struct Int16Array<'a>(&'a isolate::Isolate, v8::Int16ArrayRef);
+pub struct Int16Array(isolate::Isolate, v8::Int16ArrayRef);
 
 /// An instance of Uint32Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
 #[derive(Debug)]
-pub struct Uint32Array<'a>(&'a isolate::Isolate, v8::Uint32ArrayRef);
+pub struct Uint32Array(isolate::Isolate, v8::Uint32ArrayRef);
 
 /// An instance of Int32Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
 #[derive(Debug)]
-pub struct Int32Array<'a>(&'a isolate::Isolate, v8::Int32ArrayRef);
+pub struct Int32Array(isolate::Isolate, v8::Int32ArrayRef);
 
 /// An instance of Float32Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
 #[derive(Debug)]
-pub struct Float32Array<'a>(&'a isolate::Isolate, v8::Float32ArrayRef);
+pub struct Float32Array(isolate::Isolate, v8::Float32ArrayRef);
 
 /// An instance of Float64Array constructor (ES6 draft 15.13.6).
 ///
 /// This API is experimental and may change significantly.
 #[derive(Debug)]
-pub struct Float64Array<'a>(&'a isolate::Isolate, v8::Float64ArrayRef);
+pub struct Float64Array(isolate::Isolate, v8::Float64ArrayRef);
 
 /// An instance of DataView constructor (ES6 draft 15.13.7).
 ///
 /// This API is experimental and may change significantly.
 #[derive(Debug)]
-pub struct DataView<'a>(&'a isolate::Isolate, v8::DataViewRef);
+pub struct DataView(isolate::Isolate, v8::DataViewRef);
 
 /// An instance of the built-in SharedArrayBuffer constructor.
 ///
 /// This API is experimental and may change significantly.
 #[derive(Debug)]
-pub struct SharedArrayBuffer<'a>(&'a isolate::Isolate, v8::SharedArrayBufferRef);
+pub struct SharedArrayBuffer(isolate::Isolate, v8::SharedArrayBufferRef);
 
 /// An instance of the built-in Date constructor (ECMA-262, 15.9).
 #[derive(Debug)]
-pub struct Date<'a>(&'a isolate::Isolate, v8::DateRef);
+pub struct Date(isolate::Isolate, v8::DateRef);
 
 /// A Number object (ECMA-262, 4.3.21).
 #[derive(Debug)]
-pub struct NumberObject<'a>(&'a isolate::Isolate, v8::NumberObjectRef);
+pub struct NumberObject(isolate::Isolate, v8::NumberObjectRef);
 
 /// A Boolean object (ECMA-262, 4.3.15).
 #[derive(Debug)]
-pub struct BooleanObject<'a>(&'a isolate::Isolate, v8::BooleanObjectRef);
+pub struct BooleanObject(isolate::Isolate, v8::BooleanObjectRef);
 
 /// A String object (ECMA-262, 4.3.18).
 #[derive(Debug)]
-pub struct StringObject<'a>(&'a isolate::Isolate, v8::StringObjectRef);
+pub struct StringObject(isolate::Isolate, v8::StringObjectRef);
 
 /// A Symbol object (ECMA-262 edition 6).
 ///
 /// This is an experimental feature. Use at your own risk.
 #[derive(Debug)]
-pub struct SymbolObject<'a>(&'a isolate::Isolate, v8::SymbolObjectRef);
+pub struct SymbolObject(isolate::Isolate, v8::SymbolObjectRef);
 
 /// An instance of the built-in RegExp constructor (ECMA-262, 15.10).
 #[derive(Debug)]
-pub struct RegExp<'a>(&'a isolate::Isolate, v8::RegExpRef);
+pub struct RegExp(isolate::Isolate, v8::RegExpRef);
 
 /// A JavaScript value that wraps an external value. This type of value is mainly used to associate
 /// native data structures with JavaScript objects.
 #[derive(Debug)]
-pub struct External<'a>(&'a isolate::Isolate, v8::ExternalRef);
+pub struct External(isolate::Isolate, v8::ExternalRef);
 
-pub struct PropertyCallbackInfo<'a> {
-    pub this: Object<'a>,
-    pub holder: Object<'a>,
+pub struct PropertyCallbackInfo {
+    pub this: Object,
+    pub holder: Object,
 }
 
-pub struct FunctionCallbackInfo<'a> {
-    pub isolate: &'a isolate::Isolate,
+pub struct FunctionCallbackInfo {
+    pub isolate: isolate::Isolate,
     pub length: isize,
-    pub args: Vec<Value<'a>>,
-    pub this: Object<'a>,
-    pub holder: Object<'a>,
-    pub new_target: Value<'a>,
+    pub args: Vec<Value>,
+    pub this: Object,
+    pub holder: Object,
+    pub new_target: Value,
     pub is_construct_call: bool,
 }
 
 pub fn undefined(isolate: &isolate::Isolate) -> Primitive {
     let raw = unsafe { util::invoke(isolate, |c| v8::Undefined(c)).unwrap() };
-    Primitive(isolate, raw)
+    Primitive(isolate.clone(), raw)
 }
 
 pub fn null(isolate: &isolate::Isolate) -> Primitive {
     let raw = unsafe { util::invoke(isolate, |c| v8::Null(c)).unwrap() };
-    Primitive(isolate, raw)
+    Primitive(isolate.clone(), raw)
 }
 
 pub fn true_(isolate: &isolate::Isolate) -> Boolean {
     let raw = unsafe { util::invoke(isolate, |c| v8::True(c)).unwrap() };
-    Boolean(isolate, raw)
+    Boolean(isolate.clone(), raw)
 }
 
 pub fn false_(isolate: &isolate::Isolate) -> Boolean {
     let raw = unsafe { util::invoke(isolate, |c| v8::False(c)).unwrap() };
-    Boolean(isolate, raw)
+    Boolean(isolate.clone(), raw)
 }
 
 macro_rules! downcast {
     ($predicate:ident, $predicate_doc:expr, $wrapped:expr) => {
         #[doc=$predicate_doc]
         pub fn $predicate(&self) -> bool {
-            unsafe { util::invoke(self.0, |i| $wrapped(i, self.1)).map(|r| 0 != r).unwrap_or(false) }
+            unsafe { util::invoke(&self.0, |i| $wrapped(i, self.1)).map(|r| 0 != r).unwrap_or(false) }
         }
     };
     ($predicate:ident, $predicate_doc:expr,
@@ -255,7 +255,7 @@ macro_rules! downcast {
         downcast!($predicate, $predicate_doc, $wrapped);
 
         #[doc=$conversion_doc]
-        pub fn $conversion(self) -> Option<$result<'a>> {
+        pub fn $conversion(self) -> Option<$result> {
             if self.$predicate() {
                 Some(unsafe { mem::transmute(self) })
             } else {
@@ -269,8 +269,8 @@ macro_rules! partial_conversion {
     ($name:ident, $wrapped:expr, $target:ident) => {
         pub fn $name(&self, context: &context::Context) -> $target {
             unsafe {
-                util::invoke(self.0, |i| $wrapped(i, self.1, context.as_raw()))
-                    .map(|p| $target(self.0, p))
+                util::invoke(&self.0, |i| $wrapped(i, self.1, context.as_raw()))
+                    .map(|p| $target(self.0.clone(), p))
                     .unwrap()
             }
         }
@@ -281,7 +281,7 @@ macro_rules! partial_get {
     ($name:ident, $wrapped:expr, $target:ident) => {
         pub fn $name(&self, context: &context::Context) -> $target {
             unsafe {
-                let maybe = util::invoke(self.0, |c| $wrapped(c, self.1, context.as_raw())).unwrap();
+                let maybe = util::invoke(&self.0, |c| $wrapped(c, self.1, context.as_raw())).unwrap();
                 assert!(0 != maybe.is_set);
 
                 maybe.value
@@ -290,10 +290,10 @@ macro_rules! partial_get {
     }
 }
 
-impl<'a> Data<'a> {
+impl Data {
     /// Creates a data from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::DataRef) -> Data<'a> {
-        Data(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::DataRef) -> Data {
+        Data(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this primitive.
@@ -302,7 +302,7 @@ impl<'a> Data<'a> {
     }
 }
 
-impl<'a> Value<'a> {
+impl Value {
     downcast!(is_undefined,
               "Returns true if this value is the undefined value.  See ECMA-262 4.3.10.",
               v8::Value_IsUndefined);
@@ -570,7 +570,7 @@ impl<'a> Value<'a> {
 
     pub fn boolean_value(&self, context: &context::Context) -> bool {
         unsafe {
-            let m = util::invoke(self.0,
+            let m = util::invoke(&self.0,
                                  |i| v8::Value_BooleanValue(i, self.1, context.as_raw()))
                 .unwrap();
 
@@ -586,7 +586,7 @@ impl<'a> Value<'a> {
 
     pub fn equals(&self, context: &context::Context, that: &Value) -> bool {
         unsafe {
-            let m = util::invoke(self.0,
+            let m = util::invoke(&self.0,
                                  |c| v8::Value_Equals(c, self.1, context.as_raw(), that.as_raw()))
                 .unwrap();
             assert!(0 != m.is_set);
@@ -597,19 +597,19 @@ impl<'a> Value<'a> {
 
     pub fn strict_equals(&self, that: &Value) -> bool {
         unsafe {
-            0 != util::invoke(self.0, |c| v8::Value_StrictEquals(c, self.1, that.as_raw())).unwrap()
+            0 != util::invoke(&self.0, |c| v8::Value_StrictEquals(c, self.1, that.as_raw())).unwrap()
         }
     }
 
     pub fn same_value(&self, that: &Value) -> bool {
         unsafe {
-            0 != util::invoke(self.0, |c| v8::Value_SameValue(c, self.1, that.as_raw())).unwrap()
+            0 != util::invoke(&self.0, |c| v8::Value_SameValue(c, self.1, that.as_raw())).unwrap()
         }
     }
 
     /// Creates a value from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::ValueRef) -> Value<'a> {
-        Value(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::ValueRef) -> Value {
+        Value(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this value.
@@ -618,16 +618,16 @@ impl<'a> Value<'a> {
     }
 }
 
-impl<'a> PartialEq for Value<'a> {
+impl PartialEq for Value {
     fn eq(&self, other: &Value) -> bool {
         self.strict_equals(other)
     }
 }
 
-impl<'a> Primitive<'a> {
+impl Primitive {
     /// Creates a primitive from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::PrimitiveRef) -> Primitive<'a> {
-        Primitive(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::PrimitiveRef) -> Primitive {
+        Primitive(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this primitive.
@@ -636,18 +636,18 @@ impl<'a> Primitive<'a> {
     }
 }
 
-impl<'a> Boolean<'a> {
-    pub fn new(isolate: &'a isolate::Isolate, value: bool) -> Boolean<'a> {
+impl Boolean {
+    pub fn new(isolate: &isolate::Isolate, value: bool) -> Boolean {
         let c_value = if value { 1 } else { 0 };
         let raw = unsafe {
-            util::invoke(isolate, |c| v8::Boolean_New(c, isolate.as_raw(), c_value)).unwrap()
+            util::invoke(&isolate, |c| v8::Boolean_New(c, isolate.as_raw(), c_value)).unwrap()
         };
-        Boolean(isolate, raw)
+        Boolean(isolate.clone(), raw)
     }
 
     /// Creates a boolean from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::BooleanRef) -> Boolean<'a> {
-        Boolean(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::BooleanRef) -> Boolean {
+        Boolean(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this boolean.
@@ -656,7 +656,7 @@ impl<'a> Boolean<'a> {
     }
 }
 
-impl<'a> Name<'a> {
+impl Name {
     /// Returns the identity hash for this object.
     ///
     /// The current implementation uses an inline property on the object to store the identity
@@ -665,12 +665,12 @@ impl<'a> Name<'a> {
     /// The return value will never be 0.  Also, it is not guaranteed
     /// to be unique.
     pub fn get_identity_hash(&self) -> u32 {
-        unsafe { util::invoke(self.0, |c| v8::Name_GetIdentityHash(c, self.1)).unwrap() as u32 }
+        unsafe { util::invoke(&self.0, |c| v8::Name_GetIdentityHash(c, self.1)).unwrap() as u32 }
     }
 
     /// Creates a name from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::NameRef) -> Name<'a> {
-        Name(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::NameRef) -> Name {
+        Name(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this primitive.
@@ -679,43 +679,43 @@ impl<'a> Name<'a> {
     }
 }
 
-impl<'a> String<'a> {
-    pub fn empty(isolate: &'a isolate::Isolate) -> String<'a> {
+impl String {
+    pub fn empty(isolate: &isolate::Isolate) -> String {
         let raw =
-            unsafe { util::invoke(isolate, |c| v8::String_Empty(c, isolate.as_raw())).unwrap() };
-        String(isolate, raw)
+            unsafe { util::invoke(&isolate, |c| v8::String_Empty(c, isolate.as_raw())).unwrap() };
+        String(isolate.clone(), raw)
     }
 
     /// Allocates a new string from UTF-8 data.
-    pub fn from_str(isolate: &'a isolate::Isolate, str: &str) -> String<'a> {
+    pub fn from_str(isolate: &isolate::Isolate, str: &str) -> String {
         let ptr = str.as_ptr() as *const i8;
         let len = str.len() as os::raw::c_int;
         let raw = unsafe {
-            util::invoke(isolate, |c| v8::String_NewFromUtf8_Normal(c, ptr, len)).unwrap()
+            util::invoke(&isolate, |c| v8::String_NewFromUtf8_Normal(c, ptr, len)).unwrap()
         };
-        String(isolate, raw)
+        String(isolate.clone(), raw)
     }
 
     /// Allocates a new internalized string from UTF-8 data.
-    pub fn internalized_from_str(isolate: &'a isolate::Isolate, str: &str) -> String<'a> {
+    pub fn internalized_from_str(isolate: &isolate::Isolate, str: &str) -> String {
         unsafe {
             let ptr = str.as_ptr() as *const i8;
             let len = str.len() as os::raw::c_int;
-            let raw = util::invoke(isolate,
+            let raw = util::invoke(&isolate,
                                    |c| v8::String_NewFromUtf8_Internalized(c, ptr, len))
                 .unwrap();
-            String(isolate, raw)
+            String(isolate.clone(), raw)
         }
     }
 
     /// Returns the number of characters in this string.
     pub fn length(&self) -> u32 {
-        unsafe { util::invoke(self.0, |c| v8::String_Length(c, self.1)).unwrap() as u32 }
+        unsafe { util::invoke(&self.0, |c| v8::String_Length(c, self.1)).unwrap() as u32 }
     }
 
     /// Returns the number of bytes in the UTF-8 encoded representation of this string.
     pub fn utf8_length(&self) -> u32 {
-        unsafe { util::invoke(self.0, |c| v8::String_Utf8Length(c, self.1)).unwrap() as u32 }
+        unsafe { util::invoke(&self.0, |c| v8::String_Utf8Length(c, self.1)).unwrap() as u32 }
     }
 
     /// Returns whether this string is known to contain only one byte data.
@@ -724,23 +724,23 @@ impl<'a> String<'a> {
     ///
     /// False negatives are possible.
     pub fn is_one_byte(&self) -> bool {
-        unsafe { 0 != util::invoke(self.0, |c| v8::String_IsOneByte(c, self.1)).unwrap() }
+        unsafe { 0 != util::invoke(&self.0, |c| v8::String_IsOneByte(c, self.1)).unwrap() }
     }
 
     /// Returns whether this string contain only one byte data.
     ///
     /// Will read the entire string in some cases.
     pub fn contains_only_one_byte(&self) -> bool {
-        unsafe { 0 != util::invoke(self.0, |c| v8::String_ContainsOnlyOneByte(c, self.1)).unwrap() }
+        unsafe { 0 != util::invoke(&self.0, |c| v8::String_ContainsOnlyOneByte(c, self.1)).unwrap() }
     }
 
     pub fn to_string(&self) -> ::std::string::String {
         let len =
-            unsafe { util::invoke(self.0, |c| v8::String_Utf8Length(c, self.1)).unwrap() } as usize;
+            unsafe { util::invoke(&self.0, |c| v8::String_Utf8Length(c, self.1)).unwrap() } as usize;
         let mut buf = vec![0u8; len];
 
         unsafe {
-            util::invoke(self.0, |c| {
+            util::invoke(&self.0, |c| {
                     v8::String_WriteUtf8(c, self.1, buf.as_mut_ptr() as *mut i8, len as i32)
                 })
                 .unwrap();
@@ -749,8 +749,8 @@ impl<'a> String<'a> {
     }
 
     /// Creates a string from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::StringRef) -> String<'a> {
-        String(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::StringRef) -> String {
+        String(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this string.
@@ -759,71 +759,71 @@ impl<'a> String<'a> {
     }
 }
 
-impl<'a> Symbol<'a> {
+impl Symbol {
     /// Access global symbol registry.
     ///
     /// Note that symbols created this way are never collected, so they should only be used for
     /// statically fixed properties.  Also, there is only one global name space for the names used
     /// as keys.  To minimize the potential for clashes, use qualified names as keys.
-    pub fn for_name(isolate: &'a isolate::Isolate, name: &String<'a>) -> Symbol<'a> {
+    pub fn for_name(isolate: &isolate::Isolate, name: &String) -> Symbol {
         let raw = unsafe {
-            util::invoke(isolate,
+            util::invoke(&isolate,
                          |c| v8::Symbol_For(c, isolate.as_raw(), name.as_raw()))
                 .unwrap()
         };
-        Symbol(isolate, raw)
+        Symbol(isolate.clone(), raw)
     }
 
     /// Retrieve a global symbol.
     ///
     /// Similar to `for_name`, but using a separate registry that is not accessible by (and cannot
     /// clash with) JavaScript code.
-    pub fn for_api_name(isolate: &'a isolate::Isolate, name: &String<'a>) -> Symbol<'a> {
+    pub fn for_api_name(isolate: &isolate::Isolate, name: &String) -> Symbol {
         let raw = unsafe {
-            util::invoke(isolate,
+            util::invoke(&isolate,
                          |c| v8::Symbol_ForApi(c, isolate.as_raw(), name.as_raw()))
                 .unwrap()
         };
-        Symbol(isolate, raw)
+        Symbol(isolate.clone(), raw)
     }
 
     /// Well-known symbol `Symbol.iterator`.
-    pub fn get_iterator(isolate: &'a isolate::Isolate) -> Symbol<'a> {
+    pub fn get_iterator(isolate: &isolate::Isolate) -> Symbol {
         let raw = unsafe {
-            util::invoke(isolate, |c| v8::Symbol_GetIterator(c, isolate.as_raw())).unwrap()
+            util::invoke(&isolate, |c| v8::Symbol_GetIterator(c, isolate.as_raw())).unwrap()
         };
-        Symbol(isolate, raw)
+        Symbol(isolate.clone(), raw)
     }
 
     /// Well-known symbol `Symbol.unscopables`.
-    pub fn get_unscopables(isolate: &'a isolate::Isolate) -> Symbol<'a> {
+    pub fn get_unscopables(isolate: &isolate::Isolate) -> Symbol {
         let raw = unsafe {
-            util::invoke(isolate, |c| v8::Symbol_GetUnscopables(c, isolate.as_raw())).unwrap()
+            util::invoke(&isolate, |c| v8::Symbol_GetUnscopables(c, isolate.as_raw())).unwrap()
         };
-        Symbol(isolate, raw)
+        Symbol(isolate.clone(), raw)
     }
 
     /// Well-known symbol `Symbol.toStringTag`.
-    pub fn get_to_string_tag(isolate: &'a isolate::Isolate) -> Symbol<'a> {
+    pub fn get_to_string_tag(isolate: &isolate::Isolate) -> Symbol {
         let raw = unsafe {
-            util::invoke(isolate, |c| v8::Symbol_GetToStringTag(c, isolate.as_raw())).unwrap()
+            util::invoke(&isolate, |c| v8::Symbol_GetToStringTag(c, isolate.as_raw())).unwrap()
         };
-        Symbol(isolate, raw)
+        Symbol(isolate.clone(), raw)
     }
 
     /// Well-known symbol `Symbol.isConcatSpreadable`.
-    pub fn get_is_concat_spreadable(isolate: &'a isolate::Isolate) -> Symbol<'a> {
+    pub fn get_is_concat_spreadable(isolate: &isolate::Isolate) -> Symbol {
         let raw = unsafe {
-            util::invoke(isolate,
+            util::invoke(&isolate,
                          |c| v8::Symbol_GetIsConcatSpreadable(c, isolate.as_raw()))
                 .unwrap()
         };
-        Symbol(isolate, raw)
+        Symbol(isolate.clone(), raw)
     }
 
     /// Creates a symbol from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::SymbolRef) -> Symbol<'a> {
-        Symbol(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::SymbolRef) -> Symbol {
+        Symbol(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this symbol.
@@ -832,17 +832,17 @@ impl<'a> Symbol<'a> {
     }
 }
 
-impl<'a> Private<'a> {
+impl Private {
     /// Create a private symbol.
     ///
     /// If name is not empty, it will be the description.
-    pub fn new(isolate: &'a isolate::Isolate, name: &String<'a>) -> Private<'a> {
+    pub fn new(isolate: &isolate::Isolate, name: &String) -> Private {
         let raw = unsafe {
-            util::invoke(isolate,
+            util::invoke(&isolate,
                          |c| v8::Private_New(c, isolate.as_raw(), name.as_raw()))
                 .unwrap()
         };
-        Private(isolate, raw)
+        Private(isolate.clone(), raw)
     }
 
     /// Retrieve a global private symbol.
@@ -852,18 +852,18 @@ impl<'a> Private<'a> {
     /// only be used for statically fixed properties.  Also, there is only one global name space
     /// for the names used as keys.  To minimize the potential for clashes, use qualified names as
     /// keys, e.g., "Class#property".
-    pub fn for_api_name(isolate: &'a isolate::Isolate, name: &String<'a>) -> Private<'a> {
+    pub fn for_api_name(isolate: &isolate::Isolate, name: &String) -> Private {
         let raw = unsafe {
-            util::invoke(isolate,
+            util::invoke(&isolate,
                          |c| v8::Private_ForApi(c, isolate.as_raw(), name.as_raw()))
                 .unwrap()
         };
-        Private(isolate, raw)
+        Private(isolate.clone(), raw)
     }
 
     /// Creates a private from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::PrivateRef) -> Private<'a> {
-        Private(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::PrivateRef) -> Private {
+        Private(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this private.
@@ -872,21 +872,21 @@ impl<'a> Private<'a> {
     }
 }
 
-impl<'a> Number<'a> {
-    pub fn new(isolate: &'a isolate::Isolate, value: f64) -> Number<'a> {
+impl Number {
+    pub fn new(isolate: &isolate::Isolate, value: f64) -> Number {
         let raw = unsafe {
-            util::invoke(isolate, |c| v8::Number_New(c, isolate.as_raw(), value)).unwrap()
+            util::invoke(&isolate, |c| v8::Number_New(c, isolate.as_raw(), value)).unwrap()
         };
-        Number(isolate, raw)
+        Number(isolate.clone(), raw)
     }
 
     pub fn value(&self) -> f64 {
-        unsafe { util::invoke(self.0, |c| v8::Number_Value(c, self.1)).unwrap() }
+        unsafe { util::invoke(&self.0, |c| v8::Number_Value(c, self.1)).unwrap() }
     }
 
     /// Creates a number from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::NumberRef) -> Number<'a> {
-        Number(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::NumberRef) -> Number {
+        Number(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this number.
@@ -895,30 +895,30 @@ impl<'a> Number<'a> {
     }
 }
 
-impl<'a> Integer<'a> {
-    pub fn new(isolate: &'a isolate::Isolate, value: i32) -> Integer<'a> {
+impl Integer {
+    pub fn new(isolate: &isolate::Isolate, value: i32) -> Integer {
         let raw = unsafe {
-            util::invoke(isolate, |c| v8::Integer_New(c, isolate.as_raw(), value)).unwrap()
+            util::invoke(&isolate, |c| v8::Integer_New(c, isolate.as_raw(), value)).unwrap()
         };
-        Integer(isolate, raw)
+        Integer(isolate.clone(), raw)
     }
 
-    pub fn new_from_unsigned(isolate: &'a isolate::Isolate, value: u32) -> Integer<'a> {
+    pub fn new_from_unsigned(isolate: &isolate::Isolate, value: u32) -> Integer {
         let raw = unsafe {
-            util::invoke(isolate,
+            util::invoke(&isolate,
                          |c| v8::Integer_NewFromUnsigned(c, isolate.as_raw(), value))
                 .unwrap()
         };
-        Integer(isolate, raw)
+        Integer(isolate.clone(), raw)
     }
 
     pub fn value(&self) -> i64 {
-        unsafe { util::invoke(self.0, |c| v8::Integer_Value(c, self.1)).unwrap() }
+        unsafe { util::invoke(&self.0, |c| v8::Integer_Value(c, self.1)).unwrap() }
     }
 
     /// Creates an integer from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::IntegerRef) -> Integer<'a> {
-        Integer(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::IntegerRef) -> Integer {
+        Integer(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this integer.
@@ -927,14 +927,14 @@ impl<'a> Integer<'a> {
     }
 }
 
-impl<'a> Int32<'a> {
+impl Int32 {
     pub fn value(&self) -> i32 {
-        unsafe { util::invoke(self.0, |c| v8::Int32_Value(c, self.1)).unwrap() }
+        unsafe { util::invoke(&self.0, |c| v8::Int32_Value(c, self.1)).unwrap() }
     }
 
     /// Creates a 32-bit integer from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::Int32Ref) -> Int32<'a> {
-        Int32(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::Int32Ref) -> Int32 {
+        Int32(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this 32-bit integer.
@@ -943,14 +943,14 @@ impl<'a> Int32<'a> {
     }
 }
 
-impl<'a> Uint32<'a> {
+impl Uint32 {
     pub fn value(&self) -> u32 {
-        unsafe { util::invoke(self.0, |c| v8::Uint32_Value(c, self.1)).unwrap() }
+        unsafe { util::invoke(&self.0, |c| v8::Uint32_Value(c, self.1)).unwrap() }
     }
 
     /// Creates a 32-bit unsigned integer from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::Uint32Ref) -> Uint32<'a> {
-        Uint32(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::Uint32Ref) -> Uint32 {
+        Uint32(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this 32-bit unsigned integer.
@@ -959,19 +959,19 @@ impl<'a> Uint32<'a> {
     }
 }
 
-impl<'a> Object<'a> {
-    pub fn new(isolate: &'a isolate::Isolate, context: &context::Context) -> Object<'a> {
+impl Object {
+    pub fn new(isolate: &isolate::Isolate, context: &context::Context) -> Object {
         let g = context.make_current();
         let raw =
-            unsafe { util::invoke(isolate, |c| v8::Object_New(c, isolate.as_raw())).unwrap() };
-        let result = Object(isolate, raw);
+            unsafe { util::invoke(&isolate, |c| v8::Object_New(c, isolate.as_raw())).unwrap() };
+        let result = Object(isolate.clone(), raw);
         drop(g);
         result
     }
 
     pub fn set(&self, context: &context::Context, key: &Value, value: &Value) -> bool {
         unsafe {
-            let m = util::invoke(self.0, |c| {
+            let m = util::invoke(&self.0, |c| {
                     v8::Object_Set_Key(c, self.1, context.as_raw(), key.as_raw(), value.as_raw())
                 })
                 .unwrap();
@@ -983,7 +983,7 @@ impl<'a> Object<'a> {
 
     pub fn set_index(&self, context: &context::Context, index: u32, value: &Value) -> bool {
         unsafe {
-            let m = util::invoke(self.0, |c| {
+            let m = util::invoke(&self.0, |c| {
                     v8::Object_Set_Index(c, self.1, context.as_raw(), index, value.as_raw())
                 })
                 .unwrap();
@@ -999,7 +999,7 @@ impl<'a> Object<'a> {
                                 value: &Value)
                                 -> bool {
         unsafe {
-            let m = util::invoke(self.0, |c| {
+            let m = util::invoke(&self.0, |c| {
                     v8::Object_CreateDataProperty_Key(c,
                                                       self.1,
                                                       context.as_raw(),
@@ -1019,7 +1019,7 @@ impl<'a> Object<'a> {
                                       value: &Value)
                                       -> bool {
         unsafe {
-            let m = util::invoke(self.0, |c| {
+            let m = util::invoke(&self.0, |c| {
                     v8::Object_CreateDataProperty_Index(c,
                                                         self.1,
                                                         context.as_raw(),
@@ -1035,25 +1035,25 @@ impl<'a> Object<'a> {
 
     pub fn get(&self, context: &context::Context, key: &Value) -> Value {
         unsafe {
-            util::invoke(self.0,
+            util::invoke(&self.0,
                          |c| v8::Object_Get_Key(c, self.1, context.as_raw(), key.as_raw()))
-                .map(|p| Value(self.0, p))
+                .map(|p| Value(self.0.clone(), p))
                 .unwrap()
         }
     }
 
     pub fn get_index(&self, context: &context::Context, index: u32) -> Value {
         let raw = unsafe {
-            util::invoke(self.0,
+            util::invoke(&self.0,
                          |c| v8::Object_Get_Index(c, self.1, context.as_raw(), index))
                 .unwrap()
         };
-        Value(self.0, raw)
+        Value(self.0.clone(), raw)
     }
 
     pub fn delete(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
-            let m = util::invoke(self.0, |c| {
+            let m = util::invoke(&self.0, |c| {
                     v8::Object_Delete_Key(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
@@ -1065,7 +1065,7 @@ impl<'a> Object<'a> {
 
     pub fn delete_index(&self, context: &context::Context, index: u32) -> bool {
         unsafe {
-            let m = util::invoke(self.0,
+            let m = util::invoke(&self.0,
                                  |c| v8::Object_Delete_Index(c, self.1, context.as_raw(), index))
                 .unwrap();
 
@@ -1076,7 +1076,7 @@ impl<'a> Object<'a> {
 
     pub fn has(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
-            let m = util::invoke(self.0,
+            let m = util::invoke(&self.0,
                                  |c| v8::Object_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap();
 
@@ -1087,7 +1087,7 @@ impl<'a> Object<'a> {
 
     pub fn has_index(&self, context: &context::Context, index: u32) -> bool {
         unsafe {
-            let m = util::invoke(self.0,
+            let m = util::invoke(&self.0,
                                  |c| v8::Object_Has_Index(c, self.1, context.as_raw(), index))
                 .unwrap();
 
@@ -1103,9 +1103,9 @@ impl<'a> Object<'a> {
     /// for-in statement over this object.
     pub fn get_property_names(&self, context: &context::Context) -> Array {
         unsafe {
-            util::invoke(self.0,
+            util::invoke(&self.0,
                          |c| v8::Object_GetPropertyNames(c, self.1, context.as_raw()))
-                .map(|p| Array(self.0, p))
+                .map(|p| Array(self.0.clone(), p))
                 .unwrap()
         }
     }
@@ -1114,9 +1114,9 @@ impl<'a> Object<'a> {
     /// doesn't contain the names of properties from prototype objects.
     pub fn get_own_property_names(&self, context: &context::Context) -> Array {
         unsafe {
-            util::invoke(self.0,
+            util::invoke(&self.0,
                          |c| v8::Object_GetOwnPropertyNames(c, self.1, context.as_raw()))
-                .map(|p| Array(self.0, p))
+                .map(|p| Array(self.0.clone(), p))
                 .unwrap()
         }
     }
@@ -1126,8 +1126,8 @@ impl<'a> Object<'a> {
     /// This does not skip objects marked to be skipped by `__proto__` and it does not consult the
     /// security handler.
     pub fn get_prototype(&self) -> Value {
-        let raw = unsafe { util::invoke(self.0, |c| v8::Object_GetPrototype(c, self.1)).unwrap() };
-        Value(self.0, raw)
+        let raw = unsafe { util::invoke(&self.0, |c| v8::Object_GetPrototype(c, self.1)).unwrap() };
+        Value(self.0.clone(), raw)
     }
 
     /// Set the prototype object.
@@ -1136,7 +1136,7 @@ impl<'a> Object<'a> {
     /// security handler.
     pub fn set_prototype(&self, context: &context::Context, prototype: &Value) -> bool {
         unsafe {
-            let m = util::invoke(self.0, |c| {
+            let m = util::invoke(&self.0, |c| {
                     v8::Object_SetPrototype(c, self.1, context.as_raw(), prototype.as_raw())
                 })
                 .unwrap();
@@ -1152,39 +1152,39 @@ impl<'a> Object<'a> {
     /// function. This one does not.
     pub fn object_proto_to_string(&self, context: &context::Context) -> String {
         let raw = unsafe {
-            util::invoke(self.0,
+            util::invoke(&self.0,
                          |c| v8::Object_ObjectProtoToString(c, self.1, context.as_raw()))
                 .unwrap()
         };
-        String(self.0, raw)
+        String(self.0.clone(), raw)
     }
 
     /// Returns the name of the function invoked as a constructor for this object.
     pub fn get_constructor_name(&self) -> String {
         let raw =
-            unsafe { util::invoke(self.0, |c| v8::Object_GetConstructorName(c, self.1)).unwrap() };
+            unsafe { util::invoke(&self.0, |c| v8::Object_GetConstructorName(c, self.1)).unwrap() };
 
-        String(self.0, raw)
+        String(self.0.clone(), raw)
     }
 
     /// Gets the number of internal fields for this Object
     pub fn internal_field_count(&self) -> u32 {
         unsafe {
-            util::invoke(self.0, |c| v8::Object_InternalFieldCount(c, self.1)).unwrap() as u32
+            util::invoke(&self.0, |c| v8::Object_InternalFieldCount(c, self.1)).unwrap() as u32
         }
     }
 
     /// Gets the value from an internal field.
-    pub unsafe fn get_internal_field(&self, index: u32) -> Value<'a> {
-        let raw = util::invoke(self.0,
+    pub unsafe fn get_internal_field(&self, index: u32) -> Value {
+        let raw = util::invoke(&self.0,
                                |c| v8::Object_GetInternalField(c, self.1, index as os::raw::c_int))
             .unwrap();
-        Value(self.0, raw)
+        Value(self.0.clone(), raw)
     }
 
     /// Sets the value in an internal field.
-    pub unsafe fn set_internal_field(&self, index: u32, value: &Value<'a>) {
-        util::invoke(self.0, |c| {
+    pub unsafe fn set_internal_field(&self, index: u32, value: &Value) {
+        util::invoke(&self.0, |c| {
                 v8::Object_SetInternalField(c, self.1, index as os::raw::c_int, value.as_raw())
             })
             .unwrap()
@@ -1195,7 +1195,7 @@ impl<'a> Object<'a> {
     /// This field must have been set by `set_aligned_pointer_in_internal_field`, everything else
     /// leads to undefined behavior.
     pub unsafe fn get_aligned_pointer_from_internal_field<A>(&self, index: u32) -> *mut A {
-        util::invoke(self.0, |c| {
+        util::invoke(&self.0, |c| {
                 v8::Object_GetAlignedPointerFromInternalField(c, self.1, index as os::raw::c_int)
             })
             .unwrap() as *mut A
@@ -1206,7 +1206,7 @@ impl<'a> Object<'a> {
     /// To retrieve such a field, `get_aligned_pointer_from_internal_field` must be used, everything
     /// else leads to undefined behavior.
     pub unsafe fn set_aligned_pointer_in_internal_field<A>(&self, index: u32, value: *mut A) {
-        util::invoke(self.0, |c| {
+        util::invoke(&self.0, |c| {
                 v8::Object_SetAlignedPointerInInternalField(c,
                                                             self.1,
                                                             index as os::raw::c_int,
@@ -1217,7 +1217,7 @@ impl<'a> Object<'a> {
 
     pub fn has_own_property(&self, context: &context::Context, key: &Name) -> bool {
         unsafe {
-            let m = util::invoke(self.0, |c| {
+            let m = util::invoke(&self.0, |c| {
                     v8::Object_HasOwnProperty_Key(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
@@ -1229,7 +1229,7 @@ impl<'a> Object<'a> {
 
     pub fn has_own_property_index(&self, context: &context::Context, index: u32) -> bool {
         unsafe {
-            let m = util::invoke(self.0, |c| {
+            let m = util::invoke(&self.0, |c| {
                     v8::Object_HasOwnProperty_Index(c, self.1, context.as_raw(), index)
                 })
                 .unwrap();
@@ -1241,7 +1241,7 @@ impl<'a> Object<'a> {
 
     pub fn has_real_named_property(&self, context: &context::Context, key: &Name) -> bool {
         unsafe {
-            let m = util::invoke(self.0, |c| {
+            let m = util::invoke(&self.0, |c| {
                     v8::Object_HasRealNamedProperty(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
@@ -1253,7 +1253,7 @@ impl<'a> Object<'a> {
 
     pub fn has_real_indexed_property(&self, context: &context::Context, index: u32) -> bool {
         unsafe {
-            let m = util::invoke(self.0, |c| {
+            let m = util::invoke(&self.0, |c| {
                     v8::Object_HasRealIndexedProperty(c, self.1, context.as_raw(), index)
                 })
                 .unwrap();
@@ -1269,22 +1269,22 @@ impl<'a> Object<'a> {
     ///
     /// The return value will never be 0. Also, it is not guaranteed to be unique.
     pub fn get_identity_hash(&self) -> u32 {
-        unsafe { util::invoke(self.0, |c| v8::Object_GetIdentityHash(c, self.1)).unwrap() as u32 }
+        unsafe { util::invoke(&self.0, |c| v8::Object_GetIdentityHash(c, self.1)).unwrap() as u32 }
     }
 
     /// Clone this object with a fast but shallow copy.
     ///
     /// Values will point to the same values as the original object.
     pub fn clone(&self) -> Object {
-        let raw = unsafe { util::invoke(self.0, |c| v8::Object_Clone(c, self.1)).unwrap() };
+        let raw = unsafe { util::invoke(&self.0, |c| v8::Object_Clone(c, self.1)).unwrap() };
 
-        Object(self.0, raw)
+        Object(self.0.clone(), raw)
     }
 
     pub fn creation_context(&self) -> context::Context {
         unsafe {
-            let raw = util::invoke(self.0, |c| v8::Object_CreationContext(c, self.1)).unwrap();
-            context::Context::from_raw(self.0, raw)
+            let raw = util::invoke(&self.0, |c| v8::Object_CreationContext(c, self.1)).unwrap();
+            context::Context::from_raw(&self.0, raw)
         }
     }
 
@@ -1292,12 +1292,12 @@ impl<'a> Object<'a> {
     ///
     /// When an Object is callable this method returns true.
     pub fn is_callable(&self) -> bool {
-        unsafe { 0 != util::invoke(self.0, |c| v8::Object_IsCallable(c, self.1)).unwrap() }
+        unsafe { 0 != util::invoke(&self.0, |c| v8::Object_IsCallable(c, self.1)).unwrap() }
     }
 
     /// True if this object is a constructor.
     pub fn is_constructor(&self) -> bool {
-        unsafe { 0 != util::invoke(self.0, |c| v8::Object_IsConstructor(c, self.1)).unwrap() }
+        unsafe { 0 != util::invoke(&self.0, |c| v8::Object_IsConstructor(c, self.1)).unwrap() }
     }
 
     /// Call an Object as a function if a callback is set by the
@@ -1305,7 +1305,7 @@ impl<'a> Object<'a> {
     pub fn call(&self, context: &context::Context, args: &[&Value]) -> error::Result<Value> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         let raw = unsafe {
-            try!(util::invoke(self.0, |c| {
+            try!(util::invoke(&self.0, |c| {
                 v8::Object_CallAsFunction(c,
                                           self.1,
                                           context.as_raw(),
@@ -1314,7 +1314,7 @@ impl<'a> Object<'a> {
                                           arg_ptrs.as_mut_ptr())
             }))
         };
-        Ok(Value(self.0, raw))
+        Ok(Value(self.0.clone(), raw))
     }
 
     /// Call an Object as a function if a callback is set by the
@@ -1326,7 +1326,7 @@ impl<'a> Object<'a> {
                           -> error::Result<Value> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         let raw = unsafe {
-            try!(util::invoke(self.0, |c| {
+            try!(util::invoke(&self.0, |c| {
                 v8::Object_CallAsFunction(c,
                                           self.1,
                                           context.as_raw(),
@@ -1335,7 +1335,7 @@ impl<'a> Object<'a> {
                                           arg_ptrs.as_mut_ptr())
             }))
         };
-        Ok(Value(self.0, raw))
+        Ok(Value(self.0.clone(), raw))
     }
 
     /// Call an Object as a constructor if a callback is set by the
@@ -1348,7 +1348,7 @@ impl<'a> Object<'a> {
                                -> error::Result<Value> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         let raw = unsafe {
-            try!(util::invoke(self.0, |c| {
+            try!(util::invoke(&self.0, |c| {
                 v8::Object_CallAsConstructor(c,
                                              self.1,
                                              context.as_raw(),
@@ -1356,12 +1356,12 @@ impl<'a> Object<'a> {
                                              arg_ptrs.as_mut_ptr())
             }))
         };
-        Ok(Value(self.0, raw))
+        Ok(Value(self.0.clone(), raw))
     }
 
     /// Creates an object from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::ObjectRef) -> Object<'a> {
-        Object(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::ObjectRef) -> Object {
+        Object(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this object.
@@ -1370,19 +1370,19 @@ impl<'a> Object<'a> {
     }
 }
 
-impl<'a> Array<'a> {
+impl Array {
     pub fn new(isolate: &isolate::Isolate, length: u32) -> Array {
         let raw = unsafe {
-            util::invoke(isolate,
+            util::invoke(&isolate,
                          |c| v8::Array_New(c, isolate.as_raw(), length as i32))
                 .unwrap()
         };
-        Array(isolate, raw)
+        Array(isolate.clone(), raw)
     }
 
     /// Creates an array from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::ArrayRef) -> Array<'a> {
-        Array(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::ArrayRef) -> Array {
+        Array(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this array.
@@ -1391,32 +1391,32 @@ impl<'a> Array<'a> {
     }
 }
 
-impl<'a> Map<'a> {
+impl Map {
     pub fn new(isolate: &isolate::Isolate) -> Map {
-        let raw = unsafe { util::invoke(isolate, |c| v8::Map_New(c, isolate.as_raw())).unwrap() };
-        Map(isolate, raw)
+        let raw = unsafe { util::invoke(&isolate, |c| v8::Map_New(c, isolate.as_raw())).unwrap() };
+        Map(isolate.clone(), raw)
     }
 
     pub fn size(&self) -> usize {
-        unsafe { util::invoke(self.0, |c| v8::Map_Size(c, self.1)).unwrap() as usize }
+        unsafe { util::invoke(&self.0, |c| v8::Map_Size(c, self.1)).unwrap() as usize }
     }
 
     pub fn clear(&self) {
-        unsafe { util::invoke(self.0, |c| v8::Map_Clear(c, self.1)).unwrap() }
+        unsafe { util::invoke(&self.0, |c| v8::Map_Clear(c, self.1)).unwrap() }
     }
 
     pub fn get(&self, context: &context::Context, key: &Value) -> Value {
         let raw = unsafe {
-            util::invoke(self.0,
+            util::invoke(&self.0,
                          |c| v8::Map_Get_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap()
         };
-        Value(self.0, raw)
+        Value(self.0.clone(), raw)
     }
 
     pub fn set(&self, context: &context::Context, key: &Value, value: &Value) {
         unsafe {
-            util::invoke(self.0, |c| {
+            util::invoke(&self.0, |c| {
                     v8::Map_Set_Key(c, self.1, context.as_raw(), key.as_raw(), value.as_raw())
                 })
                 .unwrap();
@@ -1425,7 +1425,7 @@ impl<'a> Map<'a> {
 
     pub fn has(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
-            let m = util::invoke(self.0,
+            let m = util::invoke(&self.0,
                                  |c| v8::Map_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap();
 
@@ -1436,7 +1436,7 @@ impl<'a> Map<'a> {
 
     pub fn delete(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
-            let m = util::invoke(self.0,
+            let m = util::invoke(&self.0,
                                  |c| v8::Map_Delete_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap();
 
@@ -1448,13 +1448,13 @@ impl<'a> Map<'a> {
     /// Returns an array of length Size() * 2, where index N is the Nth key and index N + 1 is the
     /// Nth value.
     pub fn as_array(&self) -> Array {
-        let raw = unsafe { util::invoke(self.0, |c| v8::Map_AsArray(c, self.1)).unwrap() };
-        Array(self.0, raw)
+        let raw = unsafe { util::invoke(&self.0, |c| v8::Map_AsArray(c, self.1)).unwrap() };
+        Array(self.0.clone(), raw)
     }
 
     /// Creates a map from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::MapRef) -> Map<'a> {
-        Map(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::MapRef) -> Map {
+        Map(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this map.
@@ -1463,24 +1463,24 @@ impl<'a> Map<'a> {
     }
 }
 
-impl<'a> Set<'a> {
+impl Set {
     /// Creates a new empty Set.
-    pub fn new(isolate: &'a isolate::Isolate) -> Set<'a> {
-        let raw = unsafe { util::invoke(isolate, |c| v8::Set_New(c, isolate.as_raw())).unwrap() };
-        Set(isolate, raw)
+    pub fn new(isolate: &isolate::Isolate) -> Set {
+        let raw = unsafe { util::invoke(&isolate, |c| v8::Set_New(c, isolate.as_raw())).unwrap() };
+        Set(isolate.clone(), raw)
     }
 
     pub fn size(&self) -> usize {
-        unsafe { util::invoke(self.0, |c| v8::Set_Size(c, self.1)).unwrap() as usize }
+        unsafe { util::invoke(&self.0, |c| v8::Set_Size(c, self.1)).unwrap() as usize }
     }
 
     pub fn clear(&self) {
-        unsafe { util::invoke(self.0, |c| v8::Set_Clear(c, self.1)).unwrap() }
+        unsafe { util::invoke(&self.0, |c| v8::Set_Clear(c, self.1)).unwrap() }
     }
 
     pub fn add(&self, context: &context::Context, key: &Value) {
         unsafe {
-            util::invoke(self.0,
+            util::invoke(&self.0,
                          |c| v8::Set_Add(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap();
         }
@@ -1488,7 +1488,7 @@ impl<'a> Set<'a> {
 
     pub fn has(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
-            let m = util::invoke(self.0,
+            let m = util::invoke(&self.0,
                                  |c| v8::Set_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap();
 
@@ -1499,7 +1499,7 @@ impl<'a> Set<'a> {
 
     pub fn delete(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
-            let m = util::invoke(self.0,
+            let m = util::invoke(&self.0,
                                  |c| v8::Set_Delete_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap();
 
@@ -1510,13 +1510,13 @@ impl<'a> Set<'a> {
 
     /// Returns an array of the keys in this Set.
     pub fn as_array(&self) -> Array {
-        let raw = unsafe { util::invoke(self.0, |c| v8::Set_AsArray(c, self.1)).unwrap() };
-        Array(self.0, raw)
+        let raw = unsafe { util::invoke(&self.0, |c| v8::Set_AsArray(c, self.1)).unwrap() };
+        Array(self.0.clone(), raw)
     }
 
     /// Creates a set from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::SetRef) -> Set<'a> {
-        Set(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::SetRef) -> Set {
+        Set(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this set.
@@ -1525,30 +1525,31 @@ impl<'a> Set<'a> {
     }
 }
 
-impl<'a> Function<'a> {
+impl Function {
     /// Create a function in the current execution context for a given callback.
-    pub fn new(isolate: &'a isolate::Isolate,
-               context: &context::Context<'a>,
-               length: usize,
-               callback: &'a Fn(&'a FunctionCallbackInfo) -> Value<'a>)
-               -> Function<'a> {
+    pub fn new<F>(isolate: &isolate::Isolate,
+                  context: &context::Context,
+                  length: usize,
+                  callback: F)
+                  -> Function
+        where F: Fn(FunctionCallbackInfo) -> Value {
         unsafe {
-            let callback = Box::into_raw(Box::new(callback));
+            let callback_ptr: *mut F = Box::into_raw(Box::new(callback));
             let template = template::ObjectTemplate::new(isolate);
             template.set_internal_field_count(1);
             let closure = template.new_instance(context);
-            closure.set_aligned_pointer_in_internal_field(0, callback);
+            closure.set_aligned_pointer_in_internal_field(0, callback_ptr);
 
-            let raw = util::invoke(isolate, |c| {
+            let raw = util::invoke(&isolate, |c| {
                     v8::Function_New(c,
                                      context.as_raw(),
-                                     Some(util::callback),
+                                     Some(util::callback::<F>),
                                      (&closure as &Value).as_raw(),
                                      length as os::raw::c_int,
                                      v8::ConstructorBehavior::ConstructorBehavior_kAllow)
                 })
                 .unwrap();
-            Function(isolate, raw)
+            Function(isolate.clone(), raw)
         }
     }
 
@@ -1557,7 +1558,7 @@ impl<'a> Function<'a> {
     pub fn call(&self, context: &context::Context, args: &[&Value]) -> error::Result<Value> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         let raw = unsafe {
-            try!(util::invoke(self.0, |c| {
+            try!(util::invoke(&self.0, |c| {
                 v8::Function_Call(c,
                                   self.1,
                                   context.as_raw(),
@@ -1566,7 +1567,7 @@ impl<'a> Function<'a> {
                                   arg_ptrs.as_mut_ptr())
             }))
         };
-        Ok(Value(self.0, raw))
+        Ok(Value(self.0.clone(), raw))
     }
 
     /// Call an Object as a function if a callback is set by the
@@ -1578,7 +1579,7 @@ impl<'a> Function<'a> {
                           -> error::Result<Value> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         let raw = unsafe {
-            try!(util::invoke(self.0, |c| {
+            try!(util::invoke(&self.0, |c| {
                 v8::Function_Call(c,
                                   self.1,
                                   context.as_raw(),
@@ -1587,12 +1588,12 @@ impl<'a> Function<'a> {
                                   arg_ptrs.as_mut_ptr())
             }))
         };
-        Ok(Value(self.0, raw))
+        Ok(Value(self.0.clone(), raw))
     }
 
     /// Creates a function from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::FunctionRef) -> Function<'a> {
-        Function(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::FunctionRef) -> Function {
+        Function(isolate.clone(), raw)
     }
 
     /// Returns the underlying raw pointer behind this function.

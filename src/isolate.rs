@@ -1,4 +1,6 @@
+use std::cell;
 use std::mem;
+use std::os;
 use std::sync;
 use v8_sys as v8;
 use allocator;
@@ -12,55 +14,87 @@ static INITIALIZE: sync::Once = sync::ONCE_INIT;
 /// multiple isolates and use them in parallel in multiple threads.  An isolate can be entered by at
 /// most one thread at any given time.  The Locker/Unlocker API must be used to synchronize.
 #[derive(Debug)]
-pub struct Isolate(IsolateHolder);
+pub struct Isolate(v8::IsolatePtr);
 
-#[derive(Debug)]
-enum IsolateHolder {
-    Owned(v8::IsolatePtr, allocator::Allocator),
-    Borrowed(v8::IsolatePtr),
+struct Data {
+    count: cell::Cell<usize>,
+    _allocator: allocator::Allocator,
 }
+
+const DATA_PTR_SLOT: u32 = 0;
 
 impl Isolate {
     pub fn new() -> Isolate {
         ensure_initialized();
 
         let allocator = allocator::Allocator::new();
-        let raw = unsafe { v8::Isolate_New(allocator.as_raw()) };
 
+        let raw = unsafe { v8::Isolate_New(allocator.as_raw()) };
         if raw.is_null() {
             panic!("Could not create Isolate");
         }
 
-        unsafe { v8::Isolate_SetCaptureStackTraceForUncaughtExceptions_Detailed(raw, 1, 1024) };
+        unsafe {
+            assert!(v8::Isolate_GetNumberOfDataSlots(raw) > 0);
+        }
 
-        Isolate(IsolateHolder::Owned(raw, allocator))
+        let data = Data {
+            count: cell::Cell::new(1),
+            _allocator: allocator,
+        };
+        let data_ptr: *mut Data = Box::into_raw(Box::new(data));
+
+        unsafe {
+            v8::Isolate_SetData(raw, DATA_PTR_SLOT, data_ptr as *mut os::raw::c_void);
+            v8::Isolate_SetCaptureStackTraceForUncaughtExceptions_Detailed(raw, 1, 1024);
+        }
+
+        Isolate(raw)
     }
 
     pub unsafe fn from_raw(raw: v8::IsolatePtr) -> Isolate {
-        Isolate(IsolateHolder::Borrowed(raw))
+        let result = Isolate(raw);
+        *result.get_data().count.get_mut() += 1;
+        result
     }
 
     pub fn as_raw(&self) -> v8::IsolatePtr {
-        match self.0 {
-            IsolateHolder::Owned(p, _) => p,
-            IsolateHolder::Borrowed(p) => p,
-        }
+        self.0
     }
 
     pub fn current_context(&self) -> Option<context::Context> {
-        unsafe { 
+        unsafe {
             let raw = v8::Isolate_GetCurrentContext(self.as_raw()).as_mut();
             raw.map(|r| context::Context::from_raw(self, r))
         }
+    }
+
+    unsafe fn get_data_ptr(&self) -> *mut Data {
+        v8::Isolate_GetData(self.0, DATA_PTR_SLOT) as *mut Data
+    }
+
+    unsafe fn get_data(&self) -> &mut Data {
+        self.get_data_ptr().as_mut().unwrap()
+    }
+}
+
+impl Clone for Isolate {
+    fn clone(&self) -> Isolate {
+        unsafe {
+            *self.get_data().count.get_mut() += 1;
+        }
+        Isolate(self.0)
     }
 }
 
 impl Drop for Isolate {
     fn drop(&mut self) {
         unsafe {
-            match self.0 {
-                IsolateHolder::Owned(p, _) => v8::Isolate_Dispose(p),
-                _ => (),
+            let mut count = self.get_data().count.get_mut();
+            *count -= 1;
+
+            if *count == 0 {
+                drop(Box::from_raw(self.get_data_ptr()));
             }
         }
     }
