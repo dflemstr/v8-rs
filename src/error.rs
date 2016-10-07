@@ -32,47 +32,47 @@ pub struct CapturedStackFrame {
 
 /// An error message.
 #[derive(Debug)]
-pub struct Message<'a>(&'a isolate::Isolate, v8::MessageRef);
+pub struct Message(isolate::Isolate, v8::MessageRef);
 
 #[derive(Debug)]
-pub struct StackTrace<'a>(&'a isolate::Isolate, v8::StackTraceRef);
+pub struct StackTrace(isolate::Isolate, v8::StackTraceRef);
 
 #[derive(Debug)]
-pub struct StackFrame<'a>(&'a isolate::Isolate, v8::StackFrameRef);
+pub struct StackFrame(isolate::Isolate, v8::StackFrameRef);
 
-impl<'a> Message<'a> {
+impl Message {
     // TODO: pub fn get_script_origin(&self)
 
-    pub fn get(&self) -> value::String<'a> {
+    pub fn get(&self) -> value::String {
         unsafe {
-            value::String::from_raw(self.0,
-                                    util::invoke(self.0, |c| v8::Message_Get(c, self.1)).unwrap())
+            value::String::from_raw(&self.0,
+                                    util::invoke(&self.0, |c| v8::Message_Get(c, self.1)).unwrap())
         }
     }
 
-    pub fn get_stack_trace(&self) -> StackTrace<'a> {
+    pub fn get_stack_trace(&self) -> StackTrace {
         let raw =
-            unsafe { util::invoke(self.0, |c| v8::Message_GetStackTrace(c, self.1)).unwrap() };
+            unsafe { util::invoke(&self.0, |c| v8::Message_GetStackTrace(c, self.1)).unwrap() };
 
-        StackTrace(self.0, raw)
+        StackTrace(self.0.clone(), raw)
     }
 
-    pub unsafe fn from_raw(isolate: &'a isolate::Isolate, raw: v8::MessageRef) -> Message<'a> {
-        Message(isolate, raw)
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::MessageRef) -> Message {
+        Message(isolate.clone(), raw)
     }
 }
 
-impl<'a> StackTrace<'a> {
-    pub fn get_frames(&self) -> Vec<StackFrame<'a>> {
+impl StackTrace {
+    pub fn get_frames(&self) -> Vec<StackFrame> {
         let count =
-            unsafe { util::invoke(self.0, |c| v8::StackTrace_GetFrameCount(c, self.1)).unwrap() };
+            unsafe { util::invoke(&self.0, |c| v8::StackTrace_GetFrameCount(c, self.1)).unwrap() };
         let mut result = Vec::with_capacity(count as usize);
 
         for i in 0..count {
             let raw_frame = unsafe {
-                util::invoke(self.0, |c| v8::StackTrace_GetFrame(c, self.1, i as u32)).unwrap()
+                util::invoke(&self.0, |c| v8::StackTrace_GetFrame(c, self.1, i as u32)).unwrap()
             };
-            let frame = StackFrame(self.0, raw_frame);
+            let frame = StackFrame(self.0.clone(), raw_frame);
             result.push(frame);
         }
 
@@ -89,39 +89,39 @@ impl<'a> StackTrace<'a> {
     }
 }
 
-impl<'a> StackFrame<'a> {
+impl StackFrame {
     pub fn get_line_number(&self) -> u32 {
-        unsafe { util::invoke(self.0, |c| v8::StackFrame_GetLineNumber(c, self.1)).unwrap() as u32 }
+        unsafe { util::invoke(&self.0, |c| v8::StackFrame_GetLineNumber(c, self.1)).unwrap() as u32 }
     }
 
     pub fn get_column(&self) -> u32 {
-        unsafe { util::invoke(self.0, |c| v8::StackFrame_GetColumn(c, self.1)).unwrap() as u32 }
+        unsafe { util::invoke(&self.0, |c| v8::StackFrame_GetColumn(c, self.1)).unwrap() as u32 }
     }
 
-    pub fn get_script_name(&self) -> Option<value::String<'a>> {
+    pub fn get_script_name(&self) -> Option<value::String> {
         unsafe {
-            let raw = util::invoke(self.0, |c| v8::StackFrame_GetScriptName(c, self.1)).unwrap();
+            let raw = util::invoke(&self.0, |c| v8::StackFrame_GetScriptName(c, self.1)).unwrap();
             if raw.is_null() {
                 None
             } else {
-                Some(value::String::from_raw(self.0, raw))
+                Some(value::String::from_raw(&self.0, raw))
             }
         }
     }
 
-    pub fn get_function_name(&self) -> value::String<'a> {
+    pub fn get_function_name(&self) -> value::String {
         unsafe {
-            let raw = util::invoke(self.0, |c| v8::StackFrame_GetFunctionName(c, self.1)).unwrap();
-            value::String::from_raw(self.0, raw)
+            let raw = util::invoke(&self.0, |c| v8::StackFrame_GetFunctionName(c, self.1)).unwrap();
+            value::String::from_raw(&self.0, raw)
         }
     }
 
     pub fn is_eval(&self) -> bool {
-        unsafe { 0 != util::invoke(self.0, |c| v8::StackFrame_IsEval(c, self.1)).unwrap() }
+        unsafe { 0 != util::invoke(&self.0, |c| v8::StackFrame_IsEval(c, self.1)).unwrap() }
     }
 
     pub fn is_constructor(&self) -> bool {
-        unsafe { 0 != util::invoke(self.0, |c| v8::StackFrame_IsConstructor(c, self.1)).unwrap() }
+        unsafe { 0 != util::invoke(&self.0, |c| v8::StackFrame_IsConstructor(c, self.1)).unwrap() }
     }
 
     pub fn to_captured(&self) -> CapturedStackFrame {

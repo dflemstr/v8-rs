@@ -35,7 +35,7 @@ pub fn invoke<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<B>
     }
 }
 
-pub extern "C" fn callback(callback_info: v8::FunctionCallbackInfoPtr_Value) {
+pub extern "C" fn callback<F>(callback_info: v8::FunctionCallbackInfoPtr_Value) where F: Fn(value::FunctionCallbackInfo) -> value::Value {
     unsafe {
         let callback_info = callback_info.as_mut().unwrap();
         let isolate = isolate::Isolate::from_raw(callback_info.GetIsolate);
@@ -46,7 +46,7 @@ pub extern "C" fn callback(callback_info: v8::FunctionCallbackInfoPtr_Value) {
             .map(|i| value::Value::from_raw(&isolate, *callback_info.Args.offset(i)))
             .collect();
         let info = value::FunctionCallbackInfo {
-            isolate: &isolate,
+            isolate: isolate.clone(),
             length: length,
             args: args,
             this: value::Object::from_raw(&isolate, callback_info.This),
@@ -54,12 +54,11 @@ pub extern "C" fn callback(callback_info: v8::FunctionCallbackInfoPtr_Value) {
             new_target: value::Value::from_raw(&isolate, callback_info.NewTarget),
             is_construct_call: 0 != callback_info.IsConstructCall,
         };
-        // TODO: Here, we coerce 'b to essentially be 'a, which we know is the case, but it
-        // could probably be expressed better.
-        let callback: Box<Box<for<'b> Fn(&'b value::FunctionCallbackInfo) -> value::Value<'b>>> =
-            Box::from_raw(data.get_aligned_pointer_from_internal_field(0));
 
-        let r = callback(&info);
+        let callback_ptr: *mut Box<F> = data.get_aligned_pointer_from_internal_field(0);
+        let callback = Box::from_raw(callback_ptr);
+
+        let r = callback(info);
 
         mem::forget(callback);
 
@@ -70,7 +69,7 @@ pub extern "C" fn callback(callback_info: v8::FunctionCallbackInfoPtr_Value) {
 
 macro_rules! drop {
     ($typ:ident, $dtor:expr) => {
-        impl<'a> Drop for $typ<'a> {
+        impl Drop for $typ {
             fn drop(&mut self) {
                 // SAFETY: This is unsafe because it calls a native method with a void pointer.
                 // It's safe because the macro is only used with a type and its corresponding
@@ -85,8 +84,8 @@ macro_rules! drop {
 
 macro_rules! subtype {
     ($child:ident, $parent:ident) => {
-        impl<'a> From<$child<'a>> for $parent<'a> {
-            fn from(child: $child<'a>) -> $parent<'a> {
+        impl From<$child> for $parent {
+            fn from(child: $child) -> $parent {
                 unsafe { mem::transmute(child) }
             }
         }
@@ -97,8 +96,8 @@ macro_rules! inherit {
     ($child:ident, $parent:ident) => {
         subtype!($child, $parent);
 
-        impl<'a> ops::Deref for $child<'a> {
-            type Target = $parent<'a>;
+        impl ops::Deref for $child {
+            type Target = $parent;
 
             fn deref(&self) -> &Self::Target {
                 unsafe { mem::transmute(self) }

@@ -764,6 +764,18 @@ IsolatePtr v8_Isolate_New(ArrayBuffer_AllocatorPtr allocator) {
     return v8::Isolate::New(params);
 }
 
+uint32_t v8_Isolate_GetNumberOfDataSlots(IsolatePtr self) {
+    return self->GetNumberOfDataSlots();
+}
+
+void v8_Isolate_SetData(IsolatePtr self, uint32_t slot, void *data) {
+    self->SetData(slot, data);
+}
+
+void *v8_Isolate_GetData(IsolatePtr self, uint32_t slot) {
+    return self->GetData(slot);
+}
+
 ContextRef v8_Isolate_GetCurrentContext(IsolatePtr self) {
     return unwrap(self, self->GetCurrentContext());
 }

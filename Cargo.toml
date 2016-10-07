@@ -14,3 +14,4 @@ v8-sys = { version = "0.10.0", path = "v8-sys" }
 
 [features]
 shared = ["v8-sys/shared"]
+unstable = []
