@@ -602,8 +602,7 @@ mod tests {
     fn run_defined_static_function() {
         let i = Isolate::new();
         let c = Context::new(&i);
-        let fr = &test_function;
-        let f = value::Function::new(&i, &c, 2, fr);
+        let f = value::Function::new(&i, &c, 2, test_function);
 
         let k = value::String::from_str(&i, "f");
         c.global().set(&c, &k, &f);
@@ -621,8 +620,7 @@ mod tests {
     fn run_defined_function_template_instance() {
         let i = Isolate::new();
         let c = Context::new(&i);
-        let fr = &test_function;
-        let ft = template::FunctionTemplate::new(&i, &c, fr);
+        let ft = template::FunctionTemplate::new(&i, &c, test_function);
         let f = ft.get_function(&c);
 
         let k = value::String::from_str(&i, "f");
@@ -662,8 +660,7 @@ mod tests {
         let i = Isolate::new();
         let c = Context::new(&i);
         let ot = template::ObjectTemplate::new(&i);
-        let fr = &test_function;
-        let ft = template::FunctionTemplate::new(&i, &c, fr);
+        let ft = template::FunctionTemplate::new(&i, &c, test_function);
         ot.set("f", &ft);
 
         let o = ot.new_instance(&c);
