@@ -49,7 +49,7 @@ script:
 
 after_success:
   - |
-    if [ -z "$FEATURES" ]; then travis-cargo doc; travis-cargo doc-upload; fi
+    if [ -z "$FEATURES" ]; then travis-cargo --only stable doc; travis-cargo --only stable doc-upload; fi
     wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
     tar xzf master.tar.gz &&
     cd kcov-master &&
