@@ -94,6 +94,7 @@ impl Drop for Isolate {
 
             if *count == 0 {
                 drop(Box::from_raw(self.get_data_ptr()));
+                v8::Isolate_Dispose(self.0);
             }
         }
     }
