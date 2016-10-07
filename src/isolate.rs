@@ -1,4 +1,3 @@
-use std::cell;
 use std::mem;
 use std::os;
 use std::sync;
@@ -17,7 +16,7 @@ static INITIALIZE: sync::Once = sync::ONCE_INIT;
 pub struct Isolate(v8::IsolatePtr);
 
 struct Data {
-    count: cell::Cell<usize>,
+    count: usize,
     _allocator: allocator::Allocator,
 }
 
@@ -39,7 +38,7 @@ impl Isolate {
         }
 
         let data = Data {
-            count: cell::Cell::new(1),
+            count: 1,
             _allocator: allocator,
         };
         let data_ptr: *mut Data = Box::into_raw(Box::new(data));
@@ -54,7 +53,7 @@ impl Isolate {
 
     pub unsafe fn from_raw(raw: v8::IsolatePtr) -> Isolate {
         let result = Isolate(raw);
-        *result.get_data().count.get_mut() += 1;
+        result.get_data().count += 1;
         result
     }
 
@@ -81,7 +80,7 @@ impl Isolate {
 impl Clone for Isolate {
     fn clone(&self) -> Isolate {
         unsafe {
-            *self.get_data().count.get_mut() += 1;
+            self.get_data().count += 1;
         }
         Isolate(self.0)
     }
@@ -90,7 +89,7 @@ impl Clone for Isolate {
 impl Drop for Isolate {
     fn drop(&mut self) {
         unsafe {
-            let mut count = self.get_data().count.get_mut();
+            let ref mut count = self.get_data().count;
             *count -= 1;
 
             if *count == 0 {
