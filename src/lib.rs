@@ -678,6 +678,23 @@ mod tests {
         assert!(result.is_int32());
         assert_eq!(5, result.int32_value(&c));
     }
+
+    #[test]
+    fn isolate_rc() {
+        let (f, c, p) = {
+            let isolate = Isolate::new();
+            let context = Context::new(&isolate);
+            let param = value::Integer::new(&isolate, 42);
+
+            let function = value::Function::new(&isolate, &context, 1, |mut info: value::FunctionCallbackInfo| {
+                info.args.remove(0)
+            });
+            (function, context, param)
+        };
+
+        let result = f.call(&c, &[&p]).unwrap();
+        assert_eq!(42, result.uint32_value(&c));
+    }
 }
 
 #[cfg(all(feature="unstable", test))]
