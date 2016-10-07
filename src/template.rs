@@ -54,11 +54,11 @@ impl FunctionTemplate {
                   callback: F) -> FunctionTemplate
         where F: Fn(value::FunctionCallbackInfo) -> value::Value {
         let raw = unsafe {
-            let callback = Box::into_raw(Box::new(callback));
+            let callback_ptr: *mut Box<F> = Box::into_raw(Box::new(Box::new(callback)));
             let template = ObjectTemplate::new(isolate);
             template.set_internal_field_count(1);
             let closure = template.new_instance(context);
-            closure.set_aligned_pointer_in_internal_field(0, callback);
+            closure.set_aligned_pointer_in_internal_field(0, callback_ptr);
 
             util::invoke(isolate,
                          |c| v8::FunctionTemplate_New(c,
