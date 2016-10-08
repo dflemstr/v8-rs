@@ -27,7 +27,7 @@ pub fn invoke<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<B>
         // is annoying though.
         drop(unsafe { value::Value::from_raw(isolate, exception) });
         let message = unsafe { error::Message::from_raw(isolate, message) };
-        let message_str = message.get().to_string();
+        let message_str = message.get().value();
 
         let stack_trace = message.get_stack_trace().to_captured();
 

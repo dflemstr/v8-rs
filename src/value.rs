@@ -645,6 +645,12 @@ impl Boolean {
         Boolean(isolate.clone(), raw)
     }
 
+    pub fn value(&self) -> bool {
+        unsafe {
+            0 != util::invoke(&self.0, |c| v8::Boolean_Value(c, self.1)).unwrap()
+        }
+    }
+
     /// Creates a boolean from a set of raw pointers.
     pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::BooleanRef) -> Boolean {
         Boolean(isolate.clone(), raw)
@@ -734,7 +740,7 @@ impl String {
         unsafe { 0 != util::invoke(&self.0, |c| v8::String_ContainsOnlyOneByte(c, self.1)).unwrap() }
     }
 
-    pub fn to_string(&self) -> ::std::string::String {
+    pub fn value(&self) -> ::std::string::String {
         let len =
             unsafe { util::invoke(&self.0, |c| v8::String_Utf8Length(c, self.1)).unwrap() } as usize;
         let mut buf = vec![0u8; len];

@@ -125,11 +125,11 @@ impl StackFrame {
     }
 
     pub fn to_captured(&self) -> CapturedStackFrame {
-        let function_name = self.get_function_name().to_string();
+        let function_name = self.get_function_name().value();
         CapturedStackFrame {
             line: self.get_line_number(),
             column: self.get_column(),
-            script_name: self.get_script_name().map(|ref s| s.to_string()),
+            script_name: self.get_script_name().map(|ref s| s.value()),
             function_name: if function_name.is_empty() {
                 None
             } else {
