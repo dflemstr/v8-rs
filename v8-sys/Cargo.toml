@@ -2,6 +2,8 @@
 authors = ["David Flemström <david.flemstrom@gmail.com>"]
 build = "build.rs"
 description = "Low-level bindings to V8, the Javascript engine"
+documentation = "https://dflemstr.github.io/v8-rs/v8_sys/index.html"
+homepage = "https://dflemstr.github.io/v8-rs"
 include = ["build.rs", "src/**/*", "Cargo.toml"]
 keywords = ["v8", "javascript", "js", "ecmascript", "google"]
 name = "v8-sys"

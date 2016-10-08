@@ -1,6 +1,7 @@
 [package]
 authors = ["David Flemström <david.flemstrom@gmail.com>"]
 description = "A parser for v8.h files to extract a description of the V8 API heuristically.  Used in build scripts, for example in v8-sys."
+homepage = "https://dflemstr.github.io/v8-rs"
 keywords = ["v8", "javascript", "api"]
 name = "v8-api"
 license = "Apache-2.0"

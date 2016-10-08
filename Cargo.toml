@@ -1,6 +1,8 @@
 [package]
 authors = ["David Flemström <david.flemstrom@gmail.com>"]
 description = "High-level bindings to V8, the Javascript engine"
+documentation = "https://dflemstr.github.io/v8-rs/v8/index.html"
+homepage = "https://dflemstr.github.io/v8-rs"
 keywords = ["v8", "javascript", "js", "ecmascript", "google"]
 license = "Apache-2.0"
 name = "v8"
