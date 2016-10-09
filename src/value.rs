@@ -1,3 +1,4 @@
+//! Javascript values that user code can interact with.
 use v8_sys as v8;
 use context;
 use error;

@@ -1,3 +1,4 @@
+//! Templates for constructing functions and objects efficiently.
 use v8_sys as v8;
 use isolate;
 use util;
@@ -10,20 +11,30 @@ use std::mem;
 use std::ops;
 use std::ffi;
 
+/// The superclass of object and function templates.
 #[derive(Debug)]
 pub struct Template(isolate::Isolate, v8::TemplateRef);
 
+/// A FunctionTemplate is used to create functions at runtime.
+///
+/// There can only be one function created from a FunctionTemplate in a context.  Any modification
+/// of a FunctionTemplate after first instantiation will trigger a crash.  A FunctionTemplate can
+/// have properties, these properties are added to the function object when it is created.
 #[derive(Debug)]
 pub struct FunctionTemplate(isolate::Isolate, v8::FunctionTemplateRef);
 
+/// An ObjectTemplate is used to create objects at runtime.
+///
+/// Properties added to an ObjectTemplate are added to each object created from the ObjectTemplate.
 #[derive(Debug)]
 pub struct ObjectTemplate(isolate::Isolate, v8::ObjectTemplateRef);
 
+/// A Signature specifies which receiver is valid for a function.
 #[derive(Debug)]
 pub struct Signature(isolate::Isolate, v8::SignatureRef);
 
-/// A Signature specifies which receiver is valid for a function.
 impl Signature {
+    /// Creates a new signature.
     pub fn new(isolate: &isolate::Isolate) -> Signature {
         let raw = unsafe {
             util::invoke(isolate,
@@ -33,6 +44,7 @@ impl Signature {
         Signature(isolate.clone(), raw)
     }
 
+    /// Creates a new signature with the specified receiver.
     pub fn new_with_receiver(isolate: &isolate::Isolate, receiver: &FunctionTemplate) -> Signature {
         let raw = unsafe {
             util::invoke(isolate,
@@ -43,12 +55,8 @@ impl Signature {
     }
 }
 
-/// A FunctionTemplate is used to create functions at runtime.
-/// There can only be one function created from a FunctionTemplate in a context.
-///
-/// Any modification of a FunctionTemplate after first instantiation will trigger a crash.
-/// A FunctionTemplate can have properties, these properties are added to the function object when it is created.
 impl FunctionTemplate {
+    /// Creates a function template.
     pub fn new(isolate: &isolate::Isolate,
                context: &context::Context,
                callback: Box<Fn(value::FunctionCallbackInfo) -> value::Value + 'static>) -> FunctionTemplate {
@@ -75,6 +83,7 @@ impl FunctionTemplate {
         FunctionTemplate(isolate.clone(), raw)
     }
 
+    /// Returns the unique function instance in the current execution context.
     pub fn get_function(self, context: &context::Context) -> value::Function {
         unsafe {
             let raw = util::invoke(&self.0,
@@ -85,11 +94,8 @@ impl FunctionTemplate {
     }
 }
 
-
-/// An ObjectTemplate is used to create objects at runtime.
-///
-/// Properties added to an ObjectTemplate are added to each object created from the ObjectTemplate.
 impl ObjectTemplate {
+    /// Creates an ObjectTemplate.
     pub fn new(isolate: &isolate::Isolate) -> ObjectTemplate {
         let raw = unsafe {
             util::invoke(isolate,
@@ -99,6 +105,7 @@ impl ObjectTemplate {
         ObjectTemplate(isolate.clone(), raw)
     }
 
+    /// Sets the number of internal fields for objects generated from this template.
     pub fn set_internal_field_count(&self, value: usize) {
         unsafe {
             util::invoke(&self.0, |c| {
@@ -119,6 +126,7 @@ impl ObjectTemplate {
         };
     }
 
+    /// Creates a new object instance based off of this template.
     pub fn new_instance(&self, context: &context::Context) -> value::Object {
         unsafe {
             let raw = util::invoke(&self.0,

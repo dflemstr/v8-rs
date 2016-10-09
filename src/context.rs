@@ -1,3 +1,4 @@
+//! Execution contexts and sandboxing.
 use v8_sys as v8;
 use isolate;
 use util;
@@ -7,6 +8,7 @@ use value;
 #[derive(Debug)]
 pub struct Context(isolate::Isolate, v8::ContextRef);
 
+/// A guard that keeps a context bound while it is in scope.
 #[must_use]
 pub struct ContextGuard<'a>(&'a Context);
 
@@ -19,6 +21,9 @@ impl Context {
         }
     }
 
+    /// Binds the context to the current scope.
+    ///
+    /// Within this scope, functionality that relies on implicit contexts will work.
     pub fn make_current(&self) -> ContextGuard {
         self.enter();
         ContextGuard(self)
@@ -49,10 +54,12 @@ impl Context {
         }
     }
 
+    /// Creates a context from a set of raw pointers.
     pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::ContextRef) -> Context {
         Context(isolate.clone(), raw)
     }
 
+    /// Returns the underlying raw pointer behind this context.
     pub fn as_raw(&self) -> v8::ContextRef {
         self.1
     }

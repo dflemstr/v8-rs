@@ -15,34 +15,39 @@ error_chain! {
     }
 }
 
+/// A captured stack trace, that is separated from its underlying isolate.
 #[derive(Clone, Debug)]
 pub struct CapturedStackTrace {
-    frames: Vec<CapturedStackFrame>,
+    pub frames: Vec<CapturedStackFrame>,
 }
 
+/// A captured stack frame, that is separated from its underlying isolate.
 #[derive(Clone, Debug)]
 pub struct CapturedStackFrame {
-    line: u32,
-    column: u32,
-    script_name: Option<String>,
-    function_name: Option<String>,
-    is_eval: bool,
-    is_constructor: bool,
+    pub line: u32,
+    pub column: u32,
+    pub script_name: Option<String>,
+    pub function_name: Option<String>,
+    pub is_eval: bool,
+    pub is_constructor: bool,
 }
 
 /// An error message.
 #[derive(Debug)]
 pub struct Message(isolate::Isolate, v8::MessageRef);
 
+/// A stack trace, that is bound to an isolate.
 #[derive(Debug)]
 pub struct StackTrace(isolate::Isolate, v8::StackTraceRef);
 
+/// A stack frame, that is bound to an isolate.
 #[derive(Debug)]
 pub struct StackFrame(isolate::Isolate, v8::StackFrameRef);
 
 impl Message {
     // TODO: pub fn get_script_origin(&self)
 
+    /// The error message string.
     pub fn get(&self) -> value::String {
         unsafe {
             value::String::from_raw(&self.0,
@@ -50,6 +55,7 @@ impl Message {
         }
     }
 
+    /// The stack trace to the point where the error was generated.
     pub fn get_stack_trace(&self) -> StackTrace {
         let raw =
             unsafe { util::invoke(&self.0, |c| v8::Message_GetStackTrace(c, self.1)).unwrap() };
@@ -63,6 +69,7 @@ impl Message {
 }
 
 impl StackTrace {
+    /// The stack frames that this stack trace consists of.
     pub fn get_frames(&self) -> Vec<StackFrame> {
         let count =
             unsafe { util::invoke(&self.0, |c| v8::StackTrace_GetFrameCount(c, self.1)).unwrap() };
@@ -79,6 +86,8 @@ impl StackTrace {
         result
     }
 
+    /// Creates a captured version of this stack trace, that doesn't retain a reference to its
+    /// isolate.
     pub fn to_captured(&self) -> CapturedStackTrace {
         CapturedStackTrace {
             frames: self.get_frames()
@@ -90,14 +99,17 @@ impl StackTrace {
 }
 
 impl StackFrame {
+    /// The line number at which this stack frame was pushed.
     pub fn get_line_number(&self) -> u32 {
         unsafe { util::invoke(&self.0, |c| v8::StackFrame_GetLineNumber(c, self.1)).unwrap() as u32 }
     }
 
+    /// The column number at which this stack frame was pushed.
     pub fn get_column(&self) -> u32 {
         unsafe { util::invoke(&self.0, |c| v8::StackFrame_GetColumn(c, self.1)).unwrap() as u32 }
     }
 
+    /// The script file name in which this stack frame was pushed.
     pub fn get_script_name(&self) -> Option<value::String> {
         unsafe {
             let raw = util::invoke(&self.0, |c| v8::StackFrame_GetScriptName(c, self.1)).unwrap();
@@ -109,6 +121,7 @@ impl StackFrame {
         }
     }
 
+    /// The function name in which this stack frame was pushed.
     pub fn get_function_name(&self) -> value::String {
         unsafe {
             let raw = util::invoke(&self.0, |c| v8::StackFrame_GetFunctionName(c, self.1)).unwrap();
@@ -116,14 +129,18 @@ impl StackFrame {
         }
     }
 
+    /// Whether this stack frame is part of an eval call.
     pub fn is_eval(&self) -> bool {
         unsafe { 0 != util::invoke(&self.0, |c| v8::StackFrame_IsEval(c, self.1)).unwrap() }
     }
 
+    /// Whether this stack frame is part of a constructor call.
     pub fn is_constructor(&self) -> bool {
         unsafe { 0 != util::invoke(&self.0, |c| v8::StackFrame_IsConstructor(c, self.1)).unwrap() }
     }
 
+    /// Creates a captured version of this stack frame, that doesn't retain a reference to its
+    /// isolate.
     pub fn to_captured(&self) -> CapturedStackFrame {
         let function_name = self.get_function_name().value();
         CapturedStackFrame {
