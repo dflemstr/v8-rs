@@ -1608,6 +1608,28 @@ impl Function {
     }
 }
 
+impl External {
+    pub unsafe fn new<A>(isolate: &isolate::Isolate,
+                         value: *mut A) -> External {
+        let raw = util::invoke(&isolate, |c| v8::External_New(c, isolate.as_raw(), value as *mut os::raw::c_void)).unwrap();
+        External(isolate.clone(), raw)
+    }
+
+    pub unsafe fn value<A>(&self) -> *mut A {
+        util::invoke(&self.0, |c| v8::External_Value(c, self.1)).unwrap() as *mut A
+    }
+
+    /// Creates an external from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::ExternalRef) -> External {
+        External(isolate.clone(), raw)
+    }
+
+    /// Returns the underlying raw pointer behind this external.
+    pub fn as_raw(&self) -> v8::ExternalRef {
+        self.1
+    }
+}
+
 // unsafe: Don't add another `inherit!` line if you don't know the implications (see the comments
 // around the macro declaration).
 inherit!(Value, Data);
