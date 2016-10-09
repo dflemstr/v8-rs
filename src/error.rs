@@ -185,6 +185,6 @@ impl fmt::Display for CapturedStackFrame {
     }
 }
 
-drop!(Message, v8::Message_DestroyRef);
-drop!(StackTrace, v8::StackTrace_DestroyRef);
-drop!(StackFrame, v8::StackFrame_DestroyRef);
+reference!(Message, v8::Message_CloneRef, v8::Message_DestroyRef);
+reference!(StackTrace, v8::StackTrace_CloneRef, v8::StackTrace_DestroyRef);
+reference!(StackFrame, v8::StackFrame_CloneRef, v8::StackFrame_DestroyRef);

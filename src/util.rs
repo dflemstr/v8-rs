@@ -67,8 +67,15 @@ pub extern "C" fn callback<F>(callback_info: v8::FunctionCallbackInfoPtr_Value) 
     }
 }
 
-macro_rules! drop {
-    ($typ:ident, $dtor:expr) => {
+macro_rules! reference {
+    ($typ:ident, $clone:expr, $dtor:expr) => {
+        impl Clone for $typ {
+            fn clone(&self) -> $typ {
+                let raw = unsafe { $crate::util::invoke(&self.0, |c| $clone(c, self.1)).unwrap() };
+                $typ(self.0.clone(), raw)
+            }
+        }
+
         impl Drop for $typ {
             fn drop(&mut self) {
                 // SAFETY: This is unsafe because it calls a native method with a void pointer.

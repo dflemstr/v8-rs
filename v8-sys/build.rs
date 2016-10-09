@@ -211,6 +211,10 @@ fn write_header<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
         }
 
         try!(writeln!(out,
+                      "{class}Ref v8_{class}_CloneRef(RustContext c, {class}Ref self);",
+                      class = class.name));
+
+        try!(writeln!(out,
                       "void v8_{class}_DestroyRef({class}Ref self);",
                       class = class.name));
 
@@ -292,6 +296,13 @@ fn write_cc_file<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
             try!(writeln!(out, "}}"));
         }
 
+        try!(writeln!(out, ""));
+        try!(writeln!(out,
+                      "{class}Ref v8_{class}_CloneRef(RustContext c, {class}Ref self) {{",
+                      class = class.name));
+        try!(writeln!(out, "  v8::HandleScope __handle_scope(c.isolate);"));
+        try!(writeln!(out, "  return unwrap(c.isolate, wrap(c.isolate, self));"));
+        try!(writeln!(out, "}}"));
         try!(writeln!(out, ""));
         try!(writeln!(out,
                       "void v8_{class}_DestroyRef({class}Ref self) {{",
