@@ -1533,23 +1533,25 @@ impl Set {
 
 impl Function {
     /// Create a function in the current execution context for a given callback.
-    pub fn new<F>(isolate: &isolate::Isolate,
-                  context: &context::Context,
-                  length: usize,
-                  callback: F)
-                  -> Function
-        where F: Fn(FunctionCallbackInfo) -> Value {
+    pub fn new(isolate: &isolate::Isolate,
+               context: &context::Context,
+               length: usize,
+               callback: Box<Fn(FunctionCallbackInfo) -> Value + 'static>)
+               -> Function {
         unsafe {
-            let callback_ptr: *mut Box<F> = Box::into_raw(Box::new(Box::new(callback)));
+            let callback_ptr = Box::into_raw(Box::new(callback));
+            let callback_ext = External::new::<Box<Fn(FunctionCallbackInfo) -> Value + 'static>>(&isolate, callback_ptr);
+
             let template = template::ObjectTemplate::new(isolate);
             template.set_internal_field_count(1);
+
             let closure = template.new_instance(context);
-            closure.set_aligned_pointer_in_internal_field(0, callback_ptr);
+            closure.set_internal_field(0, &callback_ext);
 
             let raw = util::invoke(&isolate, |c| {
                     v8::Function_New(c,
                                      context.as_raw(),
-                                     Some(util::callback::<F>),
+                                     Some(util::callback),
                                      (&closure as &Value).as_raw(),
                                      length as os::raw::c_int,
                                      v8::ConstructorBehavior::ConstructorBehavior_kAllow)
