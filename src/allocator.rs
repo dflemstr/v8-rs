@@ -1,3 +1,4 @@
+//! Allocators for array buffers.
 use v8_sys as v8;
 
 use std::os;
@@ -9,6 +10,7 @@ use std::mem;
 pub struct Allocator(v8::ArrayBuffer_AllocatorPtr);
 
 impl Allocator {
+    /// Creates a new allocator.
     pub fn new() -> Allocator {
         let raw = unsafe { v8::ArrayBuffer_Allocator_Create(ALLOCATOR_FUNCTIONS) };
         if raw.is_null() {
@@ -18,6 +20,7 @@ impl Allocator {
         Allocator(raw)
     }
 
+    /// Returns the underlying raw pointer behind this allocator.
     pub fn as_raw(&self) -> v8::ArrayBuffer_AllocatorPtr {
         self.0
     }

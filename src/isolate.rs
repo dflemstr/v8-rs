@@ -1,3 +1,4 @@
+//! Heap and execution isolation.
 use std::mem;
 use std::os;
 use std::sync;
@@ -8,10 +9,12 @@ use platform;
 
 static INITIALIZE: sync::Once = sync::ONCE_INIT;
 
-/// Isolate represents an isolated instance of the V8 engine.  V8 isolates have completely separate
-/// states.  Objects from one isolate must not be used in other isolates.  The embedder can create
-/// multiple isolates and use them in parallel in multiple threads.  An isolate can be entered by at
-/// most one thread at any given time.  The Locker/Unlocker API must be used to synchronize.
+/// Isolate represents an isolated instance of the V8 engine.
+///
+/// V8 isolates have completely separate states.  Objects from one isolate must not be used in other
+/// isolates.  The embedder can create multiple isolates and use them in parallel in multiple
+/// threads.  An isolate can be entered by at most one thread at any given time.  The
+/// Locker/Unlocker API must be used to synchronize.
 #[derive(Debug)]
 pub struct Isolate(v8::IsolatePtr);
 
@@ -23,6 +26,7 @@ struct Data {
 const DATA_PTR_SLOT: u32 = 0;
 
 impl Isolate {
+    /// Creates a new isolate.
     pub fn new() -> Isolate {
         ensure_initialized();
 
@@ -51,16 +55,25 @@ impl Isolate {
         Isolate(raw)
     }
 
+    /// Creates a data from a set of raw pointers.
+    ///
+    /// This isolate must at some point have been created by `Isolate::new`, since this library
+    /// expects isolates to be configured a certain way and contain embedder information.
     pub unsafe fn from_raw(raw: v8::IsolatePtr) -> Isolate {
         let result = Isolate(raw);
         result.get_data().count += 1;
         result
     }
 
+    /// Returns the underlying raw pointer behind this isolate.
     pub fn as_raw(&self) -> v8::IsolatePtr {
         self.0
     }
 
+    /// Returns the context bound to the current thread for this isolate.
+    ///
+    /// A context will be bound by for example `Context::make_current`, or while inside of a
+    /// function callback.
     pub fn current_context(&self) -> Option<context::Context> {
         unsafe {
             let raw = v8::Isolate_GetCurrentContext(self.as_raw()).as_mut();
