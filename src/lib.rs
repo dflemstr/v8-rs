@@ -703,9 +703,9 @@ mod benches {
         let isolate = Isolate::new();
         let context = Context::new(&isolate);
 
-        let function = value::Function::new(&isolate, &context, 1, |mut info: value::FunctionCallbackInfo| {
+        let function = value::Function::new(&isolate, &context, 1, Box::new(|mut info| {
             info.args.remove(0)
-        });
+        }));
         let param = value::Integer::new(&isolate, 42);
 
         bencher.iter(|| {
