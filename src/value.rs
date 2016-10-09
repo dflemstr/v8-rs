@@ -1533,23 +1533,25 @@ impl Set {
 
 impl Function {
     /// Create a function in the current execution context for a given callback.
-    pub fn new<F>(isolate: &isolate::Isolate,
-                  context: &context::Context,
-                  length: usize,
-                  callback: F)
-                  -> Function
-        where F: Fn(FunctionCallbackInfo) -> Value {
+    pub fn new(isolate: &isolate::Isolate,
+               context: &context::Context,
+               length: usize,
+               callback: Box<Fn(FunctionCallbackInfo) -> Value + 'static>)
+               -> Function {
         unsafe {
-            let callback_ptr: *mut Box<F> = Box::into_raw(Box::new(Box::new(callback)));
+            let callback_ptr = Box::into_raw(Box::new(callback));
+            let callback_ext = External::new::<Box<Fn(FunctionCallbackInfo) -> Value + 'static>>(&isolate, callback_ptr);
+
             let template = template::ObjectTemplate::new(isolate);
             template.set_internal_field_count(1);
+
             let closure = template.new_instance(context);
-            closure.set_aligned_pointer_in_internal_field(0, callback_ptr);
+            closure.set_internal_field(0, &callback_ext);
 
             let raw = util::invoke(&isolate, |c| {
                     v8::Function_New(c,
                                      context.as_raw(),
-                                     Some(util::callback::<F>),
+                                     Some(util::callback),
                                      (&closure as &Value).as_raw(),
                                      length as os::raw::c_int,
                                      v8::ConstructorBehavior::ConstructorBehavior_kAllow)
@@ -1604,6 +1606,28 @@ impl Function {
 
     /// Returns the underlying raw pointer behind this function.
     pub fn as_raw(&self) -> v8::FunctionRef {
+        self.1
+    }
+}
+
+impl External {
+    pub unsafe fn new<A>(isolate: &isolate::Isolate,
+                         value: *mut A) -> External {
+        let raw = util::invoke(&isolate, |c| v8::External_New(c, isolate.as_raw(), value as *mut os::raw::c_void)).unwrap();
+        External(isolate.clone(), raw)
+    }
+
+    pub unsafe fn value<A>(&self) -> *mut A {
+        util::invoke(&self.0, |c| v8::External_Value(c, self.1)).unwrap() as *mut A
+    }
+
+    /// Creates an external from a set of raw pointers.
+    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::ExternalRef) -> External {
+        External(isolate.clone(), raw)
+    }
+
+    /// Returns the underlying raw pointer behind this external.
+    pub fn as_raw(&self) -> v8::ExternalRef {
         self.1
     }
 }
@@ -1753,43 +1777,43 @@ inherit!(External, Value);
 
 // unsafe: Don't add another `drop!` line if you don't know the implications (see the comments
 // around the macro declaration).
-drop!(Data, v8::Data_DestroyRef);
-drop!(Value, v8::Value_DestroyRef);
-drop!(Primitive, v8::Primitive_DestroyRef);
-drop!(Boolean, v8::Boolean_DestroyRef);
-drop!(Name, v8::Name_DestroyRef);
-drop!(String, v8::String_DestroyRef);
-drop!(Symbol, v8::Symbol_DestroyRef);
-drop!(Private, v8::Private_DestroyRef);
-drop!(Number, v8::Number_DestroyRef);
-drop!(Integer, v8::Integer_DestroyRef);
-drop!(Int32, v8::Int32_DestroyRef);
-drop!(Uint32, v8::Uint32_DestroyRef);
-drop!(Object, v8::Object_DestroyRef);
-drop!(Array, v8::Array_DestroyRef);
-drop!(Map, v8::Map_DestroyRef);
-drop!(Set, v8::Set_DestroyRef);
-drop!(Function, v8::Function_DestroyRef);
-drop!(Promise, v8::Promise_DestroyRef);
-drop!(Proxy, v8::Proxy_DestroyRef);
-drop!(ArrayBuffer, v8::ArrayBuffer_DestroyRef);
-drop!(ArrayBufferView, v8::ArrayBufferView_DestroyRef);
-drop!(TypedArray, v8::TypedArray_DestroyRef);
-drop!(Uint8Array, v8::Uint8Array_DestroyRef);
-drop!(Uint8ClampedArray, v8::Uint8ClampedArray_DestroyRef);
-drop!(Int8Array, v8::Int8Array_DestroyRef);
-drop!(Uint16Array, v8::Uint16Array_DestroyRef);
-drop!(Int16Array, v8::Int16Array_DestroyRef);
-drop!(Uint32Array, v8::Uint32Array_DestroyRef);
-drop!(Int32Array, v8::Int32Array_DestroyRef);
-drop!(Float32Array, v8::Float32Array_DestroyRef);
-drop!(Float64Array, v8::Float64Array_DestroyRef);
-drop!(DataView, v8::DataView_DestroyRef);
-drop!(SharedArrayBuffer, v8::SharedArrayBuffer_DestroyRef);
-drop!(Date, v8::Date_DestroyRef);
-drop!(NumberObject, v8::NumberObject_DestroyRef);
-drop!(BooleanObject, v8::BooleanObject_DestroyRef);
-drop!(StringObject, v8::StringObject_DestroyRef);
-drop!(SymbolObject, v8::SymbolObject_DestroyRef);
-drop!(RegExp, v8::RegExp_DestroyRef);
-drop!(External, v8::External_DestroyRef);
+reference!(Data, v8::Data_CloneRef, v8::Data_DestroyRef);
+reference!(Value, v8::Value_CloneRef, v8::Value_DestroyRef);
+reference!(Primitive, v8::Primitive_CloneRef, v8::Primitive_DestroyRef);
+reference!(Boolean, v8::Boolean_CloneRef, v8::Boolean_DestroyRef);
+reference!(Name, v8::Name_CloneRef, v8::Name_DestroyRef);
+reference!(String, v8::String_CloneRef, v8::String_DestroyRef);
+reference!(Symbol, v8::Symbol_CloneRef, v8::Symbol_DestroyRef);
+reference!(Private, v8::Private_CloneRef, v8::Private_DestroyRef);
+reference!(Number, v8::Number_CloneRef, v8::Number_DestroyRef);
+reference!(Integer, v8::Integer_CloneRef, v8::Integer_DestroyRef);
+reference!(Int32, v8::Int32_CloneRef, v8::Int32_DestroyRef);
+reference!(Uint32, v8::Uint32_CloneRef, v8::Uint32_DestroyRef);
+reference!(Object, v8::Object_CloneRef, v8::Object_DestroyRef);
+reference!(Array, v8::Array_CloneRef, v8::Array_DestroyRef);
+reference!(Map, v8::Map_CloneRef, v8::Map_DestroyRef);
+reference!(Set, v8::Set_CloneRef, v8::Set_DestroyRef);
+reference!(Function, v8::Function_CloneRef, v8::Function_DestroyRef);
+reference!(Promise, v8::Promise_CloneRef, v8::Promise_DestroyRef);
+reference!(Proxy, v8::Proxy_CloneRef, v8::Proxy_DestroyRef);
+reference!(ArrayBuffer, v8::ArrayBuffer_CloneRef, v8::ArrayBuffer_DestroyRef);
+reference!(ArrayBufferView, v8::ArrayBufferView_CloneRef, v8::ArrayBufferView_DestroyRef);
+reference!(TypedArray, v8::TypedArray_CloneRef, v8::TypedArray_DestroyRef);
+reference!(Uint8Array, v8::Uint8Array_CloneRef, v8::Uint8Array_DestroyRef);
+reference!(Uint8ClampedArray, v8::Uint8ClampedArray_CloneRef, v8::Uint8ClampedArray_DestroyRef);
+reference!(Int8Array, v8::Int8Array_CloneRef, v8::Int8Array_DestroyRef);
+reference!(Uint16Array, v8::Uint16Array_CloneRef, v8::Uint16Array_DestroyRef);
+reference!(Int16Array, v8::Int16Array_CloneRef, v8::Int16Array_DestroyRef);
+reference!(Uint32Array, v8::Uint32Array_CloneRef, v8::Uint32Array_DestroyRef);
+reference!(Int32Array, v8::Int32Array_CloneRef, v8::Int32Array_DestroyRef);
+reference!(Float32Array, v8::Float32Array_CloneRef, v8::Float32Array_DestroyRef);
+reference!(Float64Array, v8::Float64Array_CloneRef, v8::Float64Array_DestroyRef);
+reference!(DataView, v8::DataView_CloneRef, v8::DataView_DestroyRef);
+reference!(SharedArrayBuffer, v8::SharedArrayBuffer_CloneRef, v8::SharedArrayBuffer_DestroyRef);
+reference!(Date, v8::Date_CloneRef, v8::Date_DestroyRef);
+reference!(NumberObject, v8::NumberObject_CloneRef, v8::NumberObject_DestroyRef);
+reference!(BooleanObject, v8::BooleanObject_CloneRef, v8::BooleanObject_DestroyRef);
+reference!(StringObject, v8::StringObject_CloneRef, v8::StringObject_DestroyRef);
+reference!(SymbolObject, v8::SymbolObject_CloneRef, v8::SymbolObject_DestroyRef);
+reference!(RegExp, v8::RegExp_CloneRef, v8::RegExp_DestroyRef);
+reference!(External, v8::External_CloneRef, v8::External_DestroyRef);

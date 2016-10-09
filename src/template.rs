@@ -49,21 +49,23 @@ impl Signature {
 /// Any modification of a FunctionTemplate after first instantiation will trigger a crash.
 /// A FunctionTemplate can have properties, these properties are added to the function object when it is created.
 impl FunctionTemplate {
-    pub fn new<F>(isolate: &isolate::Isolate,
-                  context: &context::Context,
-                  callback: F) -> FunctionTemplate
-        where F: Fn(value::FunctionCallbackInfo) -> value::Value {
+    pub fn new(isolate: &isolate::Isolate,
+               context: &context::Context,
+               callback: Box<Fn(value::FunctionCallbackInfo) -> value::Value + 'static>) -> FunctionTemplate {
         let raw = unsafe {
-            let callback_ptr: *mut Box<F> = Box::into_raw(Box::new(Box::new(callback)));
+            let callback_ptr = Box::into_raw(Box::new(callback));
+            let callback_ext = value::External::new::<Box<Fn(value::FunctionCallbackInfo) -> value::Value + 'static>>(&isolate, callback_ptr);
+
             let template = ObjectTemplate::new(isolate);
             template.set_internal_field_count(1);
+
             let closure = template.new_instance(context);
-            closure.set_aligned_pointer_in_internal_field(0, callback_ptr);
+            closure.set_internal_field(0, &callback_ext);
 
             util::invoke(isolate,
                          |c| v8::FunctionTemplate_New(c,
                                                       context.as_raw(),
-                                                      Some(util::callback::<F>),
+                                                      Some(util::callback),
                                                       (&closure as &value::Value).as_raw(),
                                                       ptr::null_mut(),
                                                       0,
@@ -144,7 +146,7 @@ inherit!(ObjectTemplate, Template);
 inherit!(FunctionTemplate, Template);
 inherit!(Signature, Data);
 
-drop!(Template, v8::Template_DestroyRef);
-drop!(FunctionTemplate, v8::FunctionTemplate_DestroyRef);
-drop!(ObjectTemplate, v8::ObjectTemplate_DestroyRef);
-drop!(Signature, v8::Signature_DestroyRef);
+reference!(Template, v8::Template_CloneRef, v8::Template_DestroyRef);
+reference!(FunctionTemplate, v8::FunctionTemplate_CloneRef, v8::FunctionTemplate_DestroyRef);
+reference!(ObjectTemplate, v8::ObjectTemplate_CloneRef, v8::ObjectTemplate_DestroyRef);
+reference!(Signature, v8::Signature_CloneRef, v8::Signature_DestroyRef);

@@ -54,8 +54,4 @@ impl Script {
     }
 }
 
-impl Drop for Script {
-    fn drop(&mut self) {
-        unsafe { v8::Script_DestroyRef(self.1) }
-    }
-}
+reference!(Script, v8::Script_CloneRef, v8::Script_DestroyRef);

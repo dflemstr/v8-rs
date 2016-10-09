@@ -58,11 +58,7 @@ impl Context {
     }
 }
 
-impl Drop for Context {
-    fn drop(&mut self) {
-        unsafe { v8::Context_DestroyRef(self.1) }
-    }
-}
+reference!(Context, v8::Context_CloneRef, v8::Context_DestroyRef);
 
 impl<'a> Drop for ContextGuard<'a> {
     fn drop(&mut self) {

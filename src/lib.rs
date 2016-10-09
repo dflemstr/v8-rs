@@ -368,7 +368,14 @@ mod tests {
 
     #[test]
     fn eval_symbol_object() {
-        // TODO: how?
+        let (_, _, v) = eval("Object(Symbol('abc'))").unwrap();
+        assert!(v.is_symbol_object());
+    }
+
+    #[test]
+    fn eval_native_error() {
+        let (_, _, v) = eval("new Error()").unwrap();
+        assert!(v.is_native_error());
     }
 
     #[test]
@@ -481,9 +488,9 @@ mod tests {
         let isolate = Isolate::new();
         let context = Context::new(&isolate);
 
-        let function = value::Function::new(&isolate, &context, 1, |mut info: value::FunctionCallbackInfo| {
+        let function = value::Function::new(&isolate, &context, 1, Box::new(|mut info| {
             info.args.remove(0)
-        });
+        }));
         let param = value::Integer::new(&isolate, 42);
 
         let result = function.call(&context, &[&param]).unwrap();
@@ -495,17 +502,19 @@ mod tests {
         let i = Isolate::new();
         let c = Context::new(&i);
 
-        let f = value::Function::new(&i, &c, 2, |info: value::FunctionCallbackInfo| {
+        let fi = i.clone();
+        let fc = c.clone();
+        let f = value::Function::new(&i, &c, 2, Box::new(move |info| {
             assert_eq!(2, info.length);
             let ref a = info.args[0];
             assert!(a.is_int32());
-            let a = a.int32_value(&c);
+            let a = a.int32_value(&fc);
             let ref b = info.args[1];
             assert!(b.is_int32());
-            let b = b.int32_value(&c);
+            let b = b.int32_value(&fc);
 
-            value::Integer::new(&i, a + b).into()
-        });
+            value::Integer::new(&fi, a + b).into()
+        }));
 
         let k = value::String::from_str(&i, "f");
         c.global().set(&c, &k, &f);
@@ -538,7 +547,7 @@ mod tests {
     fn run_defined_static_function() {
         let i = Isolate::new();
         let c = Context::new(&i);
-        let f = value::Function::new(&i, &c, 2, test_function);
+        let f = value::Function::new(&i, &c, 2, Box::new(test_function));
 
         let k = value::String::from_str(&i, "f");
         c.global().set(&c, &k, &f);
@@ -556,7 +565,7 @@ mod tests {
     fn run_defined_function_template_instance() {
         let i = Isolate::new();
         let c = Context::new(&i);
-        let ft = template::FunctionTemplate::new(&i, &c, test_function);
+        let ft = template::FunctionTemplate::new(&i, &c, Box::new(test_function));
         let f = ft.get_function(&c);
 
         let k = value::String::from_str(&i, "f");
@@ -596,7 +605,7 @@ mod tests {
         let i = Isolate::new();
         let c = Context::new(&i);
         let ot = template::ObjectTemplate::new(&i);
-        let ft = template::FunctionTemplate::new(&i, &c, test_function);
+        let ft = template::FunctionTemplate::new(&i, &c, Box::new(test_function));
         ot.set("f", &ft);
 
         let o = ot.new_instance(&c);
@@ -619,14 +628,50 @@ mod tests {
             let context = Context::new(&isolate);
             let param = value::Integer::new(&isolate, 42);
 
-            let function = value::Function::new(&isolate, &context, 1, |mut info: value::FunctionCallbackInfo| {
+            let function = value::Function::new(&isolate, &context, 1, Box::new(|mut info| {
                 info.args.remove(0)
-            });
+            }));
             (function, context, param)
         };
 
         let result = f.call(&c, &[&p]).unwrap();
         assert_eq!(42, result.uint32_value(&c));
+    }
+
+    #[test]
+    fn closure_lifetime() {
+        struct Foo {
+            msg: String
+        }
+
+        let isolate = Isolate::new();
+        let context = Context::new(&isolate);
+
+        let f = {
+            let foo = Foo {
+                msg: "Hello, World!".into()
+            };
+
+            let closure_isolate = isolate.clone();
+            value::Function::new(&isolate, &context, 0, Box::new(move |_| {
+                assert_eq!("Hello, World!", &foo.msg);
+
+                value::undefined(&closure_isolate).into()
+            }))
+        };
+
+        let bar = Foo {
+            msg: "Goodbye, World!".into()
+        };
+        let name = value::String::from_str(&isolate, "f");
+        context.global().set(&context, &name, &f);
+
+        let source = value::String::from_str(&isolate, "f();");
+        let script = Script::compile(&isolate, &context, &source).unwrap();
+        let result = script.run(&context).unwrap();
+
+        assert_eq!("Goodbye, World!", bar.msg);
+        assert!(result.is_undefined());
     }
 }
 
@@ -658,9 +703,9 @@ mod benches {
         let isolate = Isolate::new();
         let context = Context::new(&isolate);
 
-        let function = value::Function::new(&isolate, &context, 1, |mut info: value::FunctionCallbackInfo| {
+        let function = value::Function::new(&isolate, &context, 1, Box::new(|mut info| {
             info.args.remove(0)
-        });
+        }));
         let param = value::Integer::new(&isolate, 42);
 
         bencher.iter(|| {
