@@ -368,7 +368,14 @@ mod tests {
 
     #[test]
     fn eval_symbol_object() {
-        // TODO: how?
+        let (_, _, v) = eval("Object(Symbol('abc'))").unwrap();
+        assert!(v.is_symbol_object());
+    }
+
+    #[test]
+    fn eval_native_error() {
+        let (_, _, v) = eval("new Error()").unwrap();
+        assert!(v.is_native_error());
     }
 
     #[test]
