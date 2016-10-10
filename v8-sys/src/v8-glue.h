@@ -185,6 +185,7 @@ struct PropertyCallbackInfo {
     ObjectRef Holder;
     ValueRef ReturnValue;
     bool ShouldThrowOnError;
+    ValueRef ThrownValue;
 };
 
 struct FunctionCallbackInfo {
@@ -197,6 +198,7 @@ struct FunctionCallbackInfo {
     ValueRef Data;
     IsolatePtr GetIsolate;
     ValueRef ReturnValue;
+    ValueRef ThrownValue;
 };
 
 /* These typedefs are just here to give a nicer hint to the user as to

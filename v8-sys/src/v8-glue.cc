@@ -270,6 +270,7 @@ PropertyCallbackInfo build_callback_info(
         unwrap(isolate, info.Holder()),
         nullptr,
         info.ShouldThrowOnError(),
+        nullptr,
     };
 
     return result;
@@ -301,6 +302,7 @@ FunctionCallbackInfo build_callback_info(
         unwrap(isolate, data),
         isolate,
         nullptr,
+        nullptr,
     };
 
     return result;
@@ -325,7 +327,9 @@ void generic_named_property_handler_getter(
 
     getter(unwrap(isolate, property), &callback_info);
 
-    if (callback_info.ReturnValue) {
+    if (callback_info.ThrownValue) {
+        isolate->ThrowException(wrap(isolate, callback_info.ThrownValue));
+    } else if (callback_info.ReturnValue) {
         info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
     }
 }
@@ -346,7 +350,9 @@ void generic_named_property_handler_setter(
 
     setter(unwrap(isolate, property), unwrap(isolate, value), &callback_info);
 
-    if (callback_info.ReturnValue) {
+    if (callback_info.ThrownValue) {
+        isolate->ThrowException(wrap(isolate, callback_info.ThrownValue));
+    } else if (callback_info.ReturnValue) {
         info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
     }
 }
@@ -366,7 +372,9 @@ void generic_named_property_handler_query(
 
     query(unwrap(isolate, property), &callback_info);
 
-    if (callback_info.ReturnValue) {
+    if (callback_info.ThrownValue) {
+        isolate->ThrowException(wrap(isolate, callback_info.ThrownValue));
+    } else if (callback_info.ReturnValue) {
         info.GetReturnValue().Set(v8::Local<v8::Integer>::Cast(wrap(isolate, callback_info.ReturnValue)));
     }
 }
@@ -386,7 +394,9 @@ void generic_named_property_handler_deleter(
 
     deleter(unwrap(isolate, property), &callback_info);
 
-    if (callback_info.ReturnValue) {
+    if (callback_info.ThrownValue) {
+        isolate->ThrowException(wrap(isolate, callback_info.ThrownValue));
+    } else if (callback_info.ReturnValue) {
         info.GetReturnValue().Set(v8::Local<v8::Boolean>::Cast(wrap(isolate, callback_info.ReturnValue)));
     }
 }
@@ -405,7 +415,9 @@ void generic_named_property_handler_enumerator(
 
     enumerator(&callback_info);
 
-    if (callback_info.ReturnValue) {
+    if (callback_info.ThrownValue) {
+        isolate->ThrowException(wrap(isolate, callback_info.ThrownValue));
+    } else if (callback_info.ReturnValue) {
         info.GetReturnValue().Set(v8::Local<v8::Array>::Cast(wrap(isolate, callback_info.ReturnValue)));
     }
 }
@@ -486,7 +498,9 @@ void indexed_property_handler_getter(
 
     getter(index, &callback_info);
 
-    if (callback_info.ReturnValue) {
+    if (callback_info.ThrownValue) {
+        isolate->ThrowException(wrap(isolate, callback_info.ThrownValue));
+    } else if (callback_info.ReturnValue) {
         info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
     }
 }
@@ -507,7 +521,9 @@ void indexed_property_handler_setter(
 
     setter(index, unwrap(isolate, value), &callback_info);
 
-    if (callback_info.ReturnValue) {
+    if (callback_info.ThrownValue) {
+        isolate->ThrowException(wrap(isolate, callback_info.ThrownValue));
+    } else if (callback_info.ReturnValue) {
         info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
     }
 }
@@ -527,7 +543,9 @@ void indexed_property_handler_query(
 
     query(index, &callback_info);
 
-    if (callback_info.ReturnValue) {
+    if (callback_info.ThrownValue) {
+        isolate->ThrowException(wrap(isolate, callback_info.ThrownValue));
+    } else if (callback_info.ReturnValue) {
         info.GetReturnValue().Set(v8::Local<v8::Integer>::Cast(wrap(isolate, callback_info.ReturnValue)));
     }
 }
@@ -547,7 +565,9 @@ void indexed_property_handler_deleter(
 
     deleter(index, &callback_info);
 
-    if (callback_info.ReturnValue) {
+    if (callback_info.ThrownValue) {
+        isolate->ThrowException(wrap(isolate, callback_info.ThrownValue));
+    } else if (callback_info.ReturnValue) {
         info.GetReturnValue().Set(v8::Local<v8::Boolean>::Cast(wrap(isolate, callback_info.ReturnValue)));
     }
 }
@@ -566,7 +586,9 @@ void indexed_property_handler_enumerator(
 
     enumerator(&callback_info);
 
-    if (callback_info.ReturnValue) {
+    if (callback_info.ThrownValue) {
+        isolate->ThrowException(wrap(isolate, callback_info.ThrownValue));
+    } else if (callback_info.ReturnValue) {
         info.GetReturnValue().Set(v8::Local<v8::Array>::Cast(wrap(isolate, callback_info.ReturnValue)));
     }
 }
@@ -969,7 +991,9 @@ void function_callback(const v8::FunctionCallbackInfo<v8::Value> &info) {
 
     delete[] callback_info.Args;
 
-    if (callback_info.ReturnValue) {
+    if (callback_info.ThrownValue) {
+        isolate->ThrowException(wrap(isolate, callback_info.ThrownValue));
+    } else if (callback_info.ReturnValue) {
         info.GetReturnValue().Set(wrap(isolate, callback_info.ReturnValue));
     }
 }
