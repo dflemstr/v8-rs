@@ -59,7 +59,8 @@ impl FunctionTemplate {
     /// Creates a function template.
     pub fn new(isolate: &isolate::Isolate,
                context: &context::Context,
-               callback: Box<Fn(value::FunctionCallbackInfo) -> value::Value + 'static>) -> FunctionTemplate {
+               callback: Box<Fn(value::FunctionCallbackInfo) -> value::Value + 'static>)
+               -> FunctionTemplate {
         let raw = unsafe {
             let callback_ptr = Box::into_raw(Box::new(callback));
             let callback_ext = value::External::new::<Box<Fn(value::FunctionCallbackInfo) -> value::Value + 'static>>(&isolate, callback_ptr);
@@ -70,14 +71,15 @@ impl FunctionTemplate {
             let closure = template.new_instance(context);
             closure.set_internal_field(0, &callback_ext);
 
-            util::invoke(isolate,
-                         |c| v8::FunctionTemplate_New(c,
-                                                      context.as_raw(),
-                                                      Some(util::callback),
-                                                      (&closure as &value::Value).as_raw(),
-                                                      ptr::null_mut(),
-                                                      0,
-                                                      v8::ConstructorBehavior::ConstructorBehavior_kAllow))
+            util::invoke(isolate, |c| {
+                    v8::FunctionTemplate_New(c,
+                                             context.as_raw(),
+                                             Some(util::callback),
+                                             (&closure as &value::Value).as_raw(),
+                                             ptr::null_mut(),
+                                             0,
+                                             v8::ConstructorBehavior::ConstructorBehavior_kAllow)
+                })
                 .unwrap()
         };
         FunctionTemplate(isolate.clone(), raw)
@@ -86,9 +88,10 @@ impl FunctionTemplate {
     /// Returns the unique function instance in the current execution context.
     pub fn get_function(self, context: &context::Context) -> value::Function {
         unsafe {
-            let raw = util::invoke(&self.0,
-                                   |c| v8::FunctionTemplate_GetFunction(c, self.1, context.as_raw()))
-                .unwrap();
+            let raw =
+                util::invoke(&self.0,
+                             |c| v8::FunctionTemplate_GetFunction(c, self.1, context.as_raw()))
+                    .unwrap();
             value::Function::from_raw(&self.0, raw)
         }
     }
@@ -120,9 +123,13 @@ impl ObjectTemplate {
         let template: &Template = self;
         unsafe {
             util::invoke(&self.0, |c| {
-                v8::Template_Set_Raw(c, template.1, self.0.as_raw(), cname.as_ptr(), value.as_raw())
-            })
-            .unwrap()
+                    v8::Template_Set_Raw(c,
+                                         template.1,
+                                         self.0.as_raw(),
+                                         cname.as_ptr(),
+                                         value.as_raw())
+                })
+                .unwrap()
         };
     }
 
@@ -155,6 +162,10 @@ inherit!(FunctionTemplate, Template);
 inherit!(Signature, Data);
 
 reference!(Template, v8::Template_CloneRef, v8::Template_DestroyRef);
-reference!(FunctionTemplate, v8::FunctionTemplate_CloneRef, v8::FunctionTemplate_DestroyRef);
-reference!(ObjectTemplate, v8::ObjectTemplate_CloneRef, v8::ObjectTemplate_DestroyRef);
+reference!(FunctionTemplate,
+           v8::FunctionTemplate_CloneRef,
+           v8::FunctionTemplate_DestroyRef);
+reference!(ObjectTemplate,
+           v8::ObjectTemplate_CloneRef,
+           v8::ObjectTemplate_DestroyRef);
 reference!(Signature, v8::Signature_CloneRef, v8::Signature_DestroyRef);
