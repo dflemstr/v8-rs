@@ -488,9 +488,10 @@ mod tests {
         let isolate = Isolate::new();
         let context = Context::new(&isolate);
 
-        let function = value::Function::new(&isolate, &context, 1, Box::new(|mut info| {
-            info.args.remove(0)
-        }));
+        let function = value::Function::new(&isolate,
+                                            &context,
+                                            1,
+                                            Box::new(|mut info| info.args.remove(0)));
         let param = value::Integer::new(&isolate, 42);
 
         let result = function.call(&context, &[&param]).unwrap();
@@ -504,7 +505,10 @@ mod tests {
 
         let fi = i.clone();
         let fc = c.clone();
-        let f = value::Function::new(&i, &c, 2, Box::new(move |info| {
+        let f = value::Function::new(&i,
+                                     &c,
+                                     2,
+                                     Box::new(move |info| {
             assert_eq!(2, info.length);
             let ref a = info.args[0];
             assert!(a.is_int32());
@@ -628,9 +632,10 @@ mod tests {
             let context = Context::new(&isolate);
             let param = value::Integer::new(&isolate, 42);
 
-            let function = value::Function::new(&isolate, &context, 1, Box::new(|mut info| {
-                info.args.remove(0)
-            }));
+            let function = value::Function::new(&isolate,
+                                                &context,
+                                                1,
+                                                Box::new(|mut info| info.args.remove(0)));
             (function, context, param)
         };
 
@@ -641,28 +646,27 @@ mod tests {
     #[test]
     fn closure_lifetime() {
         struct Foo {
-            msg: String
+            msg: String,
         }
 
         let isolate = Isolate::new();
         let context = Context::new(&isolate);
 
         let f = {
-            let foo = Foo {
-                msg: "Hello, World!".into()
-            };
+            let foo = Foo { msg: "Hello, World!".into() };
 
             let closure_isolate = isolate.clone();
-            value::Function::new(&isolate, &context, 0, Box::new(move |_| {
-                assert_eq!("Hello, World!", &foo.msg);
+            value::Function::new(&isolate,
+                                 &context,
+                                 0,
+                                 Box::new(move |_| {
+                                     assert_eq!("Hello, World!", &foo.msg);
 
-                value::undefined(&closure_isolate).into()
-            }))
+                                     value::undefined(&closure_isolate).into()
+                                 }))
         };
 
-        let bar = Foo {
-            msg: "Goodbye, World!".into()
-        };
+        let bar = Foo { msg: "Goodbye, World!".into() };
         let name = value::String::from_str(&isolate, "f");
         context.global().set(&context, &name, &f);
 
@@ -672,6 +676,44 @@ mod tests {
 
         assert_eq!("Goodbye, World!", bar.msg);
         assert!(result.is_undefined());
+    }
+
+    #[test]
+    #[should_panic="You dun goofed"]
+    fn propagate_panic() {
+        let isolate = Isolate::new();
+        let context = Context::new(&isolate);
+
+        let f = value::Function::new(&isolate,
+                                     &context,
+                                     0,
+                                     Box::new(|_| panic!("You dun goofed")));
+
+        f.call(&context, &[]).unwrap();
+    }
+
+    #[test]
+    fn catch_panic() {
+        let isolate = Isolate::new();
+        let context = Context::new(&isolate);
+
+        let f = value::Function::new(&isolate,
+                                     &context,
+                                     0,
+                                     Box::new(|_| panic!("Something: {}", 42)));
+
+        let f_key = value::String::from_str(&isolate, "f");
+        context.global().set(&context, &f_key, &f);
+
+        let source = value::String::from_str(&isolate,
+                                             "(function() { try { f(); } catch (e) { return \
+                                              e.message; } })()");
+        let script = Script::compile(&isolate, &context, &source).unwrap();
+        let result = script.run(&context).unwrap();
+
+        let result = result.into_string().unwrap();
+
+        assert_eq!("Rust panic: Something: 42", result.value());
     }
 }
 
@@ -693,9 +735,7 @@ mod benches {
         let function = result.into_function().unwrap();
         let param = value::Integer::new(&isolate, 42);
 
-        bencher.iter(|| {
-            function.call(&context, &[&param]).unwrap()
-        });
+        bencher.iter(|| function.call(&context, &[&param]).unwrap());
     }
 
     #[bench]
@@ -703,13 +743,12 @@ mod benches {
         let isolate = Isolate::new();
         let context = Context::new(&isolate);
 
-        let function = value::Function::new(&isolate, &context, 1, Box::new(|mut info| {
-            info.args.remove(0)
-        }));
+        let function = value::Function::new(&isolate,
+                                            &context,
+                                            1,
+                                            Box::new(|mut info| info.args.remove(0)));
         let param = value::Integer::new(&isolate, 42);
 
-        bencher.iter(|| {
-            function.call(&context, &[&param]).unwrap()
-        });
+        bencher.iter(|| function.call(&context, &[&param]).unwrap());
     }
 }

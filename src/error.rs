@@ -101,7 +101,9 @@ impl StackTrace {
 impl StackFrame {
     /// The line number at which this stack frame was pushed.
     pub fn get_line_number(&self) -> u32 {
-        unsafe { util::invoke(&self.0, |c| v8::StackFrame_GetLineNumber(c, self.1)).unwrap() as u32 }
+        unsafe {
+            util::invoke(&self.0, |c| v8::StackFrame_GetLineNumber(c, self.1)).unwrap() as u32
+        }
     }
 
     /// The column number at which this stack frame was pushed.
@@ -203,5 +205,9 @@ impl fmt::Display for CapturedStackFrame {
 }
 
 reference!(Message, v8::Message_CloneRef, v8::Message_DestroyRef);
-reference!(StackTrace, v8::StackTrace_CloneRef, v8::StackTrace_DestroyRef);
-reference!(StackFrame, v8::StackFrame_CloneRef, v8::StackFrame_DestroyRef);
+reference!(StackTrace,
+           v8::StackTrace_CloneRef,
+           v8::StackTrace_DestroyRef);
+reference!(StackFrame,
+           v8::StackFrame_CloneRef,
+           v8::StackFrame_DestroyRef);

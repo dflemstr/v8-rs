@@ -208,6 +208,8 @@ pub struct RegExp(isolate::Isolate, v8::RegExpRef);
 #[derive(Debug)]
 pub struct External(isolate::Isolate, v8::ExternalRef);
 
+pub struct Exception(isolate::Isolate, v8::ExceptionRef);
+
 pub struct PropertyCallbackInfo {
     pub this: Object,
     pub holder: Object,
@@ -598,7 +600,10 @@ impl Value {
 
     pub fn strict_equals(&self, that: &Value) -> bool {
         unsafe {
-            0 != util::invoke(&self.0, |c| v8::Value_StrictEquals(c, self.1, that.as_raw())).unwrap()
+            0 !=
+            util::invoke(&self.0,
+                         |c| v8::Value_StrictEquals(c, self.1, that.as_raw()))
+                .unwrap()
         }
     }
 
@@ -647,9 +652,7 @@ impl Boolean {
     }
 
     pub fn value(&self) -> bool {
-        unsafe {
-            0 != util::invoke(&self.0, |c| v8::Boolean_Value(c, self.1)).unwrap()
-        }
+        unsafe { 0 != util::invoke(&self.0, |c| v8::Boolean_Value(c, self.1)).unwrap() }
     }
 
     /// Creates a boolean from a set of raw pointers.
@@ -738,12 +741,15 @@ impl String {
     ///
     /// Will read the entire string in some cases.
     pub fn contains_only_one_byte(&self) -> bool {
-        unsafe { 0 != util::invoke(&self.0, |c| v8::String_ContainsOnlyOneByte(c, self.1)).unwrap() }
+        unsafe {
+            0 != util::invoke(&self.0, |c| v8::String_ContainsOnlyOneByte(c, self.1)).unwrap()
+        }
     }
 
     pub fn value(&self) -> ::std::string::String {
-        let len =
-            unsafe { util::invoke(&self.0, |c| v8::String_Utf8Length(c, self.1)).unwrap() } as usize;
+        let len = unsafe {
+            util::invoke(&self.0, |c| v8::String_Utf8Length(c, self.1)).unwrap()
+        } as usize;
         let mut buf = vec![0u8; len];
 
         unsafe {
@@ -1125,6 +1131,52 @@ impl Object {
                          |c| v8::Object_GetOwnPropertyNames(c, self.1, context.as_raw()))
                 .map(|p| Array(self.0.clone(), p))
                 .unwrap()
+        }
+    }
+
+
+    pub fn set_private(&self, context: &context::Context, key: &Private, value: &Value) -> bool {
+        unsafe {
+            let m = util::invoke(&self.0, |c| {
+                    v8::Object_SetPrivate(c, self.1, context.as_raw(), key.as_raw(), value.as_raw())
+                })
+                .unwrap();
+
+            assert!(0 != m.is_set);
+            0 != m.value
+        }
+    }
+
+    pub fn get_private(&self, context: &context::Context, key: &Private) -> Value {
+        unsafe {
+            util::invoke(&self.0,
+                         |c| v8::Object_GetPrivate(c, self.1, context.as_raw(), key.as_raw()))
+                .map(|p| Value(self.0.clone(), p))
+                .unwrap()
+        }
+    }
+
+    pub fn delete_private(&self, context: &context::Context, key: &Private) -> bool {
+        unsafe {
+            let m = util::invoke(&self.0, |c| {
+                    v8::Object_DeletePrivate(c, self.1, context.as_raw(), key.as_raw())
+                })
+                .unwrap();
+
+            assert!(0 != m.is_set);
+            0 != m.value
+        }
+    }
+
+    pub fn has_private(&self, context: &context::Context, key: &Private) -> bool {
+        unsafe {
+            let m = util::invoke(&self.0, |c| {
+                    v8::Object_HasPrivate(c, self.1, context.as_raw(), key.as_raw())
+                })
+                .unwrap();
+
+            assert!(0 != m.is_set);
+            0 != m.value
         }
     }
 
@@ -1541,7 +1593,9 @@ impl Function {
                -> Function {
         unsafe {
             let callback_ptr = Box::into_raw(Box::new(callback));
-            let callback_ext = External::new::<Box<Fn(FunctionCallbackInfo) -> Value + 'static>>(&isolate, callback_ptr);
+            let callback_ext =
+                External::new::<Box<Fn(FunctionCallbackInfo) -> Value + 'static>>(&isolate,
+                                                                                  callback_ptr);
 
             let template = template::ObjectTemplate::new(isolate);
             template.set_internal_field_count(1);
@@ -1612,9 +1666,11 @@ impl Function {
 }
 
 impl External {
-    pub unsafe fn new<A>(isolate: &isolate::Isolate,
-                         value: *mut A) -> External {
-        let raw = util::invoke(&isolate, |c| v8::External_New(c, isolate.as_raw(), value as *mut os::raw::c_void)).unwrap();
+    pub unsafe fn new<A>(isolate: &isolate::Isolate, value: *mut A) -> External {
+        let raw = util::invoke(&isolate, |c| {
+                v8::External_New(c, isolate.as_raw(), value as *mut os::raw::c_void)
+            })
+            .unwrap();
         External(isolate.clone(), raw)
     }
 
@@ -1630,6 +1686,45 @@ impl External {
     /// Returns the underlying raw pointer behind this external.
     pub fn as_raw(&self) -> v8::ExternalRef {
         self.1
+    }
+}
+
+impl Exception {
+    pub fn range_error(isolate: &isolate::Isolate, message: &String) -> Value {
+        let raw = unsafe {
+            util::invoke(&isolate, |c| v8::Exception_RangeError(c, message.as_raw())).unwrap()
+        };
+        Value(isolate.clone(), raw)
+    }
+
+    pub fn reference_error(isolate: &isolate::Isolate, message: &String) -> Value {
+        let raw = unsafe {
+            util::invoke(&isolate,
+                         |c| v8::Exception_ReferenceError(c, message.as_raw()))
+                .unwrap()
+        };
+        Value(isolate.clone(), raw)
+    }
+
+    pub fn syntax_error(isolate: &isolate::Isolate, message: &String) -> Value {
+        let raw = unsafe {
+            util::invoke(&isolate, |c| v8::Exception_SyntaxError(c, message.as_raw())).unwrap()
+        };
+        Value(isolate.clone(), raw)
+    }
+
+    pub fn type_error(isolate: &isolate::Isolate, message: &String) -> Value {
+        let raw = unsafe {
+            util::invoke(&isolate, |c| v8::Exception_TypeError(c, message.as_raw())).unwrap()
+        };
+        Value(isolate.clone(), raw)
+    }
+
+    pub fn error(isolate: &isolate::Isolate, message: &String) -> Value {
+        let raw = unsafe {
+            util::invoke(&isolate, |c| v8::Exception_Error(c, message.as_raw())).unwrap()
+        };
+        Value(isolate.clone(), raw)
     }
 }
 
@@ -1797,24 +1892,57 @@ reference!(Set, v8::Set_CloneRef, v8::Set_DestroyRef);
 reference!(Function, v8::Function_CloneRef, v8::Function_DestroyRef);
 reference!(Promise, v8::Promise_CloneRef, v8::Promise_DestroyRef);
 reference!(Proxy, v8::Proxy_CloneRef, v8::Proxy_DestroyRef);
-reference!(ArrayBuffer, v8::ArrayBuffer_CloneRef, v8::ArrayBuffer_DestroyRef);
-reference!(ArrayBufferView, v8::ArrayBufferView_CloneRef, v8::ArrayBufferView_DestroyRef);
-reference!(TypedArray, v8::TypedArray_CloneRef, v8::TypedArray_DestroyRef);
-reference!(Uint8Array, v8::Uint8Array_CloneRef, v8::Uint8Array_DestroyRef);
-reference!(Uint8ClampedArray, v8::Uint8ClampedArray_CloneRef, v8::Uint8ClampedArray_DestroyRef);
+reference!(ArrayBuffer,
+           v8::ArrayBuffer_CloneRef,
+           v8::ArrayBuffer_DestroyRef);
+reference!(ArrayBufferView,
+           v8::ArrayBufferView_CloneRef,
+           v8::ArrayBufferView_DestroyRef);
+reference!(TypedArray,
+           v8::TypedArray_CloneRef,
+           v8::TypedArray_DestroyRef);
+reference!(Uint8Array,
+           v8::Uint8Array_CloneRef,
+           v8::Uint8Array_DestroyRef);
+reference!(Uint8ClampedArray,
+           v8::Uint8ClampedArray_CloneRef,
+           v8::Uint8ClampedArray_DestroyRef);
 reference!(Int8Array, v8::Int8Array_CloneRef, v8::Int8Array_DestroyRef);
-reference!(Uint16Array, v8::Uint16Array_CloneRef, v8::Uint16Array_DestroyRef);
-reference!(Int16Array, v8::Int16Array_CloneRef, v8::Int16Array_DestroyRef);
-reference!(Uint32Array, v8::Uint32Array_CloneRef, v8::Uint32Array_DestroyRef);
-reference!(Int32Array, v8::Int32Array_CloneRef, v8::Int32Array_DestroyRef);
-reference!(Float32Array, v8::Float32Array_CloneRef, v8::Float32Array_DestroyRef);
-reference!(Float64Array, v8::Float64Array_CloneRef, v8::Float64Array_DestroyRef);
+reference!(Uint16Array,
+           v8::Uint16Array_CloneRef,
+           v8::Uint16Array_DestroyRef);
+reference!(Int16Array,
+           v8::Int16Array_CloneRef,
+           v8::Int16Array_DestroyRef);
+reference!(Uint32Array,
+           v8::Uint32Array_CloneRef,
+           v8::Uint32Array_DestroyRef);
+reference!(Int32Array,
+           v8::Int32Array_CloneRef,
+           v8::Int32Array_DestroyRef);
+reference!(Float32Array,
+           v8::Float32Array_CloneRef,
+           v8::Float32Array_DestroyRef);
+reference!(Float64Array,
+           v8::Float64Array_CloneRef,
+           v8::Float64Array_DestroyRef);
 reference!(DataView, v8::DataView_CloneRef, v8::DataView_DestroyRef);
-reference!(SharedArrayBuffer, v8::SharedArrayBuffer_CloneRef, v8::SharedArrayBuffer_DestroyRef);
+reference!(SharedArrayBuffer,
+           v8::SharedArrayBuffer_CloneRef,
+           v8::SharedArrayBuffer_DestroyRef);
 reference!(Date, v8::Date_CloneRef, v8::Date_DestroyRef);
-reference!(NumberObject, v8::NumberObject_CloneRef, v8::NumberObject_DestroyRef);
-reference!(BooleanObject, v8::BooleanObject_CloneRef, v8::BooleanObject_DestroyRef);
-reference!(StringObject, v8::StringObject_CloneRef, v8::StringObject_DestroyRef);
-reference!(SymbolObject, v8::SymbolObject_CloneRef, v8::SymbolObject_DestroyRef);
+reference!(NumberObject,
+           v8::NumberObject_CloneRef,
+           v8::NumberObject_DestroyRef);
+reference!(BooleanObject,
+           v8::BooleanObject_CloneRef,
+           v8::BooleanObject_DestroyRef);
+reference!(StringObject,
+           v8::StringObject_CloneRef,
+           v8::StringObject_DestroyRef);
+reference!(SymbolObject,
+           v8::SymbolObject_CloneRef,
+           v8::SymbolObject_DestroyRef);
 reference!(RegExp, v8::RegExp_CloneRef, v8::RegExp_DestroyRef);
 reference!(External, v8::External_CloneRef, v8::External_DestroyRef);
+reference!(Exception, v8::Exception_CloneRef, v8::Exception_DestroyRef);
