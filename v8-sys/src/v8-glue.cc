@@ -316,6 +316,7 @@ void generic_named_property_handler_getter(
     v8::Local<v8::Name> property,
     const v8::PropertyCallbackInfo<v8::Value> &info) {
     v8::Isolate *isolate = info.GetIsolate();
+    v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope scope(isolate);
     v8::Local<v8::Object> outer_data =
         v8::Local<v8::Object>::Cast(info.Data());
@@ -339,6 +340,7 @@ void generic_named_property_handler_setter(
     v8::Local<v8::Value> value,
     const v8::PropertyCallbackInfo<v8::Value> &info) {
     v8::Isolate *isolate = info.GetIsolate();
+    v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope scope(isolate);
     v8::Local<v8::Object> outer_data =
         v8::Local<v8::Object>::Cast(info.Data());
@@ -361,6 +363,7 @@ void generic_named_property_handler_query(
     v8::Local<v8::Name> property,
     const v8::PropertyCallbackInfo<v8::Integer> &info) {
     v8::Isolate *isolate = info.GetIsolate();
+    v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope scope(isolate);
     v8::Local<v8::Object> outer_data =
         v8::Local<v8::Object>::Cast(info.Data());
@@ -383,6 +386,7 @@ void generic_named_property_handler_deleter(
     v8::Local<v8::Name> property,
     const v8::PropertyCallbackInfo<v8::Boolean> &info) {
     v8::Isolate *isolate = info.GetIsolate();
+    v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope scope(isolate);
     v8::Local<v8::Object> outer_data =
         v8::Local<v8::Object>::Cast(info.Data());
@@ -404,6 +408,7 @@ void generic_named_property_handler_deleter(
 void generic_named_property_handler_enumerator(
     const v8::PropertyCallbackInfo<v8::Array> &info) {
     v8::Isolate *isolate = info.GetIsolate();
+    v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope scope(isolate);
     v8::Local<v8::Object> outer_data =
         v8::Local<v8::Object>::Cast(info.Data());
@@ -487,6 +492,7 @@ void indexed_property_handler_getter(
     uint32_t index,
     const v8::PropertyCallbackInfo<v8::Value> &info) {
     v8::Isolate *isolate = info.GetIsolate();
+    v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope scope(isolate);
     v8::Local<v8::Object> outer_data =
         v8::Local<v8::Object>::Cast(info.Data());
@@ -510,6 +516,7 @@ void indexed_property_handler_setter(
     v8::Local<v8::Value> value,
     const v8::PropertyCallbackInfo<v8::Value> &info) {
     v8::Isolate *isolate = info.GetIsolate();
+    v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope scope(isolate);
     v8::Local<v8::Object> outer_data =
         v8::Local<v8::Object>::Cast(info.Data());
@@ -532,6 +539,7 @@ void indexed_property_handler_query(
     uint32_t index,
     const v8::PropertyCallbackInfo<v8::Integer> &info) {
     v8::Isolate *isolate = info.GetIsolate();
+    v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope scope(isolate);
     v8::Local<v8::Object> outer_data =
         v8::Local<v8::Object>::Cast(info.Data());
@@ -554,6 +562,7 @@ void indexed_property_handler_deleter(
     uint32_t index,
     const v8::PropertyCallbackInfo<v8::Boolean> &info) {
     v8::Isolate *isolate = info.GetIsolate();
+    v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope scope(isolate);
     v8::Local<v8::Object> outer_data =
         v8::Local<v8::Object>::Cast(info.Data());
@@ -575,6 +584,7 @@ void indexed_property_handler_deleter(
 void indexed_property_handler_enumerator(
     const v8::PropertyCallbackInfo<v8::Array> &info) {
     v8::Isolate *isolate = info.GetIsolate();
+    v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope scope(isolate);
     v8::Local<v8::Object> outer_data =
         v8::Local<v8::Object>::Cast(info.Data());
@@ -825,6 +835,7 @@ void v8_IdleTask_Run(IdleTaskPtr task, double deadline_in_seconds) {
 #include "v8-glue-generated.cc"
 
 PrimitiveRef v8_Undefined(RustContext c) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     auto result = v8::Undefined(c.isolate);
@@ -833,6 +844,7 @@ PrimitiveRef v8_Undefined(RustContext c) {
 }
 
 PrimitiveRef v8_Null(RustContext c) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     auto result = v8::Null(c.isolate);
@@ -841,6 +853,7 @@ PrimitiveRef v8_Null(RustContext c) {
 }
 
 BooleanRef v8_True(RustContext c) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     auto result = v8::True(c.isolate);
@@ -849,6 +862,7 @@ BooleanRef v8_True(RustContext c) {
 }
 
 BooleanRef v8_False(RustContext c) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     auto result = v8::False(c.isolate);
@@ -857,6 +871,7 @@ BooleanRef v8_False(RustContext c) {
 }
 
 ContextRef v8_Context_New(RustContext c) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     auto result = v8::Context::New(c.isolate);
@@ -865,6 +880,7 @@ ContextRef v8_Context_New(RustContext c) {
 }
 
 StringRef v8_String_NewFromUtf8_Normal(RustContext c, const char *data, int length) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     auto result = v8::String::NewFromUtf8(c.isolate, data, v8::NewStringType::kNormal, length);
@@ -873,6 +889,7 @@ StringRef v8_String_NewFromUtf8_Normal(RustContext c, const char *data, int leng
 }
 
 StringRef v8_String_NewFromUtf8_Internalized(RustContext c, const char *data, int length) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     auto result = v8::String::NewFromUtf8(c.isolate, data, v8::NewStringType::kInternalized, length);
@@ -881,6 +898,7 @@ StringRef v8_String_NewFromUtf8_Internalized(RustContext c, const char *data, in
 }
 
 int v8_String_WriteUtf8(RustContext c, StringRef string, char *buffer, int length) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     auto result = wrap(c.isolate, string)->WriteUtf8(buffer, length);
@@ -889,6 +907,7 @@ int v8_String_WriteUtf8(RustContext c, StringRef string, char *buffer, int lengt
 }
 
 ScriptRef v8_Script_Compile(RustContext c, ContextRef context, StringRef source) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
@@ -910,6 +929,7 @@ ScriptRef v8_Script_Compile_Origin(
     BooleanRef resource_is_embedder_debug_script,
     ValueRef source_map_url,
     BooleanRef resource_is_opaque) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
@@ -934,6 +954,7 @@ ScriptRef v8_Script_Compile_Origin(
 }
 
 ValueRef v8_Object_CallAsFunction(RustContext c, ObjectRef self, ContextRef context, ValueRef recv, int argc, ValueRef argv[]) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
@@ -956,6 +977,7 @@ ValueRef v8_Object_CallAsFunction(RustContext c, ObjectRef self, ContextRef cont
 }
 
 ValueRef v8_Object_CallAsConstructor(RustContext c, ObjectRef self, ContextRef context, int argc, ValueRef argv[]) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
@@ -977,6 +999,7 @@ enum class FunctionHandlerFields {
 
 void function_callback(const v8::FunctionCallbackInfo<v8::Value> &info) {
     v8::Isolate *isolate = info.GetIsolate();
+    v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope scope(isolate);
     v8::Local<v8::Object> outer_data =
         v8::Local<v8::Object>::Cast(info.Data());
@@ -1005,6 +1028,7 @@ FunctionRef v8_Function_New(
     ValueRef data,
     int length,
     ConstructorBehavior behavior) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     v8::Local<v8::ObjectTemplate> outer_data_template =
@@ -1034,6 +1058,7 @@ ObjectRef v8_Function_NewInstance(
     ContextRef context,
     int argc,
     ValueRef argv[]) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
@@ -1057,6 +1082,7 @@ ValueRef v8_Function_Call(
     ValueRef recv,
     int argc,
     ValueRef argv[]) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     v8::Context::Scope context_scope(wrap(c.isolate, context));
@@ -1090,6 +1116,7 @@ void v8_Template_SetNativeDataProperty(
     PropertyAttribute attribute,
     AccessorSignatureRef signature,
     AccessControl settings) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
 
@@ -1104,6 +1131,7 @@ FunctionTemplateRef v8_FunctionTemplate_New(
     SignatureRef signature,
     int length,
     ConstructorBehavior behavior) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
     v8::Local<v8::ObjectTemplate> outer_data_template =
@@ -1137,6 +1165,7 @@ void v8_ObjectTemplate_SetAccessor(
     AccessControl settings,
     PropertyAttribute attribute,
     AccessorSignatureRef signature) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
 
@@ -1153,6 +1182,7 @@ void v8_ObjectTemplate_SetAccessor_Name(
     AccessControl settings,
     PropertyAttribute attribute,
     AccessorSignatureRef signature) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
 
@@ -1164,6 +1194,7 @@ void v8_ObjectTemplate_SetCallAsFunctionHandler(
     ObjectTemplateRef self,
     FunctionCallback callback,
     ValueRef data) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
 
@@ -1175,6 +1206,7 @@ void v8_ObjectTemplate_SetAccessCheckCallback(
     ObjectTemplateRef self,
     AccessCheckCallback callback,
     ValueRef data) {
+    v8::Isolate::Scope isolate_scope(c.isolate);
     v8::HandleScope scope(c.isolate);
     v8::TryCatch try_catch(c.isolate);
 

@@ -247,6 +247,7 @@ fn write_cc_file<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
             }
             try!(writeln!(out, ") {{"));
 
+            try!(writeln!(out, "  v8::Isolate::Scope __isolate_scope(c.isolate);"));
             try!(writeln!(out, "  v8::HandleScope __handle_scope(c.isolate);"));
             try!(writeln!(out, "  v8::TryCatch __try_catch(c.isolate);"));
 
