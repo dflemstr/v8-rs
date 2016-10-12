@@ -585,6 +585,20 @@ mod tests {
     }
 
     #[test]
+    fn create_object_instance() {
+        let i = Isolate::new();
+        let c = Context::new(&i);
+        value::Object::new(&i, &c);
+    }
+
+    #[test]
+    fn create_array_instance() {
+        let i = Isolate::new();
+        let c = Context::new(&i);
+        value::Array::new(&i, &c, 42);
+    }
+
+    #[test]
     fn create_object_template_instance() {
         let i = Isolate::new();
         let c = Context::new(&i);

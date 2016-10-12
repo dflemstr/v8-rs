@@ -974,12 +974,10 @@ impl Uint32 {
 
 impl Object {
     pub fn new(isolate: &isolate::Isolate, context: &context::Context) -> Object {
-        let g = context.make_current();
+        let _g = context.make_current();
         let raw =
             unsafe { util::invoke(&isolate, |c| v8::Object_New(c, isolate.as_raw())).unwrap() };
-        let result = Object(isolate.clone(), raw);
-        drop(g);
-        result
+        Object(isolate.clone(), raw)
     }
 
     pub fn set(&self, context: &context::Context, key: &Value, value: &Value) -> bool {
@@ -1430,7 +1428,8 @@ impl Object {
 }
 
 impl Array {
-    pub fn new(isolate: &isolate::Isolate, length: u32) -> Array {
+    pub fn new(isolate: &isolate::Isolate, context: &context::Context, length: u32) -> Array {
+        let _g = context.make_current();
         let raw = unsafe {
             util::invoke(&isolate,
                          |c| v8::Array_New(c, isolate.as_raw(), length as i32))
