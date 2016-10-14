@@ -175,7 +175,7 @@ impl<T> ObjectTemplate<T> {
         }
     }
 
-    // Creates a new object instance based off this template with an internal rust object accessible from callbacks.
+    /// Creates a new object instance based off of this template with an internal rust object accessible from callbacks.
     pub fn new_instance_with_internal(&self, context: &context::Context, internal: T) -> value::Object {
         let wrapped_ptr: *mut Box<T> = Box::into_raw(Box::new(Box::new(internal)));
         if self.internal_field_count() < 1 { 
