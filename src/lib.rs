@@ -639,6 +639,42 @@ mod tests {
         assert_eq!(5, result.int32_value(&c));
     }
 
+    struct TestItems {
+        v: Vec<i32>
+    }
+
+    #[test]
+    fn object_template_instance_internal() {
+        let i = Isolate::new();
+        let c = Context::new(&i);
+        let ot = template::ObjectTemplate::with_internal(&i);
+        ot.set_callback("test", &template::FunctionTemplate::new(&i, &c, Box::new(|args: value::FunctionCallbackInfo<TestItems>| {
+            if let Some(items) = args.internal {
+                if let Some(val) = items.v.pop() {
+                    return value::Integer::new(&args.isolate, val).into();
+                }
+            }
+
+            value::undefined(&args.isolate).into()
+        })));
+
+        let items = TestItems {
+            v: vec!(5, 1)
+        };
+
+        let o = ot.new_instance_with_internal(&c, items); 
+        let k = value::String::from_str(&i, "o");
+        c.global().set(&c, &k, &o);
+
+        let name = value::String::from_str(&i, "test.js");
+        let source = value::String::from_str(&i, "o.test(); o.test()");
+        let script = Script::compile_with_name(&i, &c, &name, &source).unwrap();
+        let result = script.run(&c).unwrap();
+
+        assert!(result.is_int32());
+        assert_eq!(5, result.int32_value(&c));
+    }
+
     #[test]
     fn isolate_rc() {
         let (f, c, p) = {

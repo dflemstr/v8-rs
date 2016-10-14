@@ -4,6 +4,7 @@ use error;
 use isolate;
 use std::any;
 use std::mem;
+use std::ops::DerefMut;
 use std::panic;
 use std::ptr;
 use value;
@@ -59,7 +60,7 @@ pub fn invoke<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<B>
     }
 }
 
-pub extern "C" fn callback(callback_info: v8::FunctionCallbackInfoPtr_Value) {
+pub extern "C" fn callback<T>(callback_info: v8::FunctionCallbackInfoPtr_Value) {
     unsafe {
         let callback_info = callback_info.as_mut().unwrap();
         let isolate = isolate::Isolate::from_raw(callback_info.GetIsolate);
@@ -69,19 +70,35 @@ pub extern "C" fn callback(callback_info: v8::FunctionCallbackInfoPtr_Value) {
         let args = (0..length)
             .map(|i| value::Value::from_raw(&isolate, *callback_info.Args.offset(i)))
             .collect();
-        let info = value::FunctionCallbackInfo {
-            isolate: isolate.clone(),
-            length: length,
-            args: args,
-            this: value::Object::from_raw(&isolate, callback_info.This),
-            holder: value::Object::from_raw(&isolate, callback_info.Holder),
-            new_target: value::Value::from_raw(&isolate, callback_info.NewTarget),
-            is_construct_call: 0 != callback_info.IsConstructCall,
-        };
+
 
         let result = panic::catch_unwind(|| {
+            let holder = value::Object::from_raw(&isolate, callback_info.Holder);
+
+            let internal = if holder.internal_field_count() > 0 {
+                if let Some(external) = holder.get_internal_field(0).into_external() {
+                    let wrapped_ptr: *mut Box<T> = external.value();                
+                    wrapped_ptr.as_mut().map(|v| v.deref_mut())
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            
+            let info = value::FunctionCallbackInfo::<T> {
+                isolate: isolate.clone(),
+                length: length,
+                args: args,
+                this: value::Object::from_raw(&isolate, callback_info.This),
+                holder: holder,
+                internal: internal,
+                new_target: value::Value::from_raw(&isolate, callback_info.NewTarget),
+                is_construct_call: 0 != callback_info.IsConstructCall,
+            };
+
             let callback_ext = data.get_internal_field(0).into_external().unwrap();
-            let callback_ptr: *mut Box<Fn(value::FunctionCallbackInfo) -> value::Value + 'static> = callback_ext.value();
+            let callback_ptr: *mut Box<Fn(value::FunctionCallbackInfo<T>) -> value::Value + 'static> = callback_ext.value();
             let callback = callback_ptr.as_ref().unwrap();
             callback(info)
         });
