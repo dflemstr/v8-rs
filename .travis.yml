@@ -20,26 +20,42 @@ addons:
       - libdw-dev
       - binutils-dev
 
-env:
-  global:
-    - CC=gcc-6
-    - CXX=g++-6
-
 matrix:
   include:
+    - env: FEATURES="" CC=gcc-6 CXX=g++-6
+      rust: stable
+      os: linux
+    - env: FEATURES="--features=shared" CC=gcc-6 CXX=g++-6
+      rust: stable
+      os: linux
     - env: FEATURES=""
       rust: stable
+      os: osx
+      osx_image: xcode8
     - env: FEATURES="--features=shared"
       rust: stable
-    - env: FEATURES=""
+      os: osx
+      osx_image: xcode8
+    - env: FEATURES="" CC=gcc-6 CXX=g++-6
       rust: nightly
-    - env: FEATURES="--features=shared"
+      os: linux
+    - env: FEATURES="--features=shared" CC=gcc-6 CXX=g++-6
       rust: nightly
+      os: linux
+
+before_install:
+  - |
+      if [ "$TRAVIS_OS_NAME" = osx ]
+      then
+        brew tap dflemstr/v8
+        brew update
+        brew install -v dflemstr/v8/v8
+      fi
 
 before_script:
   - |
       pip install 'travis-cargo<0.2' --user &&
-      export PATH=$HOME/.local/bin:$PATH
+      export PATH=$HOME/.local/bin:$HOME/Library/Python/2.7/bin:$PATH
 
 script:
   - |
