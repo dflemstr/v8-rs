@@ -1042,6 +1042,8 @@ FunctionRef v8_Function_New(
     if (wrapped_callback) {
         outer_data->SetAlignedPointerInInternalField((int) FunctionHandlerFields::Callback, (void *) wrapped_callback);
         callback = function_callback;
+    } else {
+        callback = nullptr;
     }
 
     outer_data->SetInternalField((int) FunctionHandlerFields::Data, wrap(c.isolate, data));
