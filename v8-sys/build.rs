@@ -9,12 +9,10 @@ use std::fs;
 use std::io;
 use std::path;
 
-const LIBS: [&'static str; 6] = ["v8_base",
+const LIBS: [&'static str; 4] = ["v8_base",
                                  "v8_libbase",
                                  "v8_libsampler",
-                                 "v8_nosnapshot",
-                                 "icui18n",
-                                 "icuuc"];
+                                 "v8_nosnapshot"];
 
 trait DisplayAsC {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result;
@@ -94,6 +92,7 @@ fn link_v8() {
         maybe_search("/usr/local/lib/x86_64-linux-gnu");
         maybe_search("/usr/lib/v8");
         maybe_search("/usr/local/lib/v8");
+        maybe_search("/usr/local/opt/icu4c/lib"); // homebrew
     }
 
     if cfg!(feature = "shared") {
@@ -109,7 +108,12 @@ fn link_v8() {
         for lib in LIBS.iter() {
             println!("cargo:rustc-link-lib=static={}", lib);
         }
+        println!("cargo:rustc-link-lib=static=icui18n");
+        println!("cargo:rustc-link-lib=static=icuuc");
         if fs::metadata("/usr/lib/x86_64-linux-gnu/libicudata.a").map(|m| m.is_file()).unwrap_or(false) {
+            println!("cargo:rustc-link-lib=static=icudata");
+        }
+        if fs::metadata("/usr/local/opt/icu4c/lib/libicudata.a").map(|m| m.is_file()).unwrap_or(false) {
             println!("cargo:rustc-link-lib=static=icudata");
         }
     }
@@ -125,6 +129,7 @@ fn maybe_search<P>(dir: P) where P: AsRef<path::Path> {
 fn gen_bindings(out_dir_path: &path::Path, bindings_path: &path::Path) {
     use std::io::Write;
     let mut bindings = bindgen::Builder::new("src/v8-glue.h");
+    bindings.builtins();
     bindings.remove_prefix("v8_");
     bindings.clang_arg("-Isrc");
     bindings.clang_arg(format!("-I{}", out_dir_path.to_string_lossy()));
