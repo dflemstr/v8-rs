@@ -9,10 +9,7 @@ use std::fs;
 use std::io;
 use std::path;
 
-const LIBS: [&'static str; 4] = ["v8_base",
-                                 "v8_libbase",
-                                 "v8_libsampler",
-                                 "v8_nosnapshot"];
+const LIBS: [&'static str; 4] = ["v8_base", "v8_libbase", "v8_libsampler", "v8_nosnapshot"];
 
 trait DisplayAsC {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result;
@@ -20,7 +17,9 @@ trait DisplayAsC {
 
 struct C<'a, A>(&'a A) where A: 'a;
 
-impl<'a, A> fmt::Display for C<'a, A> where A: DisplayAsC + 'a {
+impl<'a, A> fmt::Display for C<'a, A>
+    where A: DisplayAsC + 'a
+{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         DisplayAsC::fmt(self.0, f)
     }
@@ -65,61 +64,81 @@ fn read_api() -> v8_api::Api {
 }
 
 fn link_v8() {
-    if let Some(dir_str) = env::var_os("V8_BUILD") {
-        println!("V8_BUILD={:?}", dir_str);
-        let dir = path::Path::new(&dir_str);
-
-        maybe_search(dir);
-
-        // make+gyp-based build tree
-        maybe_search(dir.join("lib"));
-        maybe_search(dir.join("obj.target/src"));
-        maybe_search(dir.join("obj.target/third_party/icu"));
-
-        // ninja+gyp-based build tree
-        maybe_search(dir.join("lib"));
-        maybe_search(dir.join("obj/src"));
-        maybe_search(dir.join("obj/third_party/icu"));
-
-        // TODO: for GN-based builds it doesn't seem like the build
-        // produces static archives; maybe run ar here?
+    if let Ok(libs_str) = env::var("V8_LIBS") {
+        println!("V8_LIBS={:?}", libs_str);
+        for lib_str in libs_str.split(char::is_whitespace) {
+            let path = path::Path::new(lib_str);
+            if let Some(dir) = path.parent() {
+                println!("cargo:rustc-link-search=native={}", dir.to_str().unwrap());
+            }
+            let lib_name = path.file_name().unwrap().to_str().unwrap();
+            if lib_name.starts_with("lib") && lib_name.ends_with(".a") {
+                println!("cargo:rustc-link-lib=static={}", &lib_name[3..lib_name.len() - 2]);
+            }
+        }
     } else {
-        println!("V8_BUILD not set, searching system paths");
-        maybe_search("/usr/lib");
-        maybe_search("/usr/local/lib");
-        // TODO: hack: lazy way to fix the Travis build
-        maybe_search("/usr/lib/x86_64-linux-gnu");
-        maybe_search("/usr/local/lib/x86_64-linux-gnu");
-        maybe_search("/usr/lib/v8");
-        maybe_search("/usr/local/lib/v8");
-        maybe_search("/usr/local/opt/icu4c/lib"); // homebrew
-    }
+        if let Some(dir_str) = env::var_os("V8_BUILD") {
+            println!("V8_BUILD={:?}", dir_str);
+            let dir = path::Path::new(&dir_str);
 
-    if cfg!(feature = "shared") {
-        if cfg!(all(windows, target_env="msvc")) {
-            println!("cargo:rustc-link-lib=dylib=v8.dll");
-            println!("cargo:rustc-link-lib=static=v8_base");
+            maybe_search(dir);
+
+            // make+gyp-based build tree
+            maybe_search(dir.join("lib"));
+            maybe_search(dir.join("obj.target/src"));
+            maybe_search(dir.join("obj.target/third_party/icu"));
+
+            // ninja+gyp-based build tree
+            maybe_search(dir.join("lib"));
+            maybe_search(dir.join("obj/src"));
+            maybe_search(dir.join("obj/third_party/icu"));
+
+            // TODO: for GN-based builds it doesn't seem like the build
+            // produces static archives; maybe run ar here?
         } else {
-            println!("cargo:rustc-link-lib=dylib=v8");
-            println!("cargo:rustc-link-lib=dylib=icui18n");
-            println!("cargo:rustc-link-lib=dylib=icuuc");
+            println!("V8_BUILD not set, searching system paths");
+            maybe_search("/usr/lib");
+            maybe_search("/usr/local/lib");
+            // TODO: hack: lazy way to fix the Travis build
+            maybe_search("/usr/lib/x86_64-linux-gnu");
+            maybe_search("/usr/local/lib/x86_64-linux-gnu");
+            maybe_search("/usr/lib/v8");
+            maybe_search("/usr/local/lib/v8");
+            maybe_search("/usr/local/opt/icu4c/lib"); // homebrew
         }
-    } else {
-        for lib in LIBS.iter() {
-            println!("cargo:rustc-link-lib=static={}", lib);
-        }
-        println!("cargo:rustc-link-lib=static=icui18n");
-        println!("cargo:rustc-link-lib=static=icuuc");
-        if fs::metadata("/usr/lib/x86_64-linux-gnu/libicudata.a").map(|m| m.is_file()).unwrap_or(false) {
-            println!("cargo:rustc-link-lib=static=icudata");
-        }
-        if fs::metadata("/usr/local/opt/icu4c/lib/libicudata.a").map(|m| m.is_file()).unwrap_or(false) {
-            println!("cargo:rustc-link-lib=static=icudata");
+
+        if cfg!(feature = "shared") {
+            if cfg!(all(windows, target_env = "msvc")) {
+                println!("cargo:rustc-link-lib=dylib=v8.dll");
+                println!("cargo:rustc-link-lib=static=v8_base");
+            } else {
+                println!("cargo:rustc-link-lib=dylib=v8");
+                println!("cargo:rustc-link-lib=dylib=icui18n");
+                println!("cargo:rustc-link-lib=dylib=icuuc");
+            }
+        } else {
+            for lib in LIBS.iter() {
+                println!("cargo:rustc-link-lib=static={}", lib);
+            }
+            println!("cargo:rustc-link-lib=static=icui18n");
+            println!("cargo:rustc-link-lib=static=icuuc");
+            if fs::metadata("/usr/lib/x86_64-linux-gnu/libicudata.a")
+                .map(|m| m.is_file())
+                .unwrap_or(false) {
+                println!("cargo:rustc-link-lib=static=icudata");
+            }
+            if fs::metadata("/usr/local/opt/icu4c/lib/libicudata.a")
+                .map(|m| m.is_file())
+                .unwrap_or(false) {
+                println!("cargo:rustc-link-lib=static=icudata");
+            }
         }
     }
 }
 
-fn maybe_search<P>(dir: P) where P: AsRef<path::Path> {
+fn maybe_search<P>(dir: P)
+    where P: AsRef<path::Path>
+{
     let dir = dir.as_ref();
     if fs::metadata(dir).map(|m| m.is_dir()).unwrap_or(false) {
         println!("cargo:rustc-link-search=native={}", dir.to_string_lossy());
@@ -175,15 +194,17 @@ fn write_decl_header<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
     for class in api.classes.iter() {
         try!(writeln!(out, ""));
         try!(writeln!(out, "#if defined __cplusplus"));
-        try!(writeln!(out,
-                      "typedef v8::{class} *{class}Ptr;",
-                      class = class.name));
+        try!(writeln!(out, "typedef v8::{class} *{class}Ptr;", class = class.name));
         try!(writeln!(out,
                       "typedef v8::Persistent<v8::{class}> *{class}Ref;",
                       class = class.name));
         try!(writeln!(out, "#else"));
-        try!(writeln!(out, "typedef struct _{class} *{class}Ptr;", class = class.name));
-        try!(writeln!(out, "typedef struct _{class}Ref *{class}Ref;", class = class.name));
+        try!(writeln!(out,
+                      "typedef struct _{class} *{class}Ptr;",
+                      class = class.name));
+        try!(writeln!(out,
+                      "typedef struct _{class}Ref *{class}Ref;",
+                      class = class.name));
         try!(writeln!(out, "#endif /* defined __cplusplus */"));
     }
 
@@ -256,15 +277,22 @@ fn write_cc_file<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
             try!(writeln!(out, "  v8::HandleScope __handle_scope(c.isolate);"));
             try!(writeln!(out, "  v8::TryCatch __try_catch(c.isolate);"));
 
-            let context_type = v8_api::Type::Ref(Box::new(v8_api::Type::Class("Context".to_owned())));
+            let context_type = v8_api::Type::Ref(Box::new(v8_api::Type::Class("Context"
+                .to_owned())));
             if let Some(arg) = method.args.iter().find(|ref a| a.arg_type == context_type) {
                 // There should only be one context but who knows
-                try!(writeln!(out, "  auto wrapped_{ctx} = wrap(c.isolate, {ctx});", ctx=arg.name));
-                try!(writeln!(out, "  v8::Context::Scope {ctx}_scope(wrapped_{ctx});", ctx=arg.name));
+                try!(writeln!(out,
+                              "  auto wrapped_{ctx} = wrap(c.isolate, {ctx});",
+                              ctx = arg.name));
+                try!(writeln!(out,
+                              "  v8::Context::Scope {ctx}_scope(wrapped_{ctx});",
+                              ctx = arg.name));
             }
 
             for arg in method.args.iter() {
-                try!(writeln!(out, "  auto {arg}_wrapped = wrap(c.isolate, {arg});", arg = arg.name));
+                try!(writeln!(out,
+                              "  auto {arg}_wrapped = wrap(c.isolate, {arg});",
+                              arg = arg.name));
             }
 
             if let v8_api::RetType::Direct(v8_api::Type::Void) = method.ret_type {
@@ -278,9 +306,7 @@ fn write_cc_file<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
                             class = class.name,
                             method = method.name));
             } else {
-                try!(write!(out,
-                            "self->Get(c.isolate)->{method}(",
-                            method = method.name));
+                try!(write!(out, "self->Get(c.isolate)->{method}(", method = method.name));
             }
 
             let mut needs_sep = false;
@@ -296,7 +322,8 @@ fn write_cc_file<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
                 try!(writeln!(out, "  handle_exception(c, __try_catch);"));
             } else {
                 try!(writeln!(out, "  handle_exception(c, __try_catch);"));
-                try!(writeln!(out, "  return {unwrapper}(c.isolate, result);",
+                try!(writeln!(out,
+                              "  return {unwrapper}(c.isolate, result);",
                               unwrapper = unwrapper(&method.ret_type)));
             }
             try!(writeln!(out, "}}"));
@@ -394,14 +421,18 @@ impl DisplayAsC for v8_api::Type {
             Type::Enum(ref name) => write!(f, "{}", name),
             Type::Callback(ref name) => write!(f, "{}", name),
             Type::CallbackLValue(ref name) => write!(f, "{}", name),
-            Type::Ref(ref target) => match **target {
-                Type::Class(ref name) => write!(f, "{}Ref", name),
-                ref t => write!(f, "&{}", C(t)),
-            },
-            Type::Ptr(ref target) => match **target {
-                Type::Class(ref name) => write!(f, "{}Ptr", name),
-                ref t => write!(f, "{} *", C(t)),
-            },
+            Type::Ref(ref target) => {
+                match **target {
+                    Type::Class(ref name) => write!(f, "{}Ref", name),
+                    ref t => write!(f, "&{}", C(t)),
+                }
+            }
+            Type::Ptr(ref target) => {
+                match **target {
+                    Type::Class(ref name) => write!(f, "{}Ptr", name),
+                    ref t => write!(f, "{} *", C(t)),
+                }
+            }
             Type::Arr(ref target) => write!(f, "{}[]", C(&**target)),
         }
     }
