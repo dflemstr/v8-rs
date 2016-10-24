@@ -69,7 +69,9 @@ fn link_v8() {
         for lib_str in libs_str.split(char::is_whitespace) {
             let path = path::Path::new(lib_str);
             if let Some(dir) = path.parent() {
-                println!("cargo:rustc-link-search=native={}", dir.to_str().unwrap());
+                if dir.file_name().is_some() {
+                    println!("cargo:rustc-link-search=native={}", dir.to_str().unwrap());
+                }
             }
             let lib_name = path.file_name().unwrap().to_str().unwrap();
             if lib_name.starts_with("lib") && lib_name.ends_with(".a") {
