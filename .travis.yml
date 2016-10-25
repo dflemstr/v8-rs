@@ -42,6 +42,8 @@ matrix:
     - env: FEATURES="--features=shared" CC=gcc-6 CXX=g++-6
       rust: nightly
       os: linux
+  allow_failures:
+    - rust: nightly
 
 before_install:
   - |
