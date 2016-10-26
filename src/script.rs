@@ -18,8 +18,9 @@ impl Script {
                    source: &value::String)
                    -> error::Result<Script> {
         let raw = unsafe {
-            try!(util::invoke(isolate,
-                              |c| v8::Script_Compile(c, context.as_raw(), source.as_raw())))
+            try!(util::invoke_ctx(isolate,
+                                  context,
+                                  |c| v8::Script_Compile(c, context.as_raw(), source.as_raw())))
         };
         Ok(Script(isolate.clone(), raw))
     }
@@ -35,7 +36,7 @@ impl Script {
                              -> error::Result<Script> {
         use std::ptr::null_mut as n;
         let raw = unsafe {
-            try!(util::invoke(isolate, |c| {
+            try!(util::invoke_ctx(isolate, context, |c| {
                 v8::Script_Compile_Origin(c,
                                           context.as_raw(),
                                           source.as_raw(),
@@ -59,7 +60,9 @@ impl Script {
     /// the script throws an exception, that will reslt in this method also throwing an exception.
     pub fn run(&self, context: &context::Context) -> error::Result<value::Value> {
         unsafe {
-            let raw = try!(util::invoke(&self.0, |c| v8::Script_Run(c, self.1, context.as_raw())));
+            let raw = try!(util::invoke_ctx(&self.0,
+                                            context,
+                                            |c| v8::Script_Run(c, self.1, context.as_raw())));
             Ok(value::Value::from_raw(&self.0, raw))
         }
     }

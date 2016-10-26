@@ -11,6 +11,24 @@ use value;
 pub fn invoke<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<B>
     where F: FnOnce(v8::RustContext) -> B
 {
+    invoke_inner(isolate, None, func)
+}
+
+pub fn invoke_ctx<F, B>(isolate: &isolate::Isolate,
+                        context: &context::Context,
+                        func: F)
+                        -> error::Result<B>
+    where F: FnOnce(v8::RustContext) -> B
+{
+    invoke_inner(isolate, Some(context), func)
+}
+
+fn invoke_inner<F, B>(isolate: &isolate::Isolate,
+                      context: Option<&context::Context>,
+                      func: F)
+                      -> error::Result<B>
+    where F: FnOnce(v8::RustContext) -> B
+{
     let mut exception = ptr::null_mut();
     let mut message = ptr::null_mut();
     let rust_ctx = v8::RustContext {
@@ -28,7 +46,9 @@ pub fn invoke<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<B>
         assert!(!message.is_null());
         let exception = unsafe { value::Value::from_raw(isolate, exception) };
         let message = unsafe { error::Message::from_raw(isolate, message) };
-        let context = isolate.current_context().unwrap_or_else(|| context::Context::new(&isolate));
+        let context = context.map(|c| c.clone())
+            .or_else(|| isolate.current_context())
+            .unwrap_or_else(|| context::Context::new(&isolate));
 
         if exception.is_object() {
             let exception = exception.into_object().unwrap();
@@ -51,9 +71,7 @@ pub fn invoke<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<B>
         }
 
         let message_str = message.get(&context).value();
-
         let stack_trace = message.get_stack_trace().to_captured();
-
         Err(error::ErrorKind::Javascript(message_str, stack_trace).into())
     }
 }

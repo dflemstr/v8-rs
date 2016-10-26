@@ -53,7 +53,10 @@ impl Message {
         let _g = context.make_current();
         unsafe {
             value::String::from_raw(&self.0,
-                                    util::invoke(&self.0, |c| v8::Message_Get(c, self.1)).unwrap())
+                                    util::invoke_ctx(&self.0,
+                                                     context,
+                                                     |c| v8::Message_Get(c, self.1))
+                                        .unwrap())
         }
     }
 

@@ -71,7 +71,7 @@ impl FunctionTemplate {
             let closure = template.new_instance(context);
             closure.set_internal_field(0, &callback_ext);
 
-            util::invoke(isolate, |c| {
+            util::invoke_ctx(isolate, context, |c| {
                     v8::FunctionTemplate_New(c,
                                              context.as_raw(),
                                              Some(util::callback),
@@ -88,10 +88,10 @@ impl FunctionTemplate {
     /// Returns the unique function instance in the current execution context.
     pub fn get_function(self, context: &context::Context) -> value::Function {
         unsafe {
-            let raw =
-                util::invoke(&self.0,
-                             |c| v8::FunctionTemplate_GetFunction(c, self.1, context.as_raw()))
-                    .unwrap();
+            let raw = util::invoke_ctx(&self.0, context, |c| {
+                    v8::FunctionTemplate_GetFunction(c, self.1, context.as_raw())
+                })
+                .unwrap();
             value::Function::from_raw(&self.0, raw)
         }
     }
@@ -136,8 +136,9 @@ impl ObjectTemplate {
     /// Creates a new object instance based off of this template.
     pub fn new_instance(&self, context: &context::Context) -> value::Object {
         unsafe {
-            let raw = util::invoke(&self.0,
-                                   |c| v8::ObjectTemplate_NewInstance(c, self.1, context.as_raw()))
+            let raw = util::invoke_ctx(&self.0, context, |c| {
+                    v8::ObjectTemplate_NewInstance(c, self.1, context.as_raw())
+                })
                 .unwrap();
             value::Object::from_raw(&self.0, raw)
         }

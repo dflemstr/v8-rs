@@ -272,7 +272,7 @@ macro_rules! partial_conversion {
     ($name:ident, $wrapped:expr, $target:ident) => {
         pub fn $name(&self, context: &context::Context) -> $target {
             unsafe {
-                util::invoke(&self.0, |i| $wrapped(i, self.1, context.as_raw()))
+                util::invoke_ctx(&self.0, context, |i| $wrapped(i, self.1, context.as_raw()))
                     .map(|p| $target(self.0.clone(), p))
                     .unwrap()
             }
@@ -284,7 +284,7 @@ macro_rules! partial_get {
     ($name:ident, $wrapped:expr, $target:ident) => {
         pub fn $name(&self, context: &context::Context) -> $target {
             unsafe {
-                let maybe = util::invoke(&self.0, |c| $wrapped(c, self.1, context.as_raw())).unwrap();
+                let maybe = util::invoke_ctx(&self.0, context, |c| $wrapped(c, self.1, context.as_raw())).unwrap();
                 assert!(0 != maybe.is_set);
 
                 maybe.value
@@ -573,8 +573,9 @@ impl Value {
 
     pub fn boolean_value(&self, context: &context::Context) -> bool {
         unsafe {
-            let m = util::invoke(&self.0,
-                                 |i| v8::Value_BooleanValue(i, self.1, context.as_raw()))
+            let m = util::invoke_ctx(&self.0,
+                                     context,
+                                     |i| v8::Value_BooleanValue(i, self.1, context.as_raw()))
                 .unwrap();
 
             assert!(0 != m.is_set);
@@ -589,8 +590,9 @@ impl Value {
 
     pub fn equals(&self, context: &context::Context, that: &Value) -> bool {
         unsafe {
-            let m = util::invoke(&self.0,
-                                 |c| v8::Value_Equals(c, self.1, context.as_raw(), that.as_raw()))
+            let m = util::invoke_ctx(&self.0, context, |c| {
+                    v8::Value_Equals(c, self.1, context.as_raw(), that.as_raw())
+                })
                 .unwrap();
             assert!(0 != m.is_set);
 
@@ -975,14 +977,15 @@ impl Uint32 {
 impl Object {
     pub fn new(isolate: &isolate::Isolate, context: &context::Context) -> Object {
         let _g = context.make_current();
-        let raw =
-            unsafe { util::invoke(&isolate, |c| v8::Object_New(c, isolate.as_raw())).unwrap() };
+        let raw = unsafe {
+            util::invoke_ctx(&isolate, context, |c| v8::Object_New(c, isolate.as_raw())).unwrap()
+        };
         Object(isolate.clone(), raw)
     }
 
     pub fn set(&self, context: &context::Context, key: &Value, value: &Value) -> bool {
         unsafe {
-            let m = util::invoke(&self.0, |c| {
+            let m = util::invoke_ctx(&self.0, context, |c| {
                     v8::Object_Set_Key(c, self.1, context.as_raw(), key.as_raw(), value.as_raw())
                 })
                 .unwrap();
@@ -994,7 +997,7 @@ impl Object {
 
     pub fn set_index(&self, context: &context::Context, index: u32, value: &Value) -> bool {
         unsafe {
-            let m = util::invoke(&self.0, |c| {
+            let m = util::invoke_ctx(&self.0, context, |c| {
                     v8::Object_Set_Index(c, self.1, context.as_raw(), index, value.as_raw())
                 })
                 .unwrap();
@@ -1010,7 +1013,7 @@ impl Object {
                                 value: &Value)
                                 -> bool {
         unsafe {
-            let m = util::invoke(&self.0, |c| {
+            let m = util::invoke_ctx(&self.0, context, |c| {
                     v8::Object_CreateDataProperty_Key(c,
                                                       self.1,
                                                       context.as_raw(),
@@ -1030,7 +1033,7 @@ impl Object {
                                       value: &Value)
                                       -> bool {
         unsafe {
-            let m = util::invoke(&self.0, |c| {
+            let m = util::invoke_ctx(&self.0, context, |c| {
                     v8::Object_CreateDataProperty_Index(c,
                                                         self.1,
                                                         context.as_raw(),
@@ -1046,8 +1049,9 @@ impl Object {
 
     pub fn get(&self, context: &context::Context, key: &Value) -> Value {
         unsafe {
-            util::invoke(&self.0,
-                         |c| v8::Object_Get_Key(c, self.1, context.as_raw(), key.as_raw()))
+            util::invoke_ctx(&self.0,
+                             context,
+                             |c| v8::Object_Get_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .map(|p| Value(self.0.clone(), p))
                 .unwrap()
         }
@@ -1055,8 +1059,9 @@ impl Object {
 
     pub fn get_index(&self, context: &context::Context, index: u32) -> Value {
         let raw = unsafe {
-            util::invoke(&self.0,
-                         |c| v8::Object_Get_Index(c, self.1, context.as_raw(), index))
+            util::invoke_ctx(&self.0,
+                             context,
+                             |c| v8::Object_Get_Index(c, self.1, context.as_raw(), index))
                 .unwrap()
         };
         Value(self.0.clone(), raw)
@@ -1064,7 +1069,7 @@ impl Object {
 
     pub fn delete(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
-            let m = util::invoke(&self.0, |c| {
+            let m = util::invoke_ctx(&self.0, context, |c| {
                     v8::Object_Delete_Key(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
@@ -1076,9 +1081,11 @@ impl Object {
 
     pub fn delete_index(&self, context: &context::Context, index: u32) -> bool {
         unsafe {
-            let m = util::invoke(&self.0,
+            let m =
+                util::invoke_ctx(&self.0,
+                                 context,
                                  |c| v8::Object_Delete_Index(c, self.1, context.as_raw(), index))
-                .unwrap();
+                    .unwrap();
 
             assert!(0 != m.is_set);
             0 != m.value
@@ -1087,8 +1094,9 @@ impl Object {
 
     pub fn has(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
-            let m = util::invoke(&self.0,
-                                 |c| v8::Object_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
+            let m = util::invoke_ctx(&self.0, context, |c| {
+                    v8::Object_Has_Key(c, self.1, context.as_raw(), key.as_raw())
+                })
                 .unwrap();
 
             assert!(0 != m.is_set);
@@ -1098,8 +1106,9 @@ impl Object {
 
     pub fn has_index(&self, context: &context::Context, index: u32) -> bool {
         unsafe {
-            let m = util::invoke(&self.0,
-                                 |c| v8::Object_Has_Index(c, self.1, context.as_raw(), index))
+            let m = util::invoke_ctx(&self.0,
+                                     context,
+                                     |c| v8::Object_Has_Index(c, self.1, context.as_raw(), index))
                 .unwrap();
 
             assert!(0 != m.is_set);
@@ -1114,8 +1123,9 @@ impl Object {
     /// for-in statement over this object.
     pub fn get_property_names(&self, context: &context::Context) -> Array {
         unsafe {
-            util::invoke(&self.0,
-                         |c| v8::Object_GetPropertyNames(c, self.1, context.as_raw()))
+            util::invoke_ctx(&self.0,
+                             context,
+                             |c| v8::Object_GetPropertyNames(c, self.1, context.as_raw()))
                 .map(|p| Array(self.0.clone(), p))
                 .unwrap()
         }
@@ -1125,8 +1135,9 @@ impl Object {
     /// doesn't contain the names of properties from prototype objects.
     pub fn get_own_property_names(&self, context: &context::Context) -> Array {
         unsafe {
-            util::invoke(&self.0,
-                         |c| v8::Object_GetOwnPropertyNames(c, self.1, context.as_raw()))
+            util::invoke_ctx(&self.0,
+                             context,
+                             |c| v8::Object_GetOwnPropertyNames(c, self.1, context.as_raw()))
                 .map(|p| Array(self.0.clone(), p))
                 .unwrap()
         }
@@ -1135,7 +1146,7 @@ impl Object {
 
     pub fn set_private(&self, context: &context::Context, key: &Private, value: &Value) -> bool {
         unsafe {
-            let m = util::invoke(&self.0, |c| {
+            let m = util::invoke_ctx(&self.0, context, |c| {
                     v8::Object_SetPrivate(c, self.1, context.as_raw(), key.as_raw(), value.as_raw())
                 })
                 .unwrap();
@@ -1147,8 +1158,9 @@ impl Object {
 
     pub fn get_private(&self, context: &context::Context, key: &Private) -> Value {
         unsafe {
-            util::invoke(&self.0,
-                         |c| v8::Object_GetPrivate(c, self.1, context.as_raw(), key.as_raw()))
+            util::invoke_ctx(&self.0,
+                             context,
+                             |c| v8::Object_GetPrivate(c, self.1, context.as_raw(), key.as_raw()))
                 .map(|p| Value(self.0.clone(), p))
                 .unwrap()
         }
@@ -1156,7 +1168,7 @@ impl Object {
 
     pub fn delete_private(&self, context: &context::Context, key: &Private) -> bool {
         unsafe {
-            let m = util::invoke(&self.0, |c| {
+            let m = util::invoke_ctx(&self.0, context, |c| {
                     v8::Object_DeletePrivate(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
@@ -1168,7 +1180,7 @@ impl Object {
 
     pub fn has_private(&self, context: &context::Context, key: &Private) -> bool {
         unsafe {
-            let m = util::invoke(&self.0, |c| {
+            let m = util::invoke_ctx(&self.0, context, |c| {
                     v8::Object_HasPrivate(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
@@ -1193,7 +1205,7 @@ impl Object {
     /// security handler.
     pub fn set_prototype(&self, context: &context::Context, prototype: &Value) -> bool {
         unsafe {
-            let m = util::invoke(&self.0, |c| {
+            let m = util::invoke_ctx(&self.0, context, |c| {
                     v8::Object_SetPrototype(c, self.1, context.as_raw(), prototype.as_raw())
                 })
                 .unwrap();
@@ -1209,8 +1221,9 @@ impl Object {
     /// function. This one does not.
     pub fn object_proto_to_string(&self, context: &context::Context) -> String {
         let raw = unsafe {
-            util::invoke(&self.0,
-                         |c| v8::Object_ObjectProtoToString(c, self.1, context.as_raw()))
+            util::invoke_ctx(&self.0,
+                             context,
+                             |c| v8::Object_ObjectProtoToString(c, self.1, context.as_raw()))
                 .unwrap()
         };
         String(self.0.clone(), raw)
@@ -1274,7 +1287,7 @@ impl Object {
 
     pub fn has_own_property(&self, context: &context::Context, key: &Name) -> bool {
         unsafe {
-            let m = util::invoke(&self.0, |c| {
+            let m = util::invoke_ctx(&self.0, context, |c| {
                     v8::Object_HasOwnProperty_Key(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
@@ -1286,7 +1299,7 @@ impl Object {
 
     pub fn has_own_property_index(&self, context: &context::Context, index: u32) -> bool {
         unsafe {
-            let m = util::invoke(&self.0, |c| {
+            let m = util::invoke_ctx(&self.0, context, |c| {
                     v8::Object_HasOwnProperty_Index(c, self.1, context.as_raw(), index)
                 })
                 .unwrap();
@@ -1298,7 +1311,7 @@ impl Object {
 
     pub fn has_real_named_property(&self, context: &context::Context, key: &Name) -> bool {
         unsafe {
-            let m = util::invoke(&self.0, |c| {
+            let m = util::invoke_ctx(&self.0, context, |c| {
                     v8::Object_HasRealNamedProperty(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
@@ -1310,7 +1323,7 @@ impl Object {
 
     pub fn has_real_indexed_property(&self, context: &context::Context, index: u32) -> bool {
         unsafe {
-            let m = util::invoke(&self.0, |c| {
+            let m = util::invoke_ctx(&self.0, context, |c| {
                     v8::Object_HasRealIndexedProperty(c, self.1, context.as_raw(), index)
                 })
                 .unwrap();
@@ -1362,7 +1375,7 @@ impl Object {
     pub fn call(&self, context: &context::Context, args: &[&Value]) -> error::Result<Value> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         let raw = unsafe {
-            try!(util::invoke(&self.0, |c| {
+            try!(util::invoke_ctx(&self.0, context, |c| {
                 v8::Object_CallAsFunction(c,
                                           self.1,
                                           context.as_raw(),
@@ -1383,7 +1396,7 @@ impl Object {
                           -> error::Result<Value> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         let raw = unsafe {
-            try!(util::invoke(&self.0, |c| {
+            try!(util::invoke_ctx(&self.0, context, |c| {
                 v8::Object_CallAsFunction(c,
                                           self.1,
                                           context.as_raw(),
@@ -1405,7 +1418,7 @@ impl Object {
                                -> error::Result<Value> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         let raw = unsafe {
-            try!(util::invoke(&self.0, |c| {
+            try!(util::invoke_ctx(&self.0, context, |c| {
                 v8::Object_CallAsConstructor(c,
                                              self.1,
                                              context.as_raw(),
@@ -1431,8 +1444,9 @@ impl Array {
     pub fn new(isolate: &isolate::Isolate, context: &context::Context, length: u32) -> Array {
         let _g = context.make_current();
         let raw = unsafe {
-            util::invoke(&isolate,
-                         |c| v8::Array_New(c, isolate.as_raw(), length as i32))
+            util::invoke_ctx(&isolate,
+                             context,
+                             |c| v8::Array_New(c, isolate.as_raw(), length as i32))
                 .unwrap()
         };
         Array(isolate.clone(), raw)
@@ -1465,8 +1479,9 @@ impl Map {
 
     pub fn get(&self, context: &context::Context, key: &Value) -> Value {
         let raw = unsafe {
-            util::invoke(&self.0,
-                         |c| v8::Map_Get_Key(c, self.1, context.as_raw(), key.as_raw()))
+            util::invoke_ctx(&self.0,
+                             context,
+                             |c| v8::Map_Get_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap()
         };
         Value(self.0.clone(), raw)
@@ -1474,7 +1489,7 @@ impl Map {
 
     pub fn set(&self, context: &context::Context, key: &Value, value: &Value) {
         unsafe {
-            util::invoke(&self.0, |c| {
+            util::invoke_ctx(&self.0, context, |c| {
                     v8::Map_Set_Key(c, self.1, context.as_raw(), key.as_raw(), value.as_raw())
                 })
                 .unwrap();
@@ -1483,8 +1498,9 @@ impl Map {
 
     pub fn has(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
-            let m = util::invoke(&self.0,
-                                 |c| v8::Map_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
+            let m = util::invoke_ctx(&self.0,
+                                     context,
+                                     |c| v8::Map_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap();
 
             assert!(0 != m.is_set);
@@ -1494,8 +1510,9 @@ impl Map {
 
     pub fn delete(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
-            let m = util::invoke(&self.0,
-                                 |c| v8::Map_Delete_Key(c, self.1, context.as_raw(), key.as_raw()))
+            let m = util::invoke_ctx(&self.0, context, |c| {
+                    v8::Map_Delete_Key(c, self.1, context.as_raw(), key.as_raw())
+                })
                 .unwrap();
 
             assert!(0 != m.is_set);
@@ -1538,16 +1555,18 @@ impl Set {
 
     pub fn add(&self, context: &context::Context, key: &Value) {
         unsafe {
-            util::invoke(&self.0,
-                         |c| v8::Set_Add(c, self.1, context.as_raw(), key.as_raw()))
+            util::invoke_ctx(&self.0,
+                             context,
+                             |c| v8::Set_Add(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap();
         }
     }
 
     pub fn has(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
-            let m = util::invoke(&self.0,
-                                 |c| v8::Set_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
+            let m = util::invoke_ctx(&self.0,
+                                     context,
+                                     |c| v8::Set_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap();
 
             assert!(0 != m.is_set);
@@ -1557,8 +1576,9 @@ impl Set {
 
     pub fn delete(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
-            let m = util::invoke(&self.0,
-                                 |c| v8::Set_Delete_Key(c, self.1, context.as_raw(), key.as_raw()))
+            let m = util::invoke_ctx(&self.0, context, |c| {
+                    v8::Set_Delete_Key(c, self.1, context.as_raw(), key.as_raw())
+                })
                 .unwrap();
 
             assert!(0 != m.is_set);
@@ -1602,7 +1622,7 @@ impl Function {
             let closure = template.new_instance(context);
             closure.set_internal_field(0, &callback_ext);
 
-            let raw = util::invoke(&isolate, |c| {
+            let raw = util::invoke_ctx(&isolate, context, |c| {
                     v8::Function_New(c,
                                      context.as_raw(),
                                      Some(util::callback),
@@ -1620,7 +1640,7 @@ impl Function {
     pub fn call(&self, context: &context::Context, args: &[&Value]) -> error::Result<Value> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         let raw = unsafe {
-            try!(util::invoke(&self.0, |c| {
+            try!(util::invoke_ctx(&self.0, context, |c| {
                 v8::Function_Call(c,
                                   self.1,
                                   context.as_raw(),
@@ -1641,7 +1661,7 @@ impl Function {
                           -> error::Result<Value> {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         let raw = unsafe {
-            try!(util::invoke(&self.0, |c| {
+            try!(util::invoke_ctx(&self.0, context, |c| {
                 v8::Function_Call(c,
                                   self.1,
                                   context.as_raw(),
