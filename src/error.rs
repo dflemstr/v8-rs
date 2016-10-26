@@ -2,6 +2,7 @@
 
 use std::fmt;
 use v8_sys as v8;
+use context;
 use isolate;
 use util;
 use value;
@@ -48,7 +49,8 @@ impl Message {
     // TODO: pub fn get_script_origin(&self)
 
     /// The error message string.
-    pub fn get(&self) -> value::String {
+    pub fn get(&self, context: &context::Context) -> value::String {
+        let _g = context.make_current();
         unsafe {
             value::String::from_raw(&self.0,
                                     util::invoke(&self.0, |c| v8::Message_Get(c, self.1)).unwrap())

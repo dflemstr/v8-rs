@@ -28,12 +28,11 @@ pub fn invoke<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<B>
         assert!(!message.is_null());
         let exception = unsafe { value::Value::from_raw(isolate, exception) };
         let message = unsafe { error::Message::from_raw(isolate, message) };
+        let context = isolate.current_context().unwrap_or_else(|| context::Context::new(&isolate));
 
         if exception.is_object() {
             let exception = exception.into_object().unwrap();
             let panic_info_key = value::String::from_str(isolate, "panicInfo");
-            let context = isolate.current_context()
-                .unwrap_or_else(|| context::Context::new(&isolate));
 
             if exception.has(&context, &panic_info_key) {
                 match exception.get(&context, &panic_info_key).into_external() {
@@ -51,7 +50,7 @@ pub fn invoke<F, B>(isolate: &isolate::Isolate, func: F) -> error::Result<B>
             }
         }
 
-        let message_str = message.get().value();
+        let message_str = message.get(&context).value();
 
         let stack_trace = message.get_stack_trace().to_captured();
 
