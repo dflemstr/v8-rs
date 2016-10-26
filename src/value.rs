@@ -1345,7 +1345,7 @@ impl Object {
     /// Clone this object with a fast but shallow copy.
     ///
     /// Values will point to the same values as the original object.
-    pub fn clone(&self) -> Object {
+    pub fn clone_object(&self) -> Object {
         let raw = unsafe { util::invoke(&self.0, |c| v8::Object_Clone(c, self.1)).unwrap() };
 
         Object(self.0.clone(), raw)
