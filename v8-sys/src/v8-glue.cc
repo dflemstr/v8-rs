@@ -677,16 +677,16 @@ void handle_exception(RustContext &c, v8::TryCatch &try_catch) {
 
 class GluePlatform : public v8::Platform {
 public:
-    GluePlatform(v8_PlatformFunctions platform_functions)
-        : _platform_functions(platform_functions)
+    GluePlatform(void *self, v8_PlatformFunctions platform_functions)
+        : _self(self), _platform_functions(platform_functions)
     {}
 
     virtual ~GluePlatform() {
-        this->_platform_functions.Destroy();
+        this->_platform_functions.Destroy(this->_self);
     }
 
     virtual size_t NumberOfAvailableBackgroundThreads() {
-        return this->_platform_functions.NumberOfAvailableBackgroundThreads();
+        return this->_platform_functions.NumberOfAvailableBackgroundThreads(this->_self);
     }
 
     virtual void CallOnBackgroundThread(v8::Task *task,
@@ -703,31 +703,32 @@ public:
             break;
         }
 
-        this->_platform_functions.CallOnBackgroundThread(task, rt);
+        this->_platform_functions.CallOnBackgroundThread(this->_self, task, rt);
     }
 
     virtual void CallOnForegroundThread(v8::Isolate *isolate, v8::Task *task) {
-        this->_platform_functions.CallOnForegroundThread(isolate, task);
+        this->_platform_functions.CallOnForegroundThread(this->_self, isolate, task);
     }
 
     virtual void CallDelayedOnForegroundThread(v8::Isolate *isolate, v8::Task *task,
                                                double delay_in_seconds) {
-        this->_platform_functions.CallDelayedOnForegroundThread(isolate, task, delay_in_seconds);
+        this->_platform_functions.CallDelayedOnForegroundThread(this->_self, isolate, task, delay_in_seconds);
     }
 
     virtual void CallIdleOnForegroundThread(v8::Isolate *isolate, v8::IdleTask *task) {
-        this->_platform_functions.CallIdleOnForegroundThread(isolate, task);
+        this->_platform_functions.CallIdleOnForegroundThread(this->_self, isolate, task);
     }
 
     virtual bool IdleTasksEnabled(v8::Isolate *isolate) {
-        return this->_platform_functions.IdleTasksEnabled(isolate);
+        return this->_platform_functions.IdleTasksEnabled(this->_self, isolate);
     }
 
     virtual double MonotonicallyIncreasingTime() {
-        return this->_platform_functions.MonotonicallyIncreasingTime();
+        return this->_platform_functions.MonotonicallyIncreasingTime(this->_self);
     }
 
 private:
+    void *_self;
     v8_PlatformFunctions _platform_functions;
 };
 
@@ -753,8 +754,8 @@ private:
     v8_AllocatorFunctions _allocator_functions;
 };
 
-PlatformPtr v8_Platform_Create(struct v8_PlatformFunctions platform_functions) {
-    return new GluePlatform(platform_functions);
+PlatformPtr v8_Platform_Create(void *self, struct v8_PlatformFunctions platform_functions) {
+    return new GluePlatform(self, platform_functions);
 }
 
 void v8_Platform_Destroy(PlatformPtr platform) {

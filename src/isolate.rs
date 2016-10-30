@@ -118,8 +118,9 @@ fn ensure_initialized() {
         unsafe {
             v8::V8_InitializeICU();
 
-            let platform = platform::Platform::new();
-            v8::V8_InitializePlatform(platform.as_raw());
+            let platform = platform::DefaultPlatform::new();
+            let instance = platform::PlatformInstance::new(platform);
+            v8::V8_InitializePlatform(instance.as_raw());
             // TODO: implement some form of cleanup
             mem::forget(platform);
 

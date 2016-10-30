@@ -82,14 +82,14 @@ enum v8_ExpectedRuntime {
 };
 
 struct v8_PlatformFunctions {
-    void (*Destroy)();
-    size_t (*NumberOfAvailableBackgroundThreads)();
-    void (*CallOnBackgroundThread)(TaskPtr task, enum v8_ExpectedRuntime expected_runtime);
-    void (*CallOnForegroundThread)(IsolatePtr isolate, TaskPtr task);
-    void (*CallDelayedOnForegroundThread)(IsolatePtr isolate, TaskPtr task, double delay_in_seconds);
-    void (*CallIdleOnForegroundThread)(IsolatePtr isolate, IdleTaskPtr task);
-    bool (*IdleTasksEnabled)(IsolatePtr isolate);
-    double (*MonotonicallyIncreasingTime)();
+    void (*Destroy)(void *self);
+    size_t (*NumberOfAvailableBackgroundThreads)(void *self);
+    void (*CallOnBackgroundThread)(void *self, TaskPtr task, enum v8_ExpectedRuntime expected_runtime);
+    void (*CallOnForegroundThread)(void *self, IsolatePtr isolate, TaskPtr task);
+    void (*CallDelayedOnForegroundThread)(void *self, IsolatePtr isolate, TaskPtr task, double delay_in_seconds);
+    void (*CallIdleOnForegroundThread)(void *self, IsolatePtr isolate, IdleTaskPtr task);
+    bool (*IdleTasksEnabled)(void *self, IsolatePtr isolate);
+    double (*MonotonicallyIncreasingTime)(void *self);
 };
 typedef struct v8_PlatformFunctions v8_PlatformFunctions;
 
@@ -330,7 +330,7 @@ struct IndexedPropertyHandlerConfiguration {
 typedef struct IndexedPropertyHandlerConfiguration IndexedPropertyHandlerConfiguration;
 
 
-PlatformPtr v8_Platform_Create(v8_PlatformFunctions platform_functions);
+PlatformPtr v8_Platform_Create(void *self, v8_PlatformFunctions platform_functions);
 void v8_Platform_Destroy(PlatformPtr platform);
 
 void v8_V8_InitializeICU();
