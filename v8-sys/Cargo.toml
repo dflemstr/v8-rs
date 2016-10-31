@@ -6,16 +6,20 @@ documentation = "https://dflemstr.github.io/v8-rs/v8_sys/index.html"
 homepage = "https://dflemstr.github.io/v8-rs"
 include = ["build.rs", "src/**/*", "Cargo.toml"]
 keywords = ["v8", "javascript", "js", "ecmascript", "google"]
-name = "v8-sys"
 license = "Apache-2.0"
+name = "v8-sys"
 repository = "https://github.com/dflemstr/v8-rs/tree/master/v8-sys"
 version = "0.12.0"
 
 [build-dependencies]
 bindgen = "0.19.0"
-clang = "0.12.0"
-gcc = "0.3.35"
-v8-api = { version = "0.5.0", path = "../v8-api" }
+clang = "0.13.0"
+gcc = "0.3.38"
+pkg-config = "0.3.8"
+
+[build-dependencies.v8-api]
+path = "../v8-api"
+version = "0.5.0"
 
 [dev-dependencies]
 lazy_static = "0.2.1"

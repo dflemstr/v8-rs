@@ -2,6 +2,7 @@ extern crate v8_api;
 extern crate bindgen;
 extern crate clang;
 extern crate gcc;
+extern crate pkg_config;
 
 use std::env;
 use std::fmt;
@@ -75,30 +76,41 @@ fn link_v8() {
             }
             let lib_name = path.file_name().unwrap().to_str().unwrap();
             if lib_name.starts_with("lib") && lib_name.ends_with(".a") {
-                println!("cargo:rustc-link-lib=static={}", &lib_name[3..lib_name.len() - 2]);
+                println!("cargo:rustc-link-lib=static={}",
+                         &lib_name[3..lib_name.len() - 2]);
             }
         }
+    } else if let Some(dir_str) = env::var_os("V8_BUILD") {
+        println!("using V8_BUILD={:?}", dir_str);
+        let dir = path::Path::new(&dir_str);
+
+        maybe_search(dir);
+
+        // make+gyp-based build tree
+        maybe_search(dir.join("lib"));
+        maybe_search(dir.join("obj.target/src"));
+        maybe_search(dir.join("obj.target/third_party/icu"));
+
+        // ninja+gyp-based build tree
+        maybe_search(dir.join("lib"));
+        maybe_search(dir.join("obj/src"));
+        maybe_search(dir.join("obj/third_party/icu"));
+
+        // TODO: for GN-based builds it doesn't seem like the build
+        // produces static archives; maybe run ar here?
+
+        blind_link_libraries();
     } else {
-        if let Some(dir_str) = env::var_os("V8_BUILD") {
-            println!("V8_BUILD={:?}", dir_str);
-            let dir = path::Path::new(&dir_str);
-
-            maybe_search(dir);
-
-            // make+gyp-based build tree
-            maybe_search(dir.join("lib"));
-            maybe_search(dir.join("obj.target/src"));
-            maybe_search(dir.join("obj.target/third_party/icu"));
-
-            // ninja+gyp-based build tree
-            maybe_search(dir.join("lib"));
-            maybe_search(dir.join("obj/src"));
-            maybe_search(dir.join("obj/third_party/icu"));
-
-            // TODO: for GN-based builds it doesn't seem like the build
-            // produces static archives; maybe run ar here?
+        let statik = !cfg!(feature = "shared");
+        println!("preferring static linking: {}", statik);
+        let result = pkg_config::Config::new()
+            .statik(statik)
+            .probe("v8");
+        if result.is_ok() {
+            println!("using pkg-config for library v8");
         } else {
-            println!("V8_BUILD not set, searching system paths");
+            println!("cargo:warning=pkg-config failed, falling back to naïve lib search: {:?}", result);
+
             maybe_search("/usr/lib");
             maybe_search("/usr/local/lib");
             // TODO: hack: lazy way to fix the Travis build
@@ -107,33 +119,37 @@ fn link_v8() {
             maybe_search("/usr/lib/v8");
             maybe_search("/usr/local/lib/v8");
             maybe_search("/usr/local/opt/icu4c/lib"); // homebrew
-        }
 
-        if cfg!(feature = "shared") {
-            if cfg!(all(windows, target_env = "msvc")) {
-                println!("cargo:rustc-link-lib=dylib=v8.dll");
-                println!("cargo:rustc-link-lib=static=v8_base");
-            } else {
-                println!("cargo:rustc-link-lib=dylib=v8");
-                println!("cargo:rustc-link-lib=dylib=icui18n");
-                println!("cargo:rustc-link-lib=dylib=icuuc");
-            }
+            blind_link_libraries();
+        }
+    }
+}
+
+fn blind_link_libraries() {
+    if cfg!(feature = "shared") {
+        if cfg!(all(windows, target_env = "msvc")) {
+            println!("cargo:rustc-link-lib=dylib=v8.dll");
+            println!("cargo:rustc-link-lib=static=v8_base");
         } else {
-            for lib in LIBS.iter() {
-                println!("cargo:rustc-link-lib=static={}", lib);
-            }
-            println!("cargo:rustc-link-lib=static=icui18n");
-            println!("cargo:rustc-link-lib=static=icuuc");
-            if fs::metadata("/usr/lib/x86_64-linux-gnu/libicudata.a")
-                .map(|m| m.is_file())
-                .unwrap_or(false) {
-                println!("cargo:rustc-link-lib=static=icudata");
-            }
-            if fs::metadata("/usr/local/opt/icu4c/lib/libicudata.a")
-                .map(|m| m.is_file())
-                .unwrap_or(false) {
-                println!("cargo:rustc-link-lib=static=icudata");
-            }
+            println!("cargo:rustc-link-lib=dylib=v8");
+            println!("cargo:rustc-link-lib=dylib=icui18n");
+            println!("cargo:rustc-link-lib=dylib=icuuc");
+        }
+    } else {
+        for lib in LIBS.iter() {
+            println!("cargo:rustc-link-lib=static={}", lib);
+        }
+        println!("cargo:rustc-link-lib=static=icui18n");
+        println!("cargo:rustc-link-lib=static=icuuc");
+        if fs::metadata("/usr/lib/x86_64-linux-gnu/libicudata.a")
+               .map(|m| m.is_file())
+               .unwrap_or(false) {
+            println!("cargo:rustc-link-lib=static=icudata");
+        }
+        if fs::metadata("/usr/local/opt/icu4c/lib/libicudata.a")
+               .map(|m| m.is_file())
+               .unwrap_or(false) {
+            println!("cargo:rustc-link-lib=static=icudata");
         }
     }
 }
@@ -280,7 +296,7 @@ fn write_cc_file<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
             try!(writeln!(out, "  v8::TryCatch __try_catch(c.isolate);"));
 
             let context_type = v8_api::Type::Ref(Box::new(v8_api::Type::Class("Context"
-                .to_owned())));
+                                                                                  .to_owned())));
             if let Some(arg) = method.args.iter().find(|ref a| a.arg_type == context_type) {
                 // There should only be one context but who knows
                 try!(writeln!(out,
