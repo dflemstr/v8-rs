@@ -177,6 +177,7 @@ const SPECIAL_METHODS: &'static [(&'static str, &'static str)] = &[
     ("Function", "NewInstance"), // Because annoying-to-map signature
     ("Function", "Call"), // Because annoying-to-map signature
     ("Template", "SetNativeDataProperty"), // Because annoying-to-map signature
+    ("Template", "SetLazyDataProperty"), // Because annoying-to-map signature
     ("FunctionTemplate", "New"), // Because annoying-to-map signature
     ("ObjectTemplate", "SetAccessor"), // Because annoying-to-map signature
     ("ObjectTemplate", "SetNamedPropertyHandler"), // Because annoying-to-map signature
