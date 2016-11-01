@@ -16,7 +16,7 @@ num_cpus = "1.1.0"
 
 [dependencies.v8-sys]
 path = "v8-sys"
-version = "0.12.0"
+version = "0.13.0"
 
 [features]
 shared = ["v8-sys/shared"]
