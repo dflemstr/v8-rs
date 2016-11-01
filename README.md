@@ -9,6 +9,8 @@ Javascript engine, used for example in
 the [Google Chrome browser](https://www.google.com/chrome/browser)
 or [Node.js](https://nodejs.org/en/).
 
+[Documentation](https://dflemstr.github.io/v8-rs)
+
 ## Building
 
 It is quite complicated to build V8.  This library has been tested
