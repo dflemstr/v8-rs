@@ -39,6 +39,13 @@
 //! assert_eq!("Hello, World!", result_str.value());
 //! ```
 //!
+//! # Isolate foreground tasks
+//!
+//! Javascript can produce "deferred" or "time-outed" tasks that need to run on the main thread.
+//! Additionally, V8 has a bunch of internal tasks it wants to perform regularly (for example GC).
+//! The user should therefore call `isolate.run_enqueued_tasks()` regularly to allow these tasks to
+//! run.
+//!
 //! [1]: https://developers.google.com/v8/
 
 #![cfg_attr(all(feature="unstable", test), feature(test))]
@@ -47,6 +54,7 @@
 extern crate error_chain;
 #[macro_use]
 extern crate lazy_static;
+extern crate num_cpus;
 extern crate v8_sys;
 
 mod allocator;

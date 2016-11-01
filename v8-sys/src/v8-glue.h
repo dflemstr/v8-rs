@@ -333,6 +333,9 @@ typedef struct IndexedPropertyHandlerConfiguration IndexedPropertyHandlerConfigu
 PlatformPtr v8_Platform_Create(v8_PlatformFunctions platform_functions);
 void v8_Platform_Destroy(PlatformPtr platform);
 
+void v8_Task_Destroy(TaskPtr task);
+void v8_IdleTask_Destroy(IdleTaskPtr task);
+
 void v8_V8_InitializeICU();
 void v8_V8_InitializePlatform(PlatformPtr platform);
 void v8_V8_Initialize();

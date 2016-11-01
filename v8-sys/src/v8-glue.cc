@@ -761,6 +761,14 @@ void v8_Platform_Destroy(PlatformPtr platform) {
     delete platform;
 }
 
+void v8_Task_Destroy(TaskPtr task) {
+    delete task;
+}
+
+void v8_IdleTask_Destroy(IdleTaskPtr idle_task) {
+    delete idle_task;
+}
+
 void v8_V8_InitializePlatform(PlatformPtr platform) {
     return v8::V8::InitializePlatform(platform);
 }
