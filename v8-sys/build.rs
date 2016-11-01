@@ -358,6 +358,7 @@ fn write_cc_file<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
         try!(writeln!(out,
                       "void v8_{class}_DestroyRef({class}Ref self) {{",
                       class = class.name));
+        try!(writeln!(out, "  self->Reset();"));
         try!(writeln!(out, "  delete self;"));
         try!(writeln!(out, "}}"));
         try!(writeln!(out, ""));
