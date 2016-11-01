@@ -19,7 +19,7 @@ pkg-config = "0.3.8"
 
 [build-dependencies.v8-api]
 path = "../v8-api"
-version = "0.5.0"
+version = "0.6.0"
 
 [dev-dependencies]
 lazy_static = "0.2.1"
