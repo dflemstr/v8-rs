@@ -250,7 +250,8 @@ pub fn read<P1, P2>(file_path: P1, extra_includes: &[P2]) -> Api
     }
 
     if let Ok(target) = env::var("TARGET") {
-        args.push(format!("-target={}", target));
+        args.push("-target".to_owned());
+        args.push(target.to_owned());
     }
 
     for include in extra_includes {
