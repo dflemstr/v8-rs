@@ -198,6 +198,16 @@ fn build_glue(out_dir_path: &path::Path) {
     config.include("src");
     config.include(out_dir_path);
     config.cpp(true);
+
+    if let Ok(target) = env::var("TARGET") {
+        if target.contains("musl") {
+            // This is a bit of a hack... we know this string is inserted as a
+            // "cargo:rustc-link-lib={}" format argument, so we can force it to be linked statically
+            // like this.
+            config.cpp_link_stdlib(Some("static=stdc++"));
+        }
+    }
+
     config.flag("-std=c++11");
     config.flag("-Wall");
     config.file("src/v8-glue.cc");
