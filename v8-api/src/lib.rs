@@ -2,6 +2,7 @@ extern crate clang;
 #[macro_use]
 extern crate log;
 
+use std::env;
 use std::fmt;
 use std::path;
 
@@ -248,6 +249,9 @@ pub fn read<P1, P2>(file_path: P1, extra_includes: &[P2]) -> Api
         args.push("-fms-compatibility-version=19".to_owned());
     }
 
+    if let Ok(target) = env::var("TARGET") {
+        args.push(format!("-target={}", target));
+    }
 
     for include in extra_includes {
         println!("-I{:?}", include.as_ref());
