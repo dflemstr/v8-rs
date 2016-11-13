@@ -192,7 +192,8 @@ const SPECIAL_METHODS: &'static [(&'static str, &'static str)] = &[
     ("ObjectTemplate", "SetAccessCheckCallback"), // Because annoying-to-map signature
     ("ObjectTemplate", "SetAccessCheckCallbackAndHandler"), // Because annoying-to-map signature
     ("Value", "IsFloat32x4"), // Too experimental
-    ("WasmCompiledModule", "Serialize"), // Breaks on ARM
+    ("WasmCompiledModule", "Serialize"), // Breaks on ARM/Mac
+    ("WasmCompiledModule", "Deserialize"), // Breaks on ARM/Mac
     ("ConvertableToTraceFormat", "AppendAsTraceFormat"), // Breaks on ARM
     ("V8", "CreateSnapshotDataBlob"), // Because annoying-to-map signature
     ("V8", "WarmUpSnapshotDataBlob"), // Because annoying-to-map signature
