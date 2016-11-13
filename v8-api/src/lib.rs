@@ -70,6 +70,10 @@ pub enum Type {
     /// The `bool` type.
     Bool,
 
+    /// The `unsigned char` type.
+    UChar,
+    /// The `const unsigned char` type.
+    ConstUChar,
     /// The `char` type.
     Char,
     /// The `const char` type.
@@ -388,7 +392,14 @@ fn build_type(typ: &clang::Type) -> Result<Type, ()> {
             } else {
                 Ok(Type::Char)
             }
-        }
+        },
+        clang::TypeKind::CharU => {
+            if typ.is_const_qualified() {
+                Ok(Type::ConstUChar)
+            } else {
+                Ok(Type::UChar)
+            }
+        },
         clang::TypeKind::UInt => Ok(Type::UInt),
         clang::TypeKind::Int => Ok(Type::Int),
         clang::TypeKind::ULong => Ok(Type::ULong),
@@ -566,6 +577,8 @@ impl fmt::Display for Type {
             Type::Void => write!(f, "()"),
             Type::Bool => write!(f, "bool"),
 
+            Type::UChar => write!(f, "::std::os::raw::c_uchar"),
+            Type::ConstUChar => write!(f, "::std::os::raw::c_uchar"),
             Type::Char => write!(f, "::std::os::raw::c_char"),
             Type::ConstChar => write!(f, "::std::os::raw::c_char"),
             Type::UInt => write!(f, "::std::os::raw::c_uint"),

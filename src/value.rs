@@ -700,9 +700,9 @@ impl String {
 
     /// Allocates a new string from UTF-8 data.
     pub fn from_str(isolate: &isolate::Isolate, str: &str) -> String {
-        let ptr = str.as_ptr() as *const i8;
-        let len = str.len() as os::raw::c_int;
         let raw = unsafe {
+            let ptr = mem::transmute(str.as_ptr());
+            let len = str.len() as os::raw::c_int;
             util::invoke(&isolate, |c| v8::String_NewFromUtf8_Normal(c, ptr, len)).unwrap()
         };
         String(isolate.clone(), raw)
@@ -711,7 +711,7 @@ impl String {
     /// Allocates a new internalized string from UTF-8 data.
     pub fn internalized_from_str(isolate: &isolate::Isolate, str: &str) -> String {
         unsafe {
-            let ptr = str.as_ptr() as *const i8;
+            let ptr = mem::transmute(str.as_ptr());
             let len = str.len() as os::raw::c_int;
             let raw = util::invoke(&isolate,
                                    |c| v8::String_NewFromUtf8_Internalized(c, ptr, len))

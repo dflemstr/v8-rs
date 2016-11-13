@@ -126,7 +126,7 @@ impl ObjectTemplate {
                     v8::Template_Set_Raw(c,
                                          template.1,
                                          self.0.as_raw(),
-                                         cname.as_ptr(),
+                                         mem::transmute(cname.as_ptr()),
                                          value.as_raw())
                 })
                 .unwrap()
