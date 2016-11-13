@@ -215,12 +215,13 @@ pub struct PropertyCallbackInfo {
     pub holder: Object,
 }
 
-pub struct FunctionCallbackInfo {
+pub struct FunctionCallbackInfo<'a, T: 'a = ()> {
     pub isolate: isolate::Isolate,
     pub length: isize,
     pub args: Vec<Value>,
     pub this: Object,
     pub holder: Object,
+    pub internal: Option<&'a mut T>,
     pub new_target: Value,
     pub is_construct_call: bool,
 }
@@ -1625,7 +1626,7 @@ impl Function {
             let raw = util::invoke_ctx(&isolate, context, |c| {
                     v8::Function_New(c,
                                      context.as_raw(),
-                                     Some(util::callback),
+                                     Some(util::callback::<()>),
                                      (&closure as &Value).as_raw(),
                                      length as os::raw::c_int,
                                      v8::ConstructorBehavior::ConstructorBehavior_kAllow)
