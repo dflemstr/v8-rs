@@ -430,8 +430,8 @@ impl DisplayAsC for v8_api::Type {
         match *self {
             Type::Void => write!(f, "void"),
             Type::Bool => write!(f, "bool"),
-            Type::UChar => write!(f, "unsigned char"),
-            Type::ConstUChar => write!(f, "const unsigned char"),
+            Type::UChar => write!(f, "char"),
+            Type::ConstUChar => write!(f, "const char"),
             Type::Char => write!(f, "char"),
             Type::ConstChar => write!(f, "const char"),
             Type::UInt => write!(f, "unsigned int"),
