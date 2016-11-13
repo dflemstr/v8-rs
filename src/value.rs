@@ -755,8 +755,9 @@ impl String {
         let mut buf = vec![0u8; len];
 
         unsafe {
+            let ptr = mem::transmute(buf.as_mut_ptr());
             util::invoke(&self.0, |c| {
-                    v8::String_WriteUtf8(c, self.1, buf.as_mut_ptr() as *mut i8, len as i32)
+                    v8::String_WriteUtf8(c, self.1, ptr, len as i32)
                 })
                 .unwrap();
             ::std::string::String::from_utf8_unchecked(buf)
@@ -1694,6 +1695,17 @@ impl ArrayBuffer {
         ArrayBuffer(isolate.clone(), raw)
     }
 
+    pub fn from_bytes(isolate: &isolate::Isolate, bytes: &[u8]) -> ArrayBuffer {
+        let raw = unsafe {
+            let ptr = mem::transmute(bytes.as_ptr());
+            let len = bytes.len() as i32;
+            util::invoke(&isolate,
+                         |c| v8::ArrayBuffer_New_Mode(c, isolate.as_raw(), ptr, len, v8::ArrayBufferCreationMode::ArrayBufferCreationMode_kExternalized))
+                .unwrap()
+        };
+        ArrayBuffer(isolate.clone(), raw)
+    }
+
     /// Creates an array buffer from a set of raw pointers.
     pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::ArrayBufferRef) -> ArrayBuffer {
         ArrayBuffer(isolate.clone(), raw)
@@ -1725,9 +1737,9 @@ impl ArrayBufferView {
     }
 
     pub fn copy_contents(&self, dest: &mut [u8]) -> usize {
-        let ptr = dest.as_mut_ptr() as *mut os::raw::c_void;
-        let len = dest.len() as i32;
         unsafe {
+            let ptr = mem::transmute(dest.as_mut_ptr());
+            let len = dest.len() as i32;
             util::invoke(&self.0,
                          |c| v8::ArrayBufferView_CopyContents(c, self.1, ptr, len))
                 .unwrap() as usize
