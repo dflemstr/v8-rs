@@ -1695,17 +1695,6 @@ impl ArrayBuffer {
         ArrayBuffer(isolate.clone(), raw)
     }
 
-    pub fn from_bytes(isolate: &isolate::Isolate, bytes: &[u8]) -> ArrayBuffer {
-        let raw = unsafe {
-            let ptr = mem::transmute(bytes.as_ptr());
-            let len = bytes.len() as i32;
-            util::invoke(&isolate,
-                         |c| v8::ArrayBuffer_New_Mode(c, isolate.as_raw(), ptr, len, v8::ArrayBufferCreationMode::ArrayBufferCreationMode_kExternalized))
-                .unwrap()
-        };
-        ArrayBuffer(isolate.clone(), raw)
-    }
-
     /// Creates an array buffer from a set of raw pointers.
     pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::ArrayBufferRef) -> ArrayBuffer {
         ArrayBuffer(isolate.clone(), raw)
