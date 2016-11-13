@@ -220,7 +220,7 @@ const METHOD_MANGLES: &'static [MethodMangle] = &[
     MethodMangle { name: "New", signature: "shared_array_buffer", mangle: "New_Shared"},
     MethodMangle { name: "New", signature: "array_buffer", mangle: "New_Owned"},
     MethodMangle { name: "New", signature: "mode", mangle: "New_Mode"},
-    MethodMangle { name: "Set", signature: "isolate", mangle: "Set_Raw"},
+    MethodMangle { name: "Set", signature: "char", mangle: "Set_Raw"},
     MethodMangle { name: "SetNativeDataProperty", signature: "v8::Name", mangle: "SetNativeDataProperty_Name"},
     MethodMangle { name: "SetAccessor", signature: "v8::Name", mangle: "SetAccessor_Name"},
     MethodMangle { name: "SetHandler", signature: "v8::Name", mangle: "SetHandler_Name"},
