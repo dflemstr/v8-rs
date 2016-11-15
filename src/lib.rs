@@ -666,6 +666,31 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn isolate_exception() {
+        let isolate = Isolate::new();
+        let context = Context::new(&isolate);
+
+        let closure_isolate = isolate.clone();
+        let f = value::Function::new(&isolate,
+                &context,
+                0,
+                Box::new(move |_| {
+                    let msg = value::String::from_str(&closure_isolate, "FooBar");
+                    let ex = value::Exception::error(&closure_isolate, &msg);
+
+                    closure_isolate.throw_exception(&ex)
+                }));
+
+        let name = value::String::from_str(&isolate, "f");
+        context.global().set(&context, &name, &f);
+
+        let source = value::String::from_str(&isolate, "f();");
+        let script = Script::compile(&isolate, &context, &source).unwrap();
+        script.run(&context).unwrap();
+    }
+
+    #[test]
     fn closure_lifetime() {
         struct Foo {
             msg: String,

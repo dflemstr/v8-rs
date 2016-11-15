@@ -102,6 +102,19 @@ impl Isolate {
         }
     }
 
+    /// Schedules an exception to be thrown when returning to JavaScript.
+    ///
+    /// When an exception has been scheduled it is illegal to invoke any
+    /// JavaScript operation; the caller must return immediately and only after
+    /// the exception has been handled does it become legal to invoke JavaScript
+    /// operations.
+    pub fn throw_exception(&self, exception: &::value::Value) -> ::value::Value {
+        unsafe {
+            let raw = v8::Isolate_ThrowException(self.as_raw(), exception.as_raw()).as_mut().unwrap();
+            ::value::Value::from_raw(self, raw)
+        }
+    }
+
     /// Runs all enqueued tasks until there are no more tasks available.
     pub fn run_enqueued_tasks(&self) {
         while self.run_enqueued_task() {}

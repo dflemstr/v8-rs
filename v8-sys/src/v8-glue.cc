@@ -820,6 +820,10 @@ ContextRef v8_Isolate_GetCurrentContext(IsolatePtr self) {
     return unwrap(self, self->GetCurrentContext());
 }
 
+ValueRef v8_Isolate_ThrowException(IsolatePtr self, ValueRef exception) {
+  return unwrap(self, self->ThrowException(wrap(self, exception)));
+}
+
 void v8_Isolate_SetCaptureStackTraceForUncaughtExceptions_Overview(IsolatePtr self, bool capture, int frame_limit) {
     self->SetCaptureStackTraceForUncaughtExceptions(capture, frame_limit, v8::StackTrace::kOverview);
 }
