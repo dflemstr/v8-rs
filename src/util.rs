@@ -98,15 +98,16 @@ pub extern "C" fn callback(callback_info: v8::FunctionCallbackInfoPtr_Value) {
 
         let result = panic::catch_unwind(|| {
             let callback_ext = data.get_internal_field(0).into_external().unwrap();
-            let callback_ptr: *mut Box<Fn(value::FunctionCallbackInfo) -> value::Value + 'static> = callback_ext.value();
+            let callback_ptr: *mut Box<value::FunctionCallback> = callback_ext.value();
             let callback = callback_ptr.as_ref().unwrap();
             callback(info)
         });
 
         match result {
             Ok(value) => {
-                callback_info.ReturnValue = value.as_raw();
-                mem::forget(value);
+                let result = value.unwrap_or_else(|exception| isolate.throw_exception(&exception));
+                callback_info.ReturnValue = result.as_raw();
+                mem::forget(result);
             }
             Err(panic) => {
                 let error = create_panic_error(&isolate, panic);

@@ -59,11 +59,11 @@ impl FunctionTemplate {
     /// Creates a function template.
     pub fn new(isolate: &isolate::Isolate,
                context: &context::Context,
-               callback: Box<Fn(value::FunctionCallbackInfo) -> value::Value + 'static>)
+               callback: Box<value::FunctionCallback>)
                -> FunctionTemplate {
         let raw = unsafe {
             let callback_ptr = Box::into_raw(Box::new(callback));
-            let callback_ext = value::External::new::<Box<Fn(value::FunctionCallbackInfo) -> value::Value + 'static>>(&isolate, callback_ptr);
+            let callback_ext = value::External::new::<Box<value::FunctionCallback>>(&isolate, callback_ptr);
 
             let template = ObjectTemplate::new(isolate);
             template.set_internal_field_count(1);

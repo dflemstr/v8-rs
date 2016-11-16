@@ -499,7 +499,7 @@ mod tests {
         let function = value::Function::new(&isolate,
                                             &context,
                                             1,
-                                            Box::new(|mut info| info.args.remove(0)));
+                                            Box::new(|mut info| Ok(info.args.remove(0))));
         let param = value::Integer::new(&isolate, 42);
 
         let result = function.call(&context, &[&param]).unwrap();
@@ -525,7 +525,7 @@ mod tests {
             assert!(b.is_int32());
             let b = b.int32_value(&fc);
 
-            value::Integer::new(&fi, a + b).into()
+            Ok(value::Integer::new(&fi, a + b).into())
         }));
 
         let k = value::String::from_str(&i, "f");
@@ -540,7 +540,7 @@ mod tests {
         assert_eq!(5, result.int32_value(&c));
     }
 
-    fn test_function(info: value::FunctionCallbackInfo) -> value::Value {
+    fn test_function(info: value::FunctionCallbackInfo) -> Result<value::Value, value::Value> {
         let i = info.isolate;
         let c = i.current_context().unwrap();
 
@@ -552,7 +552,7 @@ mod tests {
         assert!(b.is_int32());
         let b = b.int32_value(&c);
 
-        value::Integer::new(&i, a + b).into()
+        Ok(value::Integer::new(&i, a + b).into())
     }
 
     #[test]
@@ -657,7 +657,7 @@ mod tests {
             let function = value::Function::new(&isolate,
                                                 &context,
                                                 1,
-                                                Box::new(|mut info| info.args.remove(0)));
+                                                Box::new(|mut info| Ok(info.args.remove(0))));
             (function, context, param)
         };
 
@@ -678,8 +678,7 @@ mod tests {
                 Box::new(move |_| {
                     let msg = value::String::from_str(&closure_isolate, "FooBar");
                     let ex = value::Exception::error(&closure_isolate, &msg);
-
-                    closure_isolate.throw_exception(&ex)
+                    Err(ex)
                 }));
 
         let name = value::String::from_str(&isolate, "f");
@@ -708,8 +707,7 @@ mod tests {
                                  0,
                                  Box::new(move |_| {
                                      assert_eq!("Hello, World!", &foo.msg);
-
-                                     value::undefined(&closure_isolate).into()
+                                     Ok(value::undefined(&closure_isolate).into())
                                  }))
         };
 
