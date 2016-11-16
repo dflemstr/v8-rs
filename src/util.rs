@@ -105,7 +105,7 @@ pub extern "C" fn callback(callback_info: v8::FunctionCallbackInfoPtr_Value) {
 
         match result {
             Ok(value) => {
-                let result = value.unwrap_or_else(|exception| isolate.throw_exception(&exception));
+                let result = value.unwrap_or_else(|exception| throw_exception(&isolate, &exception));
                 callback_info.ReturnValue = result.as_raw();
                 mem::forget(result);
             }
@@ -115,6 +115,13 @@ pub extern "C" fn callback(callback_info: v8::FunctionCallbackInfoPtr_Value) {
                 mem::forget(error);
             }
         }
+    }
+}
+
+fn throw_exception(isolate: &isolate::Isolate, exception: &value::Value) -> value::Value {
+    unsafe {
+        let raw = v8::Isolate_ThrowException(isolate.as_raw(), exception.as_raw()).as_mut().unwrap();
+        ::value::Value::from_raw(isolate, raw)
     }
 }
 
