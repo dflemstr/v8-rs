@@ -225,6 +225,8 @@ pub struct FunctionCallbackInfo {
     pub is_construct_call: bool,
 }
 
+pub type FunctionCallback = Fn(FunctionCallbackInfo) -> Result<Value, Value> + 'static;
+
 pub fn undefined(isolate: &isolate::Isolate) -> Primitive {
     let raw = unsafe { util::invoke(isolate, |c| v8::Undefined(c)).unwrap() };
     Primitive(isolate.clone(), raw)
@@ -1609,13 +1611,12 @@ impl Function {
     pub fn new(isolate: &isolate::Isolate,
                context: &context::Context,
                length: usize,
-               callback: Box<Fn(FunctionCallbackInfo) -> Value + 'static>)
+               callback: Box<FunctionCallback>)
                -> Function {
         unsafe {
             let callback_ptr = Box::into_raw(Box::new(callback));
             let callback_ext =
-                External::new::<Box<Fn(FunctionCallbackInfo) -> Value + 'static>>(&isolate,
-                                                                                  callback_ptr);
+                External::new::<Box<FunctionCallback>>(&isolate, callback_ptr);
 
             let template = template::ObjectTemplate::new(isolate);
             template.set_internal_field_count(1);
