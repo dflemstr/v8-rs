@@ -49,9 +49,9 @@ before_install:
   - |
       if [ "$TRAVIS_OS_NAME" = osx ]
       then
-        brew tap dflemstr/v8
+        brew tap dflemstr/tools
         brew update
-        brew install -v dflemstr/v8/v8
+        brew install -v dflemstr/tools/v8
       fi
 
 before_script:
