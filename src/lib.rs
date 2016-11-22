@@ -791,7 +791,7 @@ mod benches {
         let function = value::Function::new(&isolate,
                                             &context,
                                             1,
-                                            Box::new(|mut info| info.args.remove(0)));
+                                            Box::new(|mut info| Ok(info.args.remove(0))));
         let param = value::Integer::new(&isolate, 42);
 
         bencher.iter(|| function.call(&context, &[&param]).unwrap());
