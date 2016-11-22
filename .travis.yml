@@ -28,10 +28,6 @@ matrix:
     - env: FEATURES="--features=shared" CC=gcc-6 CXX=g++-6
       rust: stable
       os: linux
-    - env: FEATURES=""
-      rust: stable
-      os: osx
-      osx_image: xcode8
     - env: FEATURES="--features=shared"
       rust: stable
       os: osx
