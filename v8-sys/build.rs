@@ -54,11 +54,15 @@ fn main() {
 }
 
 fn read_api() -> v8_api::Api {
-    let extra_includes = if let Some(dir_str) = env::var_os("V8_SOURCE") {
+    let mut extra_includes = if let Some(dir_str) = env::var_os("V8_SOURCE") {
         vec![path::PathBuf::from(dir_str).join("include")]
     } else {
         vec![]
     };
+
+    extra_includes.push("/usr/include".into());
+    extra_includes.push("/usr/local/include".into());
+
     let trampoline_path = path::Path::new("src/v8-trampoline.h");
 
     v8_api::read(trampoline_path, &extra_includes)
