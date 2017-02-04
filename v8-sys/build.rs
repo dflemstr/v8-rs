@@ -1,6 +1,7 @@
 extern crate v8_api;
 extern crate bindgen;
 extern crate clang;
+extern crate clang_sys;
 extern crate gcc;
 extern crate pkg_config;
 
@@ -54,14 +55,14 @@ fn main() {
 }
 
 fn read_api() -> v8_api::Api {
-    let mut extra_includes = if let Some(dir_str) = env::var_os("V8_SOURCE") {
-        vec![path::PathBuf::from(dir_str).join("include")]
-    } else {
-        vec![]
-    };
+    let mut extra_includes = vec![];
 
-    extra_includes.push("/usr/include".into());
-    extra_includes.push("/usr/local/include".into());
+    if let Some(dir_str) = env::var_os("V8_SOURCE") {
+        extra_includes.push(path::PathBuf::from(dir_str).join("include"));
+    }
+
+    let clang = clang_sys::support::Clang::find(None).expect("No clang found, is it installed?");
+    extra_includes.extend_from_slice(&clang.c_search_paths);
 
     let trampoline_path = path::Path::new("src/v8-trampoline.h");
 

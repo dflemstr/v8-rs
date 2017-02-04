@@ -14,6 +14,7 @@ version = "0.14.1"
 [build-dependencies]
 bindgen = "0.19.0"
 clang = "0.13.0"
+clang-sys = "0.13.0"
 gcc = "0.3.38"
 pkg-config = "0.3.8"
 
