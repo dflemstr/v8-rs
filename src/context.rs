@@ -17,7 +17,7 @@ impl Context {
     pub fn new(isolate: &isolate::Isolate) -> Context {
         unsafe {
             Context(isolate.clone(),
-                    util::invoke(isolate, |c| v8::Context_New(c)).unwrap())
+                    util::invoke(isolate, |c| v8::v8_Context_New(c)).unwrap())
         }
     }
 
@@ -30,11 +30,11 @@ impl Context {
     }
 
     fn enter(&self) {
-        unsafe { util::invoke(&self.0, |c| v8::Context_Enter(c, self.1)).unwrap() }
+        unsafe { util::invoke(&self.0, |c| v8::v8_Context_Enter(c, self.1)).unwrap() }
     }
 
     fn exit(&self) {
-        unsafe { util::invoke(&self.0, |c| v8::Context_Exit(c, self.1)).unwrap() }
+        unsafe { util::invoke(&self.0, |c| v8::v8_Context_Exit(c, self.1)).unwrap() }
     }
 
     /// Returns the global proxy object.
@@ -49,7 +49,7 @@ impl Context {
     pub fn global(&self) -> value::Object {
         unsafe {
             value::Object::from_raw(&self.0,
-                                    util::invoke(&self.0, |c| v8::Context_Global(c, self.1))
+                                    util::invoke(&self.0, |c| v8::v8_Context_Global(c, self.1))
                                         .unwrap())
         }
     }
@@ -65,7 +65,7 @@ impl Context {
     }
 }
 
-reference!(Context, v8::Context_CloneRef, v8::Context_DestroyRef);
+reference!(Context, v8::v8_Context_CloneRef, v8::v8_Context_DestroyRef);
 
 impl<'a> Drop for ContextGuard<'a> {
     fn drop(&mut self) {

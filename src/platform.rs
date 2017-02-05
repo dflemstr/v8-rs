@@ -27,7 +27,7 @@ pub struct IdleTask(v8::IdleTaskPtr);
 
 impl Platform {
     pub fn new() -> Platform {
-        let raw = unsafe { v8::Platform_Create(PLATFORM_FUNCTIONS) };
+        let raw = unsafe { v8::v8_Platform_Create(PLATFORM_FUNCTIONS) };
 
         if raw.is_null() {
             panic!("Could not create Platform")
@@ -44,7 +44,7 @@ impl Platform {
 impl Drop for Platform {
     fn drop(&mut self) {
         unsafe {
-            v8::Platform_Destroy(self.0);
+            v8::v8_Platform_Destroy(self.0);
         }
     }
 }
@@ -52,7 +52,7 @@ impl Drop for Platform {
 impl Task {
     pub fn run(&self) {
         unsafe {
-            v8::Task_Run(self.0);
+            v8::v8_Task_Run(self.0);
         }
     }
 }
@@ -60,7 +60,7 @@ impl Task {
 impl Drop for Task {
     fn drop(&mut self) {
         unsafe {
-            v8::Task_Destroy(self.0);
+            v8::v8_Task_Destroy(self.0);
         }
     }
 }
@@ -68,7 +68,7 @@ impl Drop for Task {
 impl IdleTask {
     pub fn run(&self, deadline: time::Duration) {
         unsafe {
-            v8::IdleTask_Run(self.0, duration_to_seconds(deadline));
+            v8::v8_IdleTask_Run(self.0, duration_to_seconds(deadline));
         }
     }
 }
@@ -76,12 +76,12 @@ impl IdleTask {
 impl Drop for IdleTask {
     fn drop(&mut self) {
         unsafe {
-            v8::IdleTask_Destroy(self.0);
+            v8::v8_IdleTask_Destroy(self.0);
         }
     }
 }
 
-const PLATFORM_FUNCTIONS: v8::PlatformFunctions = v8::PlatformFunctions {
+const PLATFORM_FUNCTIONS: v8::v8_PlatformFunctions = v8::v8_PlatformFunctions {
     Destroy: Some(destroy_platform),
     NumberOfAvailableBackgroundThreads: Some(number_of_available_background_threads),
     CallOnBackgroundThread: Some(call_on_background_thread),
@@ -96,16 +96,16 @@ extern "C" fn destroy_platform() {
     // No-op
 }
 
-extern "C" fn number_of_available_background_threads() -> usize {
-    num_cpus::get()
+extern "C" fn number_of_available_background_threads() -> u64 {
+    num_cpus::get() as u64
 }
 
 extern "C" fn call_on_background_thread(task: v8::TaskPtr,
-                                        _expected_runtime: v8::ExpectedRuntime) {
+                                        _expected_runtime: v8::v8_ExpectedRuntime) {
     let task = Task(task);
     thread::spawn(move || {
         unsafe {
-            v8::Task_Run(task.0);
+            v8::v8_Task_Run(task.0);
         }
     });
 }
@@ -134,10 +134,10 @@ extern "C" fn call_idle_on_foreground_thread(isolate: v8::IsolatePtr, idle_task:
     isolate.enqueue_idle_task(idle_task);
 }
 
-extern "C" fn idle_tasks_enabled(isolate: v8::IsolatePtr) -> u8 {
+extern "C" fn idle_tasks_enabled(isolate: v8::IsolatePtr) -> bool {
     let isolate = unsafe { isolate::Isolate::from_raw(isolate) };
 
-    if isolate.supports_idle_tasks() { 1 } else { 0 }
+    isolate.supports_idle_tasks()
 }
 
 extern "C" fn monotonically_increasing_time() -> f64 {

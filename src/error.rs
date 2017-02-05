@@ -55,7 +55,7 @@ impl Message {
             value::String::from_raw(&self.0,
                                     util::invoke_ctx(&self.0,
                                                      context,
-                                                     |c| v8::Message_Get(c, self.1))
+                                                     |c| v8::v8_Message_Get(c, self.1))
                                         .unwrap())
         }
     }
@@ -63,7 +63,7 @@ impl Message {
     /// The stack trace to the point where the error was generated.
     pub fn get_stack_trace(&self) -> StackTrace {
         let raw =
-            unsafe { util::invoke(&self.0, |c| v8::Message_GetStackTrace(c, self.1)).unwrap() };
+            unsafe { util::invoke(&self.0, |c| v8::v8_Message_GetStackTrace(c, self.1)).unwrap() };
 
         StackTrace(self.0.clone(), raw)
     }
@@ -77,12 +77,12 @@ impl StackTrace {
     /// The stack frames that this stack trace consists of.
     pub fn get_frames(&self) -> Vec<StackFrame> {
         let count =
-            unsafe { util::invoke(&self.0, |c| v8::StackTrace_GetFrameCount(c, self.1)).unwrap() };
+            unsafe { util::invoke(&self.0, |c| v8::v8_StackTrace_GetFrameCount(c, self.1)).unwrap() };
         let mut result = Vec::with_capacity(count as usize);
 
         for i in 0..count {
             let raw_frame = unsafe {
-                util::invoke(&self.0, |c| v8::StackTrace_GetFrame(c, self.1, i as u32)).unwrap()
+                util::invoke(&self.0, |c| v8::v8_StackTrace_GetFrame(c, self.1, i as u32)).unwrap()
             };
             let frame = StackFrame(self.0.clone(), raw_frame);
             result.push(frame);
@@ -107,19 +107,19 @@ impl StackFrame {
     /// The line number at which this stack frame was pushed.
     pub fn get_line_number(&self) -> u32 {
         unsafe {
-            util::invoke(&self.0, |c| v8::StackFrame_GetLineNumber(c, self.1)).unwrap() as u32
+            util::invoke(&self.0, |c| v8::v8_StackFrame_GetLineNumber(c, self.1)).unwrap() as u32
         }
     }
 
     /// The column number at which this stack frame was pushed.
     pub fn get_column(&self) -> u32 {
-        unsafe { util::invoke(&self.0, |c| v8::StackFrame_GetColumn(c, self.1)).unwrap() as u32 }
+        unsafe { util::invoke(&self.0, |c| v8::v8_StackFrame_GetColumn(c, self.1)).unwrap() as u32 }
     }
 
     /// The script file name in which this stack frame was pushed.
     pub fn get_script_name(&self) -> Option<value::String> {
         unsafe {
-            let raw = util::invoke(&self.0, |c| v8::StackFrame_GetScriptName(c, self.1)).unwrap();
+            let raw = util::invoke(&self.0, |c| v8::v8_StackFrame_GetScriptName(c, self.1)).unwrap();
             if raw.is_null() {
                 None
             } else {
@@ -131,19 +131,19 @@ impl StackFrame {
     /// The function name in which this stack frame was pushed.
     pub fn get_function_name(&self) -> value::String {
         unsafe {
-            let raw = util::invoke(&self.0, |c| v8::StackFrame_GetFunctionName(c, self.1)).unwrap();
+            let raw = util::invoke(&self.0, |c| v8::v8_StackFrame_GetFunctionName(c, self.1)).unwrap();
             value::String::from_raw(&self.0, raw)
         }
     }
 
     /// Whether this stack frame is part of an eval call.
     pub fn is_eval(&self) -> bool {
-        unsafe { 0 != util::invoke(&self.0, |c| v8::StackFrame_IsEval(c, self.1)).unwrap() }
+        unsafe { util::invoke(&self.0, |c| v8::v8_StackFrame_IsEval(c, self.1)).unwrap() }
     }
 
     /// Whether this stack frame is part of a constructor call.
     pub fn is_constructor(&self) -> bool {
-        unsafe { 0 != util::invoke(&self.0, |c| v8::StackFrame_IsConstructor(c, self.1)).unwrap() }
+        unsafe { util::invoke(&self.0, |c| v8::v8_StackFrame_IsConstructor(c, self.1)).unwrap() }
     }
 
     /// Creates a captured version of this stack frame, that doesn't retain a reference to its
@@ -209,10 +209,10 @@ impl fmt::Display for CapturedStackFrame {
     }
 }
 
-reference!(Message, v8::Message_CloneRef, v8::Message_DestroyRef);
+reference!(Message, v8::v8_Message_CloneRef, v8::v8_Message_DestroyRef);
 reference!(StackTrace,
-           v8::StackTrace_CloneRef,
-           v8::StackTrace_DestroyRef);
+           v8::v8_StackTrace_CloneRef,
+           v8::v8_StackTrace_DestroyRef);
 reference!(StackFrame,
-           v8::StackFrame_CloneRef,
-           v8::StackFrame_DestroyRef);
+           v8::v8_StackFrame_CloneRef,
+           v8::v8_StackFrame_DestroyRef);
