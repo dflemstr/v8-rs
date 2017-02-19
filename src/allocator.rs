@@ -12,7 +12,7 @@ pub struct Allocator(v8::ArrayBuffer_AllocatorPtr);
 impl Allocator {
     /// Creates a new allocator.
     pub fn new() -> Allocator {
-        let raw = unsafe { v8::ArrayBuffer_Allocator_Create(ALLOCATOR_FUNCTIONS) };
+        let raw = unsafe { v8::v8_ArrayBuffer_Allocator_Create(ALLOCATOR_FUNCTIONS) };
         if raw.is_null() {
             panic!("Could not create ArrayBuffer::Allocator");
         }
@@ -29,12 +29,12 @@ impl Allocator {
 impl Drop for Allocator {
     fn drop(&mut self) {
         unsafe {
-            v8::ArrayBuffer_Allocator_Destroy(self.0);
+            v8::v8_ArrayBuffer_Allocator_Destroy(self.0);
         }
     }
 }
 
-const ALLOCATOR_FUNCTIONS: v8::AllocatorFunctions = v8::AllocatorFunctions {
+const ALLOCATOR_FUNCTIONS: v8::v8_AllocatorFunctions = v8::v8_AllocatorFunctions {
     Allocate: Some(allocate),
     AllocateUninitialized: Some(allocate_uninitialized),
     Free: Some(free),

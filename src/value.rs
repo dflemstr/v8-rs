@@ -228,22 +228,22 @@ pub struct FunctionCallbackInfo {
 pub type FunctionCallback = Fn(FunctionCallbackInfo) -> Result<Value, Value> + 'static;
 
 pub fn undefined(isolate: &isolate::Isolate) -> Primitive {
-    let raw = unsafe { util::invoke(isolate, |c| v8::Undefined(c)).unwrap() };
+    let raw = unsafe { util::invoke(isolate, |c| v8::v8_Undefined(c)).unwrap() };
     Primitive(isolate.clone(), raw)
 }
 
 pub fn null(isolate: &isolate::Isolate) -> Primitive {
-    let raw = unsafe { util::invoke(isolate, |c| v8::Null(c)).unwrap() };
+    let raw = unsafe { util::invoke(isolate, |c| v8::v8_Null(c)).unwrap() };
     Primitive(isolate.clone(), raw)
 }
 
 pub fn true_(isolate: &isolate::Isolate) -> Boolean {
-    let raw = unsafe { util::invoke(isolate, |c| v8::True(c)).unwrap() };
+    let raw = unsafe { util::invoke(isolate, |c| v8::v8_True(c)).unwrap() };
     Boolean(isolate.clone(), raw)
 }
 
 pub fn false_(isolate: &isolate::Isolate) -> Boolean {
-    let raw = unsafe { util::invoke(isolate, |c| v8::False(c)).unwrap() };
+    let raw = unsafe { util::invoke(isolate, |c| v8::v8_False(c)).unwrap() };
     Boolean(isolate.clone(), raw)
 }
 
@@ -251,7 +251,7 @@ macro_rules! downcast {
     ($predicate:ident, $predicate_doc:expr, $wrapped:expr) => {
         #[doc=$predicate_doc]
         pub fn $predicate(&self) -> bool {
-            unsafe { util::invoke(&self.0, |i| $wrapped(i, self.1)).map(|r| 0 != r).unwrap_or(false) }
+            unsafe { util::invoke(&self.0, |i| $wrapped(i, self.1)).map(|r|  r).unwrap_or(false) }
         }
     };
     ($predicate:ident, $predicate_doc:expr,
@@ -287,7 +287,7 @@ macro_rules! partial_get {
         pub fn $name(&self, context: &context::Context) -> $target {
             unsafe {
                 let maybe = util::invoke_ctx(&self.0, context, |c| $wrapped(c, self.1, context.as_raw())).unwrap();
-                assert!(0 != maybe.is_set);
+                assert!( maybe.is_set);
 
                 maybe.value
             }
@@ -310,310 +310,307 @@ impl Data {
 impl Value {
     downcast!(is_undefined,
               "Returns true if this value is the undefined value.  See ECMA-262 4.3.10.",
-              v8::Value_IsUndefined);
+              v8::v8_Value_IsUndefined);
     downcast!(is_null,
               "Returns true if this value is the null value.  See ECMA-262 4.3.11.",
-              v8::Value_IsNull);
+              v8::v8_Value_IsNull);
     downcast!(is_true,
               "Returns true if this value is true.",
-              v8::Value_IsTrue);
+              v8::v8_Value_IsTrue);
     downcast!(is_false,
               "Returns true if this value is false.",
-              v8::Value_IsFalse);
+              v8::v8_Value_IsFalse);
     downcast!(is_name,
               "Returns true if this value is a symbol or a string.\n\nThis is an experimental \
                feature.",
               into_name,
               "",
-              v8::Value_IsName,
+              v8::v8_Value_IsName,
               Name);
     downcast!(is_string,
               "Returns true if this value is an instance of the String type.  See ECMA-262 8.4.",
               into_string,
               "",
-              v8::Value_IsString,
+              v8::v8_Value_IsString,
               String);
     downcast!(is_symbol,
               "Returns true if this value is a symbol.\n\nThis is an experimental feature.",
               into_symbol,
               "",
-              v8::Value_IsSymbol,
+              v8::v8_Value_IsSymbol,
               Symbol);
     downcast!(is_function,
               "Returns true if this value is a function.",
               into_function,
               "",
-              v8::Value_IsFunction,
+              v8::v8_Value_IsFunction,
               Function);
     downcast!(is_array,
               "Returns true if this value is an array.  Note that it will return false for an \
                Proxy for an array.",
               into_array,
               "",
-              v8::Value_IsArray,
+              v8::v8_Value_IsArray,
               Array);
     downcast!(is_object,
               "Returns true if this value is an object.",
               into_object,
               "",
-              v8::Value_IsObject,
+              v8::v8_Value_IsObject,
               Object);
     downcast!(is_boolean,
               "Returns true if this value is boolean.",
               into_boolean,
               "",
-              v8::Value_IsBoolean,
+              v8::v8_Value_IsBoolean,
               Boolean);
     downcast!(is_number,
               "Returns true if this value is a number.",
               into_number,
               "",
-              v8::Value_IsNumber,
+              v8::v8_Value_IsNumber,
               Number);
     downcast!(is_external,
               "Returns true if this value is external.",
               into_external,
               "",
-              v8::Value_IsExternal,
+              v8::v8_Value_IsExternal,
               External);
     downcast!(is_int32,
               "Returns true if this value is a 32-bit signed integer.",
               into_int32,
               "",
-              v8::Value_IsInt32,
+              v8::v8_Value_IsInt32,
               Int32);
     downcast!(is_uint32,
               "Returns true if this value is a 32-bit unsigned integer.",
               into_uint32,
               "",
-              v8::Value_IsUint32,
+              v8::v8_Value_IsUint32,
               Uint32);
     downcast!(is_date,
               "Returns true if this value is a Date.",
               into_date,
               "",
-              v8::Value_IsDate,
+              v8::v8_Value_IsDate,
               Date);
     downcast!(is_arguments_object,
               "Returns true if this value is an Arguments object.",
-              v8::Value_IsArgumentsObject);
+              v8::v8_Value_IsArgumentsObject);
     downcast!(is_boolean_object,
               "Returns true if this value is a Boolean object.",
               into_boolean_object,
               "",
-              v8::Value_IsBooleanObject,
+              v8::v8_Value_IsBooleanObject,
               BooleanObject);
     downcast!(is_number_object,
               "Returns true if this value is a Number object.",
               into_number_object,
               "",
-              v8::Value_IsNumberObject,
+              v8::v8_Value_IsNumberObject,
               NumberObject);
     downcast!(is_string_object,
               "Returns true if this value is a String object.",
               into_string_object,
               "",
-              v8::Value_IsStringObject,
+              v8::v8_Value_IsStringObject,
               StringObject);
     downcast!(is_symbol_object,
               "Returns true if this value is a Symbol object.\n\nThis is an experimental feature.",
               into_symbol_object,
               "",
-              v8::Value_IsSymbolObject,
+              v8::v8_Value_IsSymbolObject,
               Symbol);
     downcast!(is_native_error,
               "Returns true if this value is a NativeError.",
-              v8::Value_IsNativeError);
+              v8::v8_Value_IsNativeError);
     downcast!(is_reg_exp,
               "Returns true if this value is a RegExp.",
               into_reg_exp,
               "",
-              v8::Value_IsRegExp,
+              v8::v8_Value_IsRegExp,
               RegExp);
     downcast!(is_generator_function,
               "Returns true if this value is a Generator function.\n\nThis is an experimental \
                feature.",
-              v8::Value_IsGeneratorFunction);
+              v8::v8_Value_IsGeneratorFunction);
     downcast!(is_generator_object,
               "Returns true if this value is a Generator object (iterator).\n\nThis is an \
                experimental feature.",
-              v8::Value_IsGeneratorObject);
+              v8::v8_Value_IsGeneratorObject);
     downcast!(is_promise,
               "Returns true if this value is a Promise.\n\nThis is an experimental feature.",
               into_promise,
               "",
-              v8::Value_IsPromise,
+              v8::v8_Value_IsPromise,
               Promise);
     downcast!(is_map,
               "Returns true if this value is a Map.",
               into_map,
               "",
-              v8::Value_IsMap,
+              v8::v8_Value_IsMap,
               Map);
     downcast!(is_set,
               "Returns true if this value is a Set.",
               into_set,
               "",
-              v8::Value_IsSet,
+              v8::v8_Value_IsSet,
               Set);
     downcast!(is_map_iterator,
               "Returns true if this value is a Map Iterator.",
-              v8::Value_IsMapIterator);
+              v8::v8_Value_IsMapIterator);
     downcast!(is_set_iterator,
               "Returns true if this value is a Set Iterator.",
-              v8::Value_IsSetIterator);
+              v8::v8_Value_IsSetIterator);
     downcast!(is_weak_map,
               "Returns true if this value is a WeakMap.",
-              v8::Value_IsWeakMap);
+              v8::v8_Value_IsWeakMap);
     downcast!(is_weak_set,
               "Returns true if this value is a WeakSet.",
-              v8::Value_IsWeakSet);
+              v8::v8_Value_IsWeakSet);
     downcast!(is_array_buffer,
               "Returns true if this value is an ArrayBuffer.\n\nThis is an experimental feature.",
               into_array_buffer,
               "",
-              v8::Value_IsArrayBuffer,
+              v8::v8_Value_IsArrayBuffer,
               ArrayBuffer);
     downcast!(is_array_buffer_view,
               "Returns true if this value is an ArrayBufferView.\n\nThis is an experimental \
                feature.",
               into_array_buffer_view,
               "",
-              v8::Value_IsArrayBufferView,
+              v8::v8_Value_IsArrayBufferView,
               ArrayBufferView);
     downcast!(is_typed_array,
               "Returns true if this value is one of TypedArrays.\n\nThis is an experimental \
                feature.",
               into_typed_array,
               "",
-              v8::Value_IsTypedArray,
+              v8::v8_Value_IsTypedArray,
               TypedArray);
     downcast!(is_uint8_array,
               "Returns true if this value is an Uint8Array.\n\nThis is an experimental feature.",
               into_uint8_array,
               "",
-              v8::Value_IsUint8Array,
+              v8::v8_Value_IsUint8Array,
               Uint8Array);
     downcast!(is_uint8_clamped_array,
               "Returns true if this value is an Uint8ClampedArray.\n\nThis is an experimental \
                feature.",
               into_uint8_clamped_array,
               "",
-              v8::Value_IsUint8ClampedArray,
+              v8::v8_Value_IsUint8ClampedArray,
               Uint8ClampedArray);
     downcast!(is_int8_array,
               "Returns true if this value is an Int8Array.\n\nThis is an experimental feature.",
               into_int8_array,
               "",
-              v8::Value_IsInt8Array,
+              v8::v8_Value_IsInt8Array,
               Int8Array);
     downcast!(is_uint16_array,
               "Returns true if this value is an Uint16Array.\n\nThis is an experimental feature.",
               into_uint16_array,
               "",
-              v8::Value_IsUint16Array,
+              v8::v8_Value_IsUint16Array,
               Uint16Array);
     downcast!(is_int16_array,
               "Returns true if this value is an Int16Array.\n\nThis is an experimental feature.",
               into_int16_array,
               "",
-              v8::Value_IsInt16Array,
+              v8::v8_Value_IsInt16Array,
               Int16Array);
     downcast!(is_uint32_array,
               "Returns true if this value is an Uint32Array.\n\nThis is an experimental feature.",
               into_uint32_array,
               "",
-              v8::Value_IsUint32Array,
+              v8::v8_Value_IsUint32Array,
               Uint32Array);
     downcast!(is_int32_array,
               "Returns true if this value is an Int32Array.\n\nThis is an experimental feature.",
               into_int32_array,
               "",
-              v8::Value_IsInt32Array,
+              v8::v8_Value_IsInt32Array,
               Int32Array);
     downcast!(is_float32_array,
               "Returns true if this value is a Float32Array.\n\nThis is an experimental feature.",
               into_float32_array,
               "",
-              v8::Value_IsFloat32Array,
+              v8::v8_Value_IsFloat32Array,
               Float32Array);
     downcast!(is_float64_array,
               "Returns true if this value is a Float64Array.\n\nThis is an experimental feature.",
               into_float64_array,
               "",
-              v8::Value_IsFloat64Array,
+              v8::v8_Value_IsFloat64Array,
               Float64Array);
     downcast!(is_data_view,
               "Returns true if this value is a DataView.\n\nThis is an experimental feature.",
               into_data_view,
               "",
-              v8::Value_IsDataView,
+              v8::v8_Value_IsDataView,
               DataView);
     downcast!(is_shared_array_buffer,
               "Returns true if this value is a SharedArrayBuffer.\n\nThis is an experimental \
                feature.",
               into_shared_array_buffer,
               "",
-              v8::Value_IsSharedArrayBuffer,
+              v8::v8_Value_IsSharedArrayBuffer,
               SharedArrayBuffer);
     downcast!(is_proxy,
               "Returns true if this value is a JavaScript Proxy.",
               into_proxy,
               "",
-              v8::Value_IsProxy,
+              v8::v8_Value_IsProxy,
               Proxy);
 
-    partial_conversion!(to_boolean, v8::Value_ToBoolean, Boolean);
-    partial_conversion!(to_number, v8::Value_ToNumber, Number);
-    partial_conversion!(to_string, v8::Value_ToString, String);
-    partial_conversion!(to_detail_string, v8::Value_ToDetailString, String);
-    partial_conversion!(to_object, v8::Value_ToObject, Object);
-    partial_conversion!(to_integer, v8::Value_ToInteger, Integer);
-    partial_conversion!(to_uint32, v8::Value_ToUint32, Uint32);
-    partial_conversion!(to_int32, v8::Value_ToInt32, Int32);
-    partial_conversion!(to_array_index, v8::Value_ToArrayIndex, Uint32);
+    partial_conversion!(to_boolean, v8::v8_Value_ToBoolean, Boolean);
+    partial_conversion!(to_number, v8::v8_Value_ToNumber, Number);
+    partial_conversion!(to_string, v8::v8_Value_ToString, String);
+    partial_conversion!(to_detail_string, v8::v8_Value_ToDetailString, String);
+    partial_conversion!(to_object, v8::v8_Value_ToObject, Object);
+    partial_conversion!(to_integer, v8::v8_Value_ToInteger, Integer);
+    partial_conversion!(to_uint32, v8::v8_Value_ToUint32, Uint32);
+    partial_conversion!(to_int32, v8::v8_Value_ToInt32, Int32);
+    partial_conversion!(to_array_index, v8::v8_Value_ToArrayIndex, Uint32);
 
     pub fn boolean_value(&self, context: &context::Context) -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0,
                                      context,
-                                     |i| v8::Value_BooleanValue(i, self.1, context.as_raw()))
+                                     |i| v8::v8_Value_BooleanValue(i, self.1, context.as_raw()))
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
-    partial_get!(number_value, v8::Value_NumberValue, f64);
-    partial_get!(integer_value, v8::Value_IntegerValue, i64);
-    partial_get!(uint32_value, v8::Value_Uint32Value, u32);
-    partial_get!(int32_value, v8::Value_Int32Value, i32);
+    partial_get!(number_value, v8::v8_Value_NumberValue, f64);
+    partial_get!(integer_value, v8::v8_Value_IntegerValue, i64);
+    partial_get!(uint32_value, v8::v8_Value_Uint32Value, u32);
+    partial_get!(int32_value, v8::v8_Value_Int32Value, i32);
 
     pub fn equals(&self, context: &context::Context, that: &Value) -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Value_Equals(c, self.1, context.as_raw(), that.as_raw())
+                    v8::v8_Value_Equals(c, self.1, context.as_raw(), that.as_raw())
                 })
                 .unwrap();
-            assert!(0 != m.is_set);
+            assert!( m.is_set);
 
-            0 != m.value
+             m.value
         }
     }
 
     pub fn strict_equals(&self, that: &Value) -> bool {
         unsafe {
-            0 !=
-            util::invoke(&self.0,
-                         |c| v8::Value_StrictEquals(c, self.1, that.as_raw()))
-                .unwrap()
+            util::invoke(&self.0, |c| v8::v8_Value_StrictEquals(c, self.1, that.as_raw())).unwrap()
         }
     }
 
     pub fn same_value(&self, that: &Value) -> bool {
         unsafe {
-            0 != util::invoke(&self.0, |c| v8::Value_SameValue(c, self.1, that.as_raw())).unwrap()
+            util::invoke(&self.0, |c| v8::v8_Value_SameValue(c, self.1, that.as_raw())).unwrap()
         }
     }
 
@@ -648,15 +645,14 @@ impl Primitive {
 
 impl Boolean {
     pub fn new(isolate: &isolate::Isolate, value: bool) -> Boolean {
-        let c_value = if value { 1 } else { 0 };
         let raw = unsafe {
-            util::invoke(&isolate, |c| v8::Boolean_New(c, isolate.as_raw(), c_value)).unwrap()
+            util::invoke(&isolate, |c| v8::v8_Boolean_New(c, isolate.as_raw(), value)).unwrap()
         };
         Boolean(isolate.clone(), raw)
     }
 
     pub fn value(&self) -> bool {
-        unsafe { 0 != util::invoke(&self.0, |c| v8::Boolean_Value(c, self.1)).unwrap() }
+        unsafe {  util::invoke(&self.0, |c| v8::v8_Boolean_Value(c, self.1)).unwrap() }
     }
 
     /// Creates a boolean from a set of raw pointers.
@@ -679,7 +675,7 @@ impl Name {
     /// The return value will never be 0.  Also, it is not guaranteed
     /// to be unique.
     pub fn get_identity_hash(&self) -> u32 {
-        unsafe { util::invoke(&self.0, |c| v8::Name_GetIdentityHash(c, self.1)).unwrap() as u32 }
+        unsafe { util::invoke(&self.0, |c| v8::v8_Name_GetIdentityHash(c, self.1)).unwrap() as u32 }
     }
 
     /// Creates a name from a set of raw pointers.
@@ -696,7 +692,7 @@ impl Name {
 impl String {
     pub fn empty(isolate: &isolate::Isolate) -> String {
         let raw =
-            unsafe { util::invoke(&isolate, |c| v8::String_Empty(c, isolate.as_raw())).unwrap() };
+            unsafe { util::invoke(&isolate, |c| v8::v8_String_Empty(c, isolate.as_raw())).unwrap() };
         String(isolate.clone(), raw)
     }
 
@@ -705,7 +701,7 @@ impl String {
         let raw = unsafe {
             let ptr = mem::transmute(str.as_ptr());
             let len = str.len() as os::raw::c_int;
-            util::invoke(&isolate, |c| v8::String_NewFromUtf8_Normal(c, ptr, len)).unwrap()
+            util::invoke(&isolate, |c| v8::v8_String_NewFromUtf8_Normal(c, ptr, len)).unwrap()
         };
         String(isolate.clone(), raw)
     }
@@ -716,7 +712,7 @@ impl String {
             let ptr = mem::transmute(str.as_ptr());
             let len = str.len() as os::raw::c_int;
             let raw = util::invoke(&isolate,
-                                   |c| v8::String_NewFromUtf8_Internalized(c, ptr, len))
+                                   |c| v8::v8_String_NewFromUtf8_Internalized(c, ptr, len))
                 .unwrap();
             String(isolate.clone(), raw)
         }
@@ -724,12 +720,12 @@ impl String {
 
     /// Returns the number of characters in this string.
     pub fn length(&self) -> u32 {
-        unsafe { util::invoke(&self.0, |c| v8::String_Length(c, self.1)).unwrap() as u32 }
+        unsafe { util::invoke(&self.0, |c| v8::v8_String_Length(c, self.1)).unwrap() as u32 }
     }
 
     /// Returns the number of bytes in the UTF-8 encoded representation of this string.
     pub fn utf8_length(&self) -> u32 {
-        unsafe { util::invoke(&self.0, |c| v8::String_Utf8Length(c, self.1)).unwrap() as u32 }
+        unsafe { util::invoke(&self.0, |c| v8::v8_String_Utf8Length(c, self.1)).unwrap() as u32 }
     }
 
     /// Returns whether this string is known to contain only one byte data.
@@ -738,7 +734,7 @@ impl String {
     ///
     /// False negatives are possible.
     pub fn is_one_byte(&self) -> bool {
-        unsafe { 0 != util::invoke(&self.0, |c| v8::String_IsOneByte(c, self.1)).unwrap() }
+        unsafe {  util::invoke(&self.0, |c| v8::v8_String_IsOneByte(c, self.1)).unwrap() }
     }
 
     /// Returns whether this string contain only one byte data.
@@ -746,20 +742,20 @@ impl String {
     /// Will read the entire string in some cases.
     pub fn contains_only_one_byte(&self) -> bool {
         unsafe {
-            0 != util::invoke(&self.0, |c| v8::String_ContainsOnlyOneByte(c, self.1)).unwrap()
+             util::invoke(&self.0, |c| v8::v8_String_ContainsOnlyOneByte(c, self.1)).unwrap()
         }
     }
 
     pub fn value(&self) -> ::std::string::String {
         let len = unsafe {
-            util::invoke(&self.0, |c| v8::String_Utf8Length(c, self.1)).unwrap()
+            util::invoke(&self.0, |c| v8::v8_String_Utf8Length(c, self.1)).unwrap()
         } as usize;
         let mut buf = vec![0u8; len];
 
         unsafe {
             let ptr = mem::transmute(buf.as_mut_ptr());
             util::invoke(&self.0, |c| {
-                    v8::String_WriteUtf8(c, self.1, ptr, len as i32)
+                    v8::v8_String_WriteUtf8(c, self.1, ptr, len as i32)
                 })
                 .unwrap();
             ::std::string::String::from_utf8_unchecked(buf)
@@ -786,7 +782,7 @@ impl Symbol {
     pub fn for_name(isolate: &isolate::Isolate, name: &String) -> Symbol {
         let raw = unsafe {
             util::invoke(&isolate,
-                         |c| v8::Symbol_For(c, isolate.as_raw(), name.as_raw()))
+                         |c| v8::v8_Symbol_For(c, isolate.as_raw(), name.as_raw()))
                 .unwrap()
         };
         Symbol(isolate.clone(), raw)
@@ -799,7 +795,7 @@ impl Symbol {
     pub fn for_api_name(isolate: &isolate::Isolate, name: &String) -> Symbol {
         let raw = unsafe {
             util::invoke(&isolate,
-                         |c| v8::Symbol_ForApi(c, isolate.as_raw(), name.as_raw()))
+                         |c| v8::v8_Symbol_ForApi(c, isolate.as_raw(), name.as_raw()))
                 .unwrap()
         };
         Symbol(isolate.clone(), raw)
@@ -808,7 +804,7 @@ impl Symbol {
     /// Well-known symbol `Symbol.iterator`.
     pub fn get_iterator(isolate: &isolate::Isolate) -> Symbol {
         let raw = unsafe {
-            util::invoke(&isolate, |c| v8::Symbol_GetIterator(c, isolate.as_raw())).unwrap()
+            util::invoke(&isolate, |c| v8::v8_Symbol_GetIterator(c, isolate.as_raw())).unwrap()
         };
         Symbol(isolate.clone(), raw)
     }
@@ -816,7 +812,7 @@ impl Symbol {
     /// Well-known symbol `Symbol.unscopables`.
     pub fn get_unscopables(isolate: &isolate::Isolate) -> Symbol {
         let raw = unsafe {
-            util::invoke(&isolate, |c| v8::Symbol_GetUnscopables(c, isolate.as_raw())).unwrap()
+            util::invoke(&isolate, |c| v8::v8_Symbol_GetUnscopables(c, isolate.as_raw())).unwrap()
         };
         Symbol(isolate.clone(), raw)
     }
@@ -824,7 +820,7 @@ impl Symbol {
     /// Well-known symbol `Symbol.toStringTag`.
     pub fn get_to_string_tag(isolate: &isolate::Isolate) -> Symbol {
         let raw = unsafe {
-            util::invoke(&isolate, |c| v8::Symbol_GetToStringTag(c, isolate.as_raw())).unwrap()
+            util::invoke(&isolate, |c| v8::v8_Symbol_GetToStringTag(c, isolate.as_raw())).unwrap()
         };
         Symbol(isolate.clone(), raw)
     }
@@ -833,7 +829,7 @@ impl Symbol {
     pub fn get_is_concat_spreadable(isolate: &isolate::Isolate) -> Symbol {
         let raw = unsafe {
             util::invoke(&isolate,
-                         |c| v8::Symbol_GetIsConcatSpreadable(c, isolate.as_raw()))
+                         |c| v8::v8_Symbol_GetIsConcatSpreadable(c, isolate.as_raw()))
                 .unwrap()
         };
         Symbol(isolate.clone(), raw)
@@ -857,7 +853,7 @@ impl Private {
     pub fn new(isolate: &isolate::Isolate, name: &String) -> Private {
         let raw = unsafe {
             util::invoke(&isolate,
-                         |c| v8::Private_New(c, isolate.as_raw(), name.as_raw()))
+                         |c| v8::v8_Private_New(c, isolate.as_raw(), name.as_raw()))
                 .unwrap()
         };
         Private(isolate.clone(), raw)
@@ -873,7 +869,7 @@ impl Private {
     pub fn for_api_name(isolate: &isolate::Isolate, name: &String) -> Private {
         let raw = unsafe {
             util::invoke(&isolate,
-                         |c| v8::Private_ForApi(c, isolate.as_raw(), name.as_raw()))
+                         |c| v8::v8_Private_ForApi(c, isolate.as_raw(), name.as_raw()))
                 .unwrap()
         };
         Private(isolate.clone(), raw)
@@ -893,13 +889,13 @@ impl Private {
 impl Number {
     pub fn new(isolate: &isolate::Isolate, value: f64) -> Number {
         let raw = unsafe {
-            util::invoke(&isolate, |c| v8::Number_New(c, isolate.as_raw(), value)).unwrap()
+            util::invoke(&isolate, |c| v8::v8_Number_New(c, isolate.as_raw(), value)).unwrap()
         };
         Number(isolate.clone(), raw)
     }
 
     pub fn value(&self) -> f64 {
-        unsafe { util::invoke(&self.0, |c| v8::Number_Value(c, self.1)).unwrap() }
+        unsafe { util::invoke(&self.0, |c| v8::v8_Number_Value(c, self.1)).unwrap() }
     }
 
     /// Creates a number from a set of raw pointers.
@@ -916,7 +912,7 @@ impl Number {
 impl Integer {
     pub fn new(isolate: &isolate::Isolate, value: i32) -> Integer {
         let raw = unsafe {
-            util::invoke(&isolate, |c| v8::Integer_New(c, isolate.as_raw(), value)).unwrap()
+            util::invoke(&isolate, |c| v8::v8_Integer_New(c, isolate.as_raw(), value)).unwrap()
         };
         Integer(isolate.clone(), raw)
     }
@@ -924,14 +920,14 @@ impl Integer {
     pub fn new_from_unsigned(isolate: &isolate::Isolate, value: u32) -> Integer {
         let raw = unsafe {
             util::invoke(&isolate,
-                         |c| v8::Integer_NewFromUnsigned(c, isolate.as_raw(), value))
+                         |c| v8::v8_Integer_NewFromUnsigned(c, isolate.as_raw(), value))
                 .unwrap()
         };
         Integer(isolate.clone(), raw)
     }
 
     pub fn value(&self) -> i64 {
-        unsafe { util::invoke(&self.0, |c| v8::Integer_Value(c, self.1)).unwrap() }
+        unsafe { util::invoke(&self.0, |c| v8::v8_Integer_Value(c, self.1)).unwrap() }
     }
 
     /// Creates an integer from a set of raw pointers.
@@ -947,7 +943,7 @@ impl Integer {
 
 impl Int32 {
     pub fn value(&self) -> i32 {
-        unsafe { util::invoke(&self.0, |c| v8::Int32_Value(c, self.1)).unwrap() }
+        unsafe { util::invoke(&self.0, |c| v8::v8_Int32_Value(c, self.1)).unwrap() }
     }
 
     /// Creates a 32-bit integer from a set of raw pointers.
@@ -963,7 +959,7 @@ impl Int32 {
 
 impl Uint32 {
     pub fn value(&self) -> u32 {
-        unsafe { util::invoke(&self.0, |c| v8::Uint32_Value(c, self.1)).unwrap() }
+        unsafe { util::invoke(&self.0, |c| v8::v8_Uint32_Value(c, self.1)).unwrap() }
     }
 
     /// Creates a 32-bit unsigned integer from a set of raw pointers.
@@ -981,7 +977,7 @@ impl Object {
     pub fn new(isolate: &isolate::Isolate, context: &context::Context) -> Object {
         let _g = context.make_current();
         let raw = unsafe {
-            util::invoke_ctx(&isolate, context, |c| v8::Object_New(c, isolate.as_raw())).unwrap()
+            util::invoke_ctx(&isolate, context, |c| v8::v8_Object_New(c, isolate.as_raw())).unwrap()
         };
         Object(isolate.clone(), raw)
     }
@@ -989,24 +985,24 @@ impl Object {
     pub fn set(&self, context: &context::Context, key: &Value, value: &Value) -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Object_Set_Key(c, self.1, context.as_raw(), key.as_raw(), value.as_raw())
+                    v8::v8_Object_Set_Key(c, self.1, context.as_raw(), key.as_raw(), value.as_raw())
                 })
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
     pub fn set_index(&self, context: &context::Context, index: u32, value: &Value) -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Object_Set_Index(c, self.1, context.as_raw(), index, value.as_raw())
+                    v8::v8_Object_Set_Index(c, self.1, context.as_raw(), index, value.as_raw())
                 })
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
@@ -1017,7 +1013,7 @@ impl Object {
                                 -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Object_CreateDataProperty_Key(c,
+                    v8::v8_Object_CreateDataProperty_Key(c,
                                                       self.1,
                                                       context.as_raw(),
                                                       key.as_raw(),
@@ -1025,8 +1021,8 @@ impl Object {
                 })
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
@@ -1037,7 +1033,7 @@ impl Object {
                                       -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Object_CreateDataProperty_Index(c,
+                    v8::v8_Object_CreateDataProperty_Index(c,
                                                         self.1,
                                                         context.as_raw(),
                                                         index,
@@ -1045,8 +1041,8 @@ impl Object {
                 })
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
@@ -1054,7 +1050,7 @@ impl Object {
         unsafe {
             util::invoke_ctx(&self.0,
                              context,
-                             |c| v8::Object_Get_Key(c, self.1, context.as_raw(), key.as_raw()))
+                             |c| v8::v8_Object_Get_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .map(|p| Value(self.0.clone(), p))
                 .unwrap()
         }
@@ -1064,7 +1060,7 @@ impl Object {
         let raw = unsafe {
             util::invoke_ctx(&self.0,
                              context,
-                             |c| v8::Object_Get_Index(c, self.1, context.as_raw(), index))
+                             |c| v8::v8_Object_Get_Index(c, self.1, context.as_raw(), index))
                 .unwrap()
         };
         Value(self.0.clone(), raw)
@@ -1073,12 +1069,12 @@ impl Object {
     pub fn delete(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Object_Delete_Key(c, self.1, context.as_raw(), key.as_raw())
+                    v8::v8_Object_Delete_Key(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
@@ -1087,23 +1083,23 @@ impl Object {
             let m =
                 util::invoke_ctx(&self.0,
                                  context,
-                                 |c| v8::Object_Delete_Index(c, self.1, context.as_raw(), index))
+                                 |c| v8::v8_Object_Delete_Index(c, self.1, context.as_raw(), index))
                     .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
     pub fn has(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Object_Has_Key(c, self.1, context.as_raw(), key.as_raw())
+                    v8::v8_Object_Has_Key(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
@@ -1111,11 +1107,11 @@ impl Object {
         unsafe {
             let m = util::invoke_ctx(&self.0,
                                      context,
-                                     |c| v8::Object_Has_Index(c, self.1, context.as_raw(), index))
+                                     |c| v8::v8_Object_Has_Index(c, self.1, context.as_raw(), index))
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
@@ -1128,7 +1124,7 @@ impl Object {
         unsafe {
             util::invoke_ctx(&self.0,
                              context,
-                             |c| v8::Object_GetPropertyNames(c, self.1, context.as_raw()))
+                             |c| v8::v8_Object_GetPropertyNames(c, self.1, context.as_raw()))
                 .map(|p| Array(self.0.clone(), p))
                 .unwrap()
         }
@@ -1140,7 +1136,7 @@ impl Object {
         unsafe {
             util::invoke_ctx(&self.0,
                              context,
-                             |c| v8::Object_GetOwnPropertyNames(c, self.1, context.as_raw()))
+                             |c| v8::v8_Object_GetOwnPropertyNames(c, self.1, context.as_raw()))
                 .map(|p| Array(self.0.clone(), p))
                 .unwrap()
         }
@@ -1150,12 +1146,12 @@ impl Object {
     pub fn set_private(&self, context: &context::Context, key: &Private, value: &Value) -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Object_SetPrivate(c, self.1, context.as_raw(), key.as_raw(), value.as_raw())
+                    v8::v8_Object_SetPrivate(c, self.1, context.as_raw(), key.as_raw(), value.as_raw())
                 })
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
@@ -1163,7 +1159,7 @@ impl Object {
         unsafe {
             util::invoke_ctx(&self.0,
                              context,
-                             |c| v8::Object_GetPrivate(c, self.1, context.as_raw(), key.as_raw()))
+                             |c| v8::v8_Object_GetPrivate(c, self.1, context.as_raw(), key.as_raw()))
                 .map(|p| Value(self.0.clone(), p))
                 .unwrap()
         }
@@ -1172,24 +1168,24 @@ impl Object {
     pub fn delete_private(&self, context: &context::Context, key: &Private) -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Object_DeletePrivate(c, self.1, context.as_raw(), key.as_raw())
+                    v8::v8_Object_DeletePrivate(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
     pub fn has_private(&self, context: &context::Context, key: &Private) -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Object_HasPrivate(c, self.1, context.as_raw(), key.as_raw())
+                    v8::v8_Object_HasPrivate(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
@@ -1198,7 +1194,7 @@ impl Object {
     /// This does not skip objects marked to be skipped by `__proto__` and it does not consult the
     /// security handler.
     pub fn get_prototype(&self) -> Value {
-        let raw = unsafe { util::invoke(&self.0, |c| v8::Object_GetPrototype(c, self.1)).unwrap() };
+        let raw = unsafe { util::invoke(&self.0, |c| v8::v8_Object_GetPrototype(c, self.1)).unwrap() };
         Value(self.0.clone(), raw)
     }
 
@@ -1209,12 +1205,12 @@ impl Object {
     pub fn set_prototype(&self, context: &context::Context, prototype: &Value) -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Object_SetPrototype(c, self.1, context.as_raw(), prototype.as_raw())
+                    v8::v8_Object_SetPrototype(c, self.1, context.as_raw(), prototype.as_raw())
                 })
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
@@ -1226,7 +1222,7 @@ impl Object {
         let raw = unsafe {
             util::invoke_ctx(&self.0,
                              context,
-                             |c| v8::Object_ObjectProtoToString(c, self.1, context.as_raw()))
+                             |c| v8::v8_Object_ObjectProtoToString(c, self.1, context.as_raw()))
                 .unwrap()
         };
         String(self.0.clone(), raw)
@@ -1235,7 +1231,7 @@ impl Object {
     /// Returns the name of the function invoked as a constructor for this object.
     pub fn get_constructor_name(&self) -> String {
         let raw =
-            unsafe { util::invoke(&self.0, |c| v8::Object_GetConstructorName(c, self.1)).unwrap() };
+            unsafe { util::invoke(&self.0, |c| v8::v8_Object_GetConstructorName(c, self.1)).unwrap() };
 
         String(self.0.clone(), raw)
     }
@@ -1243,14 +1239,14 @@ impl Object {
     /// Gets the number of internal fields for this Object
     pub fn internal_field_count(&self) -> u32 {
         unsafe {
-            util::invoke(&self.0, |c| v8::Object_InternalFieldCount(c, self.1)).unwrap() as u32
+            util::invoke(&self.0, |c| v8::v8_Object_InternalFieldCount(c, self.1)).unwrap() as u32
         }
     }
 
     /// Gets the value from an internal field.
     pub unsafe fn get_internal_field(&self, index: u32) -> Value {
         let raw = util::invoke(&self.0,
-                               |c| v8::Object_GetInternalField(c, self.1, index as os::raw::c_int))
+                               |c| v8::v8_Object_GetInternalField(c, self.1, index as os::raw::c_int))
             .unwrap();
         Value(self.0.clone(), raw)
     }
@@ -1258,7 +1254,7 @@ impl Object {
     /// Sets the value in an internal field.
     pub unsafe fn set_internal_field(&self, index: u32, value: &Value) {
         util::invoke(&self.0, |c| {
-                v8::Object_SetInternalField(c, self.1, index as os::raw::c_int, value.as_raw())
+                v8::v8_Object_SetInternalField(c, self.1, index as os::raw::c_int, value.as_raw())
             })
             .unwrap()
     }
@@ -1269,7 +1265,7 @@ impl Object {
     /// leads to undefined behavior.
     pub unsafe fn get_aligned_pointer_from_internal_field<A>(&self, index: u32) -> *mut A {
         util::invoke(&self.0, |c| {
-                v8::Object_GetAlignedPointerFromInternalField(c, self.1, index as os::raw::c_int)
+                v8::v8_Object_GetAlignedPointerFromInternalField(c, self.1, index as os::raw::c_int)
             })
             .unwrap() as *mut A
     }
@@ -1280,7 +1276,7 @@ impl Object {
     /// else leads to undefined behavior.
     pub unsafe fn set_aligned_pointer_in_internal_field<A>(&self, index: u32, value: *mut A) {
         util::invoke(&self.0, |c| {
-                v8::Object_SetAlignedPointerInInternalField(c,
+                v8::v8_Object_SetAlignedPointerInInternalField(c,
                                                             self.1,
                                                             index as os::raw::c_int,
                                                             value as *mut os::raw::c_void)
@@ -1291,48 +1287,48 @@ impl Object {
     pub fn has_own_property(&self, context: &context::Context, key: &Name) -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Object_HasOwnProperty_Key(c, self.1, context.as_raw(), key.as_raw())
+                    v8::v8_Object_HasOwnProperty_Key(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
     pub fn has_own_property_index(&self, context: &context::Context, index: u32) -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Object_HasOwnProperty_Index(c, self.1, context.as_raw(), index)
+                    v8::v8_Object_HasOwnProperty_Index(c, self.1, context.as_raw(), index)
                 })
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
     pub fn has_real_named_property(&self, context: &context::Context, key: &Name) -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Object_HasRealNamedProperty(c, self.1, context.as_raw(), key.as_raw())
+                    v8::v8_Object_HasRealNamedProperty(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
     pub fn has_real_indexed_property(&self, context: &context::Context, index: u32) -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Object_HasRealIndexedProperty(c, self.1, context.as_raw(), index)
+                    v8::v8_Object_HasRealIndexedProperty(c, self.1, context.as_raw(), index)
                 })
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
@@ -1342,21 +1338,21 @@ impl Object {
     ///
     /// The return value will never be 0. Also, it is not guaranteed to be unique.
     pub fn get_identity_hash(&self) -> u32 {
-        unsafe { util::invoke(&self.0, |c| v8::Object_GetIdentityHash(c, self.1)).unwrap() as u32 }
+        unsafe { util::invoke(&self.0, |c| v8::v8_Object_GetIdentityHash(c, self.1)).unwrap() as u32 }
     }
 
     /// Clone this object with a fast but shallow copy.
     ///
     /// Values will point to the same values as the original object.
     pub fn clone_object(&self) -> Object {
-        let raw = unsafe { util::invoke(&self.0, |c| v8::Object_Clone(c, self.1)).unwrap() };
+        let raw = unsafe { util::invoke(&self.0, |c| v8::v8_Object_Clone(c, self.1)).unwrap() };
 
         Object(self.0.clone(), raw)
     }
 
     pub fn creation_context(&self) -> context::Context {
         unsafe {
-            let raw = util::invoke(&self.0, |c| v8::Object_CreationContext(c, self.1)).unwrap();
+            let raw = util::invoke(&self.0, |c| v8::v8_Object_CreationContext(c, self.1)).unwrap();
             context::Context::from_raw(&self.0, raw)
         }
     }
@@ -1365,12 +1361,12 @@ impl Object {
     ///
     /// When an Object is callable this method returns true.
     pub fn is_callable(&self) -> bool {
-        unsafe { 0 != util::invoke(&self.0, |c| v8::Object_IsCallable(c, self.1)).unwrap() }
+        unsafe {  util::invoke(&self.0, |c| v8::v8_Object_IsCallable(c, self.1)).unwrap() }
     }
 
     /// True if this object is a constructor.
     pub fn is_constructor(&self) -> bool {
-        unsafe { 0 != util::invoke(&self.0, |c| v8::Object_IsConstructor(c, self.1)).unwrap() }
+        unsafe {  util::invoke(&self.0, |c| v8::v8_Object_IsConstructor(c, self.1)).unwrap() }
     }
 
     /// Call an Object as a function if a callback is set by the
@@ -1379,7 +1375,7 @@ impl Object {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         let raw = unsafe {
             try!(util::invoke_ctx(&self.0, context, |c| {
-                v8::Object_CallAsFunction(c,
+                v8::v8_Object_CallAsFunction(c,
                                           self.1,
                                           context.as_raw(),
                                           ptr::null_mut(),
@@ -1400,7 +1396,7 @@ impl Object {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         let raw = unsafe {
             try!(util::invoke_ctx(&self.0, context, |c| {
-                v8::Object_CallAsFunction(c,
+                v8::v8_Object_CallAsFunction(c,
                                           self.1,
                                           context.as_raw(),
                                           this.as_raw(),
@@ -1422,7 +1418,7 @@ impl Object {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         let raw = unsafe {
             try!(util::invoke_ctx(&self.0, context, |c| {
-                v8::Object_CallAsConstructor(c,
+                v8::v8_Object_CallAsConstructor(c,
                                              self.1,
                                              context.as_raw(),
                                              arg_ptrs.len() as i32,
@@ -1449,7 +1445,7 @@ impl Array {
         let raw = unsafe {
             util::invoke_ctx(&isolate,
                              context,
-                             |c| v8::Array_New(c, isolate.as_raw(), length as i32))
+                             |c| v8::v8_Array_New(c, isolate.as_raw(), length as i32))
                 .unwrap()
         };
         Array(isolate.clone(), raw)
@@ -1468,23 +1464,23 @@ impl Array {
 
 impl Map {
     pub fn new(isolate: &isolate::Isolate) -> Map {
-        let raw = unsafe { util::invoke(&isolate, |c| v8::Map_New(c, isolate.as_raw())).unwrap() };
+        let raw = unsafe { util::invoke(&isolate, |c| v8::v8_Map_New(c, isolate.as_raw())).unwrap() };
         Map(isolate.clone(), raw)
     }
 
     pub fn size(&self) -> usize {
-        unsafe { util::invoke(&self.0, |c| v8::Map_Size(c, self.1)).unwrap() as usize }
+        unsafe { util::invoke(&self.0, |c| v8::v8_Map_Size(c, self.1)).unwrap() as usize }
     }
 
     pub fn clear(&self) {
-        unsafe { util::invoke(&self.0, |c| v8::Map_Clear(c, self.1)).unwrap() }
+        unsafe { util::invoke(&self.0, |c| v8::v8_Map_Clear(c, self.1)).unwrap() }
     }
 
     pub fn get(&self, context: &context::Context, key: &Value) -> Value {
         let raw = unsafe {
             util::invoke_ctx(&self.0,
                              context,
-                             |c| v8::Map_Get_Key(c, self.1, context.as_raw(), key.as_raw()))
+                             |c| v8::v8_Map_Get_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap()
         };
         Value(self.0.clone(), raw)
@@ -1493,7 +1489,7 @@ impl Map {
     pub fn set(&self, context: &context::Context, key: &Value, value: &Value) {
         unsafe {
             util::invoke_ctx(&self.0, context, |c| {
-                    v8::Map_Set_Key(c, self.1, context.as_raw(), key.as_raw(), value.as_raw())
+                    v8::v8_Map_Set_Key(c, self.1, context.as_raw(), key.as_raw(), value.as_raw())
                 })
                 .unwrap();
         }
@@ -1503,30 +1499,30 @@ impl Map {
         unsafe {
             let m = util::invoke_ctx(&self.0,
                                      context,
-                                     |c| v8::Map_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
+                                     |c| v8::v8_Map_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
     pub fn delete(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Map_Delete_Key(c, self.1, context.as_raw(), key.as_raw())
+                    v8::v8_Map_Delete_Key(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
     /// Returns an array of length Size() * 2, where index N is the Nth key and index N + 1 is the
     /// Nth value.
     pub fn as_array(&self) -> Array {
-        let raw = unsafe { util::invoke(&self.0, |c| v8::Map_AsArray(c, self.1)).unwrap() };
+        let raw = unsafe { util::invoke(&self.0, |c| v8::v8_Map_AsArray(c, self.1)).unwrap() };
         Array(self.0.clone(), raw)
     }
 
@@ -1544,23 +1540,23 @@ impl Map {
 impl Set {
     /// Creates a new empty Set.
     pub fn new(isolate: &isolate::Isolate) -> Set {
-        let raw = unsafe { util::invoke(&isolate, |c| v8::Set_New(c, isolate.as_raw())).unwrap() };
+        let raw = unsafe { util::invoke(&isolate, |c| v8::v8_Set_New(c, isolate.as_raw())).unwrap() };
         Set(isolate.clone(), raw)
     }
 
     pub fn size(&self) -> usize {
-        unsafe { util::invoke(&self.0, |c| v8::Set_Size(c, self.1)).unwrap() as usize }
+        unsafe { util::invoke(&self.0, |c| v8::v8_Set_Size(c, self.1)).unwrap() as usize }
     }
 
     pub fn clear(&self) {
-        unsafe { util::invoke(&self.0, |c| v8::Set_Clear(c, self.1)).unwrap() }
+        unsafe { util::invoke(&self.0, |c| v8::v8_Set_Clear(c, self.1)).unwrap() }
     }
 
     pub fn add(&self, context: &context::Context, key: &Value) {
         unsafe {
             util::invoke_ctx(&self.0,
                              context,
-                             |c| v8::Set_Add(c, self.1, context.as_raw(), key.as_raw()))
+                             |c| v8::v8_Set_Add(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap();
         }
     }
@@ -1569,29 +1565,29 @@ impl Set {
         unsafe {
             let m = util::invoke_ctx(&self.0,
                                      context,
-                                     |c| v8::Set_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
+                                     |c| v8::v8_Set_Has_Key(c, self.1, context.as_raw(), key.as_raw()))
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
     pub fn delete(&self, context: &context::Context, key: &Value) -> bool {
         unsafe {
             let m = util::invoke_ctx(&self.0, context, |c| {
-                    v8::Set_Delete_Key(c, self.1, context.as_raw(), key.as_raw())
+                    v8::v8_Set_Delete_Key(c, self.1, context.as_raw(), key.as_raw())
                 })
                 .unwrap();
 
-            assert!(0 != m.is_set);
-            0 != m.value
+            assert!( m.is_set);
+             m.value
         }
     }
 
     /// Returns an array of the keys in this Set.
     pub fn as_array(&self) -> Array {
-        let raw = unsafe { util::invoke(&self.0, |c| v8::Set_AsArray(c, self.1)).unwrap() };
+        let raw = unsafe { util::invoke(&self.0, |c| v8::v8_Set_AsArray(c, self.1)).unwrap() };
         Array(self.0.clone(), raw)
     }
 
@@ -1625,7 +1621,7 @@ impl Function {
             closure.set_internal_field(0, &callback_ext);
 
             let raw = util::invoke_ctx(&isolate, context, |c| {
-                    v8::Function_New(c,
+                    v8::v8_Function_New(c,
                                      context.as_raw(),
                                      Some(util::callback),
                                      (&closure as &Value).as_raw(),
@@ -1643,7 +1639,7 @@ impl Function {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         let raw = unsafe {
             try!(util::invoke_ctx(&self.0, context, |c| {
-                v8::Function_Call(c,
+                v8::v8_Function_Call(c,
                                   self.1,
                                   context.as_raw(),
                                   ptr::null_mut(),
@@ -1664,7 +1660,7 @@ impl Function {
         let mut arg_ptrs = args.iter().map(|v| v.1).collect::<Vec<_>>();
         let raw = unsafe {
             try!(util::invoke_ctx(&self.0, context, |c| {
-                v8::Function_Call(c,
+                v8::v8_Function_Call(c,
                                   self.1,
                                   context.as_raw(),
                                   this.as_raw(),
@@ -1689,14 +1685,14 @@ impl Function {
 impl External {
     pub unsafe fn new<A>(isolate: &isolate::Isolate, value: *mut A) -> External {
         let raw = util::invoke(&isolate, |c| {
-                v8::External_New(c, isolate.as_raw(), value as *mut os::raw::c_void)
+                v8::v8_External_New(c, isolate.as_raw(), value as *mut os::raw::c_void)
             })
             .unwrap();
         External(isolate.clone(), raw)
     }
 
     pub unsafe fn value<A>(&self) -> *mut A {
-        util::invoke(&self.0, |c| v8::External_Value(c, self.1)).unwrap() as *mut A
+        util::invoke(&self.0, |c| v8::v8_External_Value(c, self.1)).unwrap() as *mut A
     }
 
     /// Creates an external from a set of raw pointers.
@@ -1713,7 +1709,7 @@ impl External {
 impl Exception {
     pub fn range_error(isolate: &isolate::Isolate, message: &String) -> Value {
         let raw = unsafe {
-            util::invoke(&isolate, |c| v8::Exception_RangeError(c, message.as_raw())).unwrap()
+            util::invoke(&isolate, |c| v8::v8_Exception_RangeError(c, message.as_raw())).unwrap()
         };
         Value(isolate.clone(), raw)
     }
@@ -1721,7 +1717,7 @@ impl Exception {
     pub fn reference_error(isolate: &isolate::Isolate, message: &String) -> Value {
         let raw = unsafe {
             util::invoke(&isolate,
-                         |c| v8::Exception_ReferenceError(c, message.as_raw()))
+                         |c| v8::v8_Exception_ReferenceError(c, message.as_raw()))
                 .unwrap()
         };
         Value(isolate.clone(), raw)
@@ -1729,21 +1725,21 @@ impl Exception {
 
     pub fn syntax_error(isolate: &isolate::Isolate, message: &String) -> Value {
         let raw = unsafe {
-            util::invoke(&isolate, |c| v8::Exception_SyntaxError(c, message.as_raw())).unwrap()
+            util::invoke(&isolate, |c| v8::v8_Exception_SyntaxError(c, message.as_raw())).unwrap()
         };
         Value(isolate.clone(), raw)
     }
 
     pub fn type_error(isolate: &isolate::Isolate, message: &String) -> Value {
         let raw = unsafe {
-            util::invoke(&isolate, |c| v8::Exception_TypeError(c, message.as_raw())).unwrap()
+            util::invoke(&isolate, |c| v8::v8_Exception_TypeError(c, message.as_raw())).unwrap()
         };
         Value(isolate.clone(), raw)
     }
 
     pub fn error(isolate: &isolate::Isolate, message: &String) -> Value {
         let raw = unsafe {
-            util::invoke(&isolate, |c| v8::Exception_Error(c, message.as_raw())).unwrap()
+            util::invoke(&isolate, |c| v8::v8_Exception_Error(c, message.as_raw())).unwrap()
         };
         Value(isolate.clone(), raw)
     }
@@ -1894,76 +1890,76 @@ inherit!(External, Value);
 
 // unsafe: Don't add another `drop!` line if you don't know the implications (see the comments
 // around the macro declaration).
-reference!(Data, v8::Data_CloneRef, v8::Data_DestroyRef);
-reference!(Value, v8::Value_CloneRef, v8::Value_DestroyRef);
-reference!(Primitive, v8::Primitive_CloneRef, v8::Primitive_DestroyRef);
-reference!(Boolean, v8::Boolean_CloneRef, v8::Boolean_DestroyRef);
-reference!(Name, v8::Name_CloneRef, v8::Name_DestroyRef);
-reference!(String, v8::String_CloneRef, v8::String_DestroyRef);
-reference!(Symbol, v8::Symbol_CloneRef, v8::Symbol_DestroyRef);
-reference!(Private, v8::Private_CloneRef, v8::Private_DestroyRef);
-reference!(Number, v8::Number_CloneRef, v8::Number_DestroyRef);
-reference!(Integer, v8::Integer_CloneRef, v8::Integer_DestroyRef);
-reference!(Int32, v8::Int32_CloneRef, v8::Int32_DestroyRef);
-reference!(Uint32, v8::Uint32_CloneRef, v8::Uint32_DestroyRef);
-reference!(Object, v8::Object_CloneRef, v8::Object_DestroyRef);
-reference!(Array, v8::Array_CloneRef, v8::Array_DestroyRef);
-reference!(Map, v8::Map_CloneRef, v8::Map_DestroyRef);
-reference!(Set, v8::Set_CloneRef, v8::Set_DestroyRef);
-reference!(Function, v8::Function_CloneRef, v8::Function_DestroyRef);
-reference!(Promise, v8::Promise_CloneRef, v8::Promise_DestroyRef);
-reference!(Proxy, v8::Proxy_CloneRef, v8::Proxy_DestroyRef);
+reference!(Data, v8::v8_Data_CloneRef, v8::v8_Data_DestroyRef);
+reference!(Value, v8::v8_Value_CloneRef, v8::v8_Value_DestroyRef);
+reference!(Primitive, v8::v8_Primitive_CloneRef, v8::v8_Primitive_DestroyRef);
+reference!(Boolean, v8::v8_Boolean_CloneRef, v8::v8_Boolean_DestroyRef);
+reference!(Name, v8::v8_Name_CloneRef, v8::v8_Name_DestroyRef);
+reference!(String, v8::v8_String_CloneRef, v8::v8_String_DestroyRef);
+reference!(Symbol, v8::v8_Symbol_CloneRef, v8::v8_Symbol_DestroyRef);
+reference!(Private, v8::v8_Private_CloneRef, v8::v8_Private_DestroyRef);
+reference!(Number, v8::v8_Number_CloneRef, v8::v8_Number_DestroyRef);
+reference!(Integer, v8::v8_Integer_CloneRef, v8::v8_Integer_DestroyRef);
+reference!(Int32, v8::v8_Int32_CloneRef, v8::v8_Int32_DestroyRef);
+reference!(Uint32, v8::v8_Uint32_CloneRef, v8::v8_Uint32_DestroyRef);
+reference!(Object, v8::v8_Object_CloneRef, v8::v8_Object_DestroyRef);
+reference!(Array, v8::v8_Array_CloneRef, v8::v8_Array_DestroyRef);
+reference!(Map, v8::v8_Map_CloneRef, v8::v8_Map_DestroyRef);
+reference!(Set, v8::v8_Set_CloneRef, v8::v8_Set_DestroyRef);
+reference!(Function, v8::v8_Function_CloneRef, v8::v8_Function_DestroyRef);
+reference!(Promise, v8::v8_Promise_CloneRef, v8::v8_Promise_DestroyRef);
+reference!(Proxy, v8::v8_Proxy_CloneRef, v8::v8_Proxy_DestroyRef);
 reference!(ArrayBuffer,
-           v8::ArrayBuffer_CloneRef,
-           v8::ArrayBuffer_DestroyRef);
+           v8::v8_ArrayBuffer_CloneRef,
+           v8::v8_ArrayBuffer_DestroyRef);
 reference!(ArrayBufferView,
-           v8::ArrayBufferView_CloneRef,
-           v8::ArrayBufferView_DestroyRef);
+           v8::v8_ArrayBufferView_CloneRef,
+           v8::v8_ArrayBufferView_DestroyRef);
 reference!(TypedArray,
-           v8::TypedArray_CloneRef,
-           v8::TypedArray_DestroyRef);
+           v8::v8_TypedArray_CloneRef,
+           v8::v8_TypedArray_DestroyRef);
 reference!(Uint8Array,
-           v8::Uint8Array_CloneRef,
-           v8::Uint8Array_DestroyRef);
+           v8::v8_Uint8Array_CloneRef,
+           v8::v8_Uint8Array_DestroyRef);
 reference!(Uint8ClampedArray,
-           v8::Uint8ClampedArray_CloneRef,
-           v8::Uint8ClampedArray_DestroyRef);
-reference!(Int8Array, v8::Int8Array_CloneRef, v8::Int8Array_DestroyRef);
+           v8::v8_Uint8ClampedArray_CloneRef,
+           v8::v8_Uint8ClampedArray_DestroyRef);
+reference!(Int8Array, v8::v8_Int8Array_CloneRef, v8::v8_Int8Array_DestroyRef);
 reference!(Uint16Array,
-           v8::Uint16Array_CloneRef,
-           v8::Uint16Array_DestroyRef);
+           v8::v8_Uint16Array_CloneRef,
+           v8::v8_Uint16Array_DestroyRef);
 reference!(Int16Array,
-           v8::Int16Array_CloneRef,
-           v8::Int16Array_DestroyRef);
+           v8::v8_Int16Array_CloneRef,
+           v8::v8_Int16Array_DestroyRef);
 reference!(Uint32Array,
-           v8::Uint32Array_CloneRef,
-           v8::Uint32Array_DestroyRef);
+           v8::v8_Uint32Array_CloneRef,
+           v8::v8_Uint32Array_DestroyRef);
 reference!(Int32Array,
-           v8::Int32Array_CloneRef,
-           v8::Int32Array_DestroyRef);
+           v8::v8_Int32Array_CloneRef,
+           v8::v8_Int32Array_DestroyRef);
 reference!(Float32Array,
-           v8::Float32Array_CloneRef,
-           v8::Float32Array_DestroyRef);
+           v8::v8_Float32Array_CloneRef,
+           v8::v8_Float32Array_DestroyRef);
 reference!(Float64Array,
-           v8::Float64Array_CloneRef,
-           v8::Float64Array_DestroyRef);
-reference!(DataView, v8::DataView_CloneRef, v8::DataView_DestroyRef);
+           v8::v8_Float64Array_CloneRef,
+           v8::v8_Float64Array_DestroyRef);
+reference!(DataView, v8::v8_DataView_CloneRef, v8::v8_DataView_DestroyRef);
 reference!(SharedArrayBuffer,
-           v8::SharedArrayBuffer_CloneRef,
-           v8::SharedArrayBuffer_DestroyRef);
-reference!(Date, v8::Date_CloneRef, v8::Date_DestroyRef);
+           v8::v8_SharedArrayBuffer_CloneRef,
+           v8::v8_SharedArrayBuffer_DestroyRef);
+reference!(Date, v8::v8_Date_CloneRef, v8::v8_Date_DestroyRef);
 reference!(NumberObject,
-           v8::NumberObject_CloneRef,
-           v8::NumberObject_DestroyRef);
+           v8::v8_NumberObject_CloneRef,
+           v8::v8_NumberObject_DestroyRef);
 reference!(BooleanObject,
-           v8::BooleanObject_CloneRef,
-           v8::BooleanObject_DestroyRef);
+           v8::v8_BooleanObject_CloneRef,
+           v8::v8_BooleanObject_DestroyRef);
 reference!(StringObject,
-           v8::StringObject_CloneRef,
-           v8::StringObject_DestroyRef);
+           v8::v8_StringObject_CloneRef,
+           v8::v8_StringObject_DestroyRef);
 reference!(SymbolObject,
-           v8::SymbolObject_CloneRef,
-           v8::SymbolObject_DestroyRef);
-reference!(RegExp, v8::RegExp_CloneRef, v8::RegExp_DestroyRef);
-reference!(External, v8::External_CloneRef, v8::External_DestroyRef);
-reference!(Exception, v8::Exception_CloneRef, v8::Exception_DestroyRef);
+           v8::v8_SymbolObject_CloneRef,
+           v8::v8_SymbolObject_DestroyRef);
+reference!(RegExp, v8::v8_RegExp_CloneRef, v8::v8_RegExp_DestroyRef);
+reference!(External, v8::v8_External_CloneRef, v8::v8_External_DestroyRef);
+reference!(Exception, v8::v8_Exception_CloneRef, v8::v8_Exception_DestroyRef);

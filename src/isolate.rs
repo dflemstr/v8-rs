@@ -97,7 +97,7 @@ impl Isolate {
     /// function callback.
     pub fn current_context(&self) -> Option<context::Context> {
         unsafe {
-            let raw = v8::Isolate_GetCurrentContext(self.as_raw()).as_mut();
+            let raw = v8::v8_Isolate_GetCurrentContext(self.as_raw()).as_mut();
             raw.map(|r| context::Context::from_raw(self, r))
         }
     }
@@ -178,7 +178,7 @@ impl Isolate {
     }
 
     unsafe fn get_data_ptr(&self) -> *mut Data {
-        v8::Isolate_GetData(self.0, DATA_PTR_SLOT) as *mut Data
+        v8::v8_Isolate_GetData(self.0, DATA_PTR_SLOT) as *mut Data
     }
 
     unsafe fn get_data(&self) -> &mut Data {
@@ -203,7 +203,7 @@ impl Drop for Isolate {
 
             if *count == 0 {
                 drop(Box::from_raw(self.get_data_ptr()));
-                v8::Isolate_Dispose(self.0);
+                v8::v8_Isolate_Dispose(self.0);
             }
         }
     }
@@ -223,13 +223,13 @@ impl Builder {
 
         let allocator = allocator::Allocator::new();
 
-        let raw = unsafe { v8::Isolate_New(allocator.as_raw()) };
+        let raw = unsafe { v8::v8_Isolate_New(allocator.as_raw()) };
         if raw.is_null() {
             panic!("Could not create Isolate");
         }
 
         unsafe {
-            assert!(v8::Isolate_GetNumberOfDataSlots(raw) > 0);
+            assert!(v8::v8_Isolate_GetNumberOfDataSlots(raw) > 0);
         }
 
         let idle_task_queue = if self.supports_idle_tasks {
@@ -247,8 +247,8 @@ impl Builder {
         let data_ptr: *mut Data = Box::into_raw(Box::new(data));
 
         unsafe {
-            v8::Isolate_SetData(raw, DATA_PTR_SLOT, data_ptr as *mut os::raw::c_void);
-            v8::Isolate_SetCaptureStackTraceForUncaughtExceptions_Detailed(raw, 1, 1024);
+            v8::v8_Isolate_SetData(raw, DATA_PTR_SLOT, data_ptr as *mut os::raw::c_void);
+            v8::v8_Isolate_SetCaptureStackTraceForUncaughtExceptions_Detailed(raw, true, 1024);
         }
 
         Isolate(raw)
@@ -270,14 +270,14 @@ impl Ord for ScheduledTask {
 fn ensure_initialized() {
     INITIALIZE.call_once(|| {
         unsafe {
-            v8::V8_InitializeICU();
+            v8::v8_V8_InitializeICU();
 
             let platform = platform::Platform::new();
-            v8::V8_InitializePlatform(platform.as_raw());
+            v8::v8_V8_InitializePlatform(platform.as_raw());
             // TODO: implement some form of cleanup
             mem::forget(platform);
 
-            v8::V8_Initialize();
+            v8::v8_V8_Initialize();
         }
     });
 }

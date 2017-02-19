@@ -93,7 +93,7 @@ pub extern "C" fn callback(callback_info: v8::FunctionCallbackInfoPtr_Value) {
             this: value::Object::from_raw(&isolate, callback_info.This),
             holder: value::Object::from_raw(&isolate, callback_info.Holder),
             new_target: value::Value::from_raw(&isolate, callback_info.NewTarget),
-            is_construct_call: 0 != callback_info.IsConstructCall,
+            is_construct_call: callback_info.IsConstructCall,
         };
 
         let result = panic::catch_unwind(|| {
@@ -120,7 +120,7 @@ pub extern "C" fn callback(callback_info: v8::FunctionCallbackInfoPtr_Value) {
 
 fn throw_exception(isolate: &isolate::Isolate, exception: &value::Value) -> value::Value {
     unsafe {
-        let raw = v8::Isolate_ThrowException(isolate.as_raw(), exception.as_raw()).as_mut().unwrap();
+        let raw = v8::v8_Isolate_ThrowException(isolate.as_raw(), exception.as_raw()).as_mut().unwrap();
         ::value::Value::from_raw(isolate, raw)
     }
 }

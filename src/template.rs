@@ -38,7 +38,7 @@ impl Signature {
     pub fn new(isolate: &isolate::Isolate) -> Signature {
         let raw = unsafe {
             util::invoke(isolate,
-                         |c| v8::Signature_New(c, isolate.as_raw(), ptr::null_mut()))
+                         |c| v8::v8_Signature_New(c, isolate.as_raw(), ptr::null_mut()))
                 .unwrap()
         };
         Signature(isolate.clone(), raw)
@@ -48,7 +48,7 @@ impl Signature {
     pub fn new_with_receiver(isolate: &isolate::Isolate, receiver: &FunctionTemplate) -> Signature {
         let raw = unsafe {
             util::invoke(isolate,
-                         |c| v8::Signature_New(c, isolate.as_raw(), receiver.1))
+                         |c| v8::v8_Signature_New(c, isolate.as_raw(), receiver.1))
                 .unwrap()
         };
         Signature(isolate.clone(), raw)
@@ -72,7 +72,7 @@ impl FunctionTemplate {
             closure.set_internal_field(0, &callback_ext);
 
             util::invoke_ctx(isolate, context, |c| {
-                    v8::FunctionTemplate_New(c,
+                    v8::v8_FunctionTemplate_New(c,
                                              context.as_raw(),
                                              Some(util::callback),
                                              (&closure as &value::Value).as_raw(),
@@ -89,7 +89,7 @@ impl FunctionTemplate {
     pub fn get_function(self, context: &context::Context) -> value::Function {
         unsafe {
             let raw = util::invoke_ctx(&self.0, context, |c| {
-                    v8::FunctionTemplate_GetFunction(c, self.1, context.as_raw())
+                    v8::v8_FunctionTemplate_GetFunction(c, self.1, context.as_raw())
                 })
                 .unwrap();
             value::Function::from_raw(&self.0, raw)
@@ -102,7 +102,7 @@ impl ObjectTemplate {
     pub fn new(isolate: &isolate::Isolate) -> ObjectTemplate {
         let raw = unsafe {
             util::invoke(isolate,
-                         |c| v8::ObjectTemplate_New(c, isolate.as_raw(), ptr::null_mut()))
+                         |c| v8::v8_ObjectTemplate_New(c, isolate.as_raw(), ptr::null_mut()))
                 .unwrap()
         };
         ObjectTemplate(isolate.clone(), raw)
@@ -112,7 +112,7 @@ impl ObjectTemplate {
     pub fn set_internal_field_count(&self, value: usize) {
         unsafe {
             util::invoke(&self.0, |c| {
-                    v8::ObjectTemplate_SetInternalFieldCount(c, self.1, value as os::raw::c_int)
+                    v8::v8_ObjectTemplate_SetInternalFieldCount(c, self.1, value as os::raw::c_int)
                 })
                 .unwrap()
         };
@@ -123,7 +123,7 @@ impl ObjectTemplate {
         let template: &Template = self;
         unsafe {
             util::invoke(&self.0, |c| {
-                    v8::Template_Set_Raw(c,
+                    v8::v8_Template_Set_Raw(c,
                                          template.1,
                                          self.0.as_raw(),
                                          mem::transmute(cname.as_ptr()),
@@ -137,7 +137,7 @@ impl ObjectTemplate {
     pub fn new_instance(&self, context: &context::Context) -> value::Object {
         unsafe {
             let raw = util::invoke_ctx(&self.0, context, |c| {
-                    v8::ObjectTemplate_NewInstance(c, self.1, context.as_raw())
+                    v8::v8_ObjectTemplate_NewInstance(c, self.1, context.as_raw())
                 })
                 .unwrap();
             value::Object::from_raw(&self.0, raw)
@@ -162,11 +162,11 @@ inherit!(ObjectTemplate, Template);
 inherit!(FunctionTemplate, Template);
 inherit!(Signature, Data);
 
-reference!(Template, v8::Template_CloneRef, v8::Template_DestroyRef);
+reference!(Template, v8::v8_Template_CloneRef, v8::v8_Template_DestroyRef);
 reference!(FunctionTemplate,
-           v8::FunctionTemplate_CloneRef,
-           v8::FunctionTemplate_DestroyRef);
+           v8::v8_FunctionTemplate_CloneRef,
+           v8::v8_FunctionTemplate_DestroyRef);
 reference!(ObjectTemplate,
-           v8::ObjectTemplate_CloneRef,
-           v8::ObjectTemplate_DestroyRef);
-reference!(Signature, v8::Signature_CloneRef, v8::Signature_DestroyRef);
+           v8::v8_ObjectTemplate_CloneRef,
+           v8::v8_ObjectTemplate_DestroyRef);
+reference!(Signature, v8::v8_Signature_CloneRef, v8::v8_Signature_DestroyRef);

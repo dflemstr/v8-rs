@@ -458,7 +458,7 @@ fn build_type(typ: &clang::Type) -> Result<Type, ()> {
                 }
             }
         }
-        clang::TypeKind::Unexposed => {
+        clang::TypeKind::Unexposed | clang::TypeKind::Elaborated => {
             if typ.get_display_name().starts_with("Local<") {
                 let ref_type = try!(build_type(&get_first_tpl_arg(typ)));
                 Ok(Type::Ref(Box::new(ref_type)))
