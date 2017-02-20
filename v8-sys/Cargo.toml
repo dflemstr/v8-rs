@@ -9,7 +9,7 @@ keywords = ["v8", "javascript", "js", "ecmascript", "google"]
 license = "Apache-2.0"
 name = "v8-sys"
 repository = "https://github.com/dflemstr/v8-rs/tree/master/v8-sys"
-version = "0.14.4"
+version = "0.14.5"
 
 [build-dependencies]
 bindgen = "0.22.0"
