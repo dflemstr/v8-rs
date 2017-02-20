@@ -9,9 +9,9 @@ repository = "https://github.com/dflemstr/v8-rs/tree/master/v8-api"
 version = "0.7.1"
 
 [dependencies]
-env_logger = "0.3.4"
+env_logger = "0.4.0"
 log = "0.3.6"
 
 [dependencies.clang]
 features = ["clang_3_5"]
-version = "0.14.0"
+version = "0.15.0"
