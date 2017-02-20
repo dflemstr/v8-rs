@@ -13,10 +13,16 @@ version = "0.14.4"
 
 [build-dependencies]
 bindgen = "0.22.0"
-clang = "0.15.0"
-clang-sys = "0.14.0"
 gcc = "0.3.38"
 pkg-config = "0.3.8"
+
+[build-dependencies.clang]
+features = ["runtime"]
+version = "0.15.0"
+
+[build-dependencies.clang-sys]
+features = ["runtime"]
+version = "0.14.0"
 
 [build-dependencies.v8-api]
 path = "../v8-api"
