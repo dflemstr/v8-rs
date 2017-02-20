@@ -952,7 +952,9 @@ ScriptRef v8_Script_Compile_Origin(
         wrap(c.isolate, resource_column_offset),
         wrap(c.isolate, resource_is_shared_cross_origin),
         wrap(c.isolate, script_id),
-        wrap(c.isolate, resource_is_embedder_debug_script),
+        #if V8_MAJOR_VERSION < 5 || (V8_MAJOR_VERSION == 5 && V8_MINOR_VERSION < 7)
+            wrap(c.isolate, resource_is_embedder_debug_script),
+        #endif
         wrap(c.isolate, source_map_url),
         wrap(c.isolate, resource_is_opaque));
 
