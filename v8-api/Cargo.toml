@@ -6,7 +6,7 @@ keywords = ["v8", "javascript", "api"]
 license = "Apache-2.0"
 name = "v8-api"
 repository = "https://github.com/dflemstr/v8-rs/tree/master/v8-api"
-version = "0.7.2"
+version = "0.7.3"
 
 [dependencies]
 env_logger = "0.4.0"
