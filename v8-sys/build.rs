@@ -170,16 +170,18 @@ fn maybe_search<P>(dir: P)
 
 fn gen_bindings(out_dir_path: &path::Path, bindings_path: &path::Path) {
     use std::io::Write;
-    let mut bindings = bindgen::Builder::new("src/v8-glue.h");
-    bindings.builtins();
-    bindings.remove_prefix("v8_");
-    bindings.clang_arg("-Isrc");
-    bindings.clang_arg(format!("-I{}", out_dir_path.to_string_lossy()));
+    let mut bindings = bindgen::builder()
+    .header("src/v8-glue.h")
+    .emit_builtins()
+    .no_unstable_rust()
+    //bindings.remove_prefix("v8_");
+    .clang_arg("-Isrc")
+    .clang_arg(format!("-I{}", out_dir_path.to_string_lossy()));
 
     if let Some(dir_str) = env::var_os("V8_SOURCE") {
         println!("V8_SOURCE={:?}", dir_str);
         let dir = path::Path::new(&dir_str);
-        bindings.clang_arg(format!("-I{}", dir.join("include").to_string_lossy()));
+        bindings = bindings.clang_arg(format!("-I{}", dir.join("include").to_string_lossy()));
     } else {
         println!("V8_SOURCE not set, searching system paths");
     }

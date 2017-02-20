@@ -20,7 +20,7 @@ impl Script {
         let raw = unsafe {
             try!(util::invoke_ctx(isolate,
                                   context,
-                                  |c| v8::Script_Compile(c, context.as_raw(), source.as_raw())))
+                                  |c| v8::v8_Script_Compile(c, context.as_raw(), source.as_raw())))
         };
         Ok(Script(isolate.clone(), raw))
     }
@@ -37,7 +37,7 @@ impl Script {
         use std::ptr::null_mut as n;
         let raw = unsafe {
             try!(util::invoke_ctx(isolate, context, |c| {
-                v8::Script_Compile_Origin(c,
+                v8::v8_Script_Compile_Origin(c,
                                           context.as_raw(),
                                           source.as_raw(),
                                           name.as_raw(),
@@ -62,10 +62,10 @@ impl Script {
         unsafe {
             let raw = try!(util::invoke_ctx(&self.0,
                                             context,
-                                            |c| v8::Script_Run(c, self.1, context.as_raw())));
+                                            |c| v8::v8_Script_Run(c, self.1, context.as_raw())));
             Ok(value::Value::from_raw(&self.0, raw))
         }
     }
 }
 
-reference!(Script, v8::Script_CloneRef, v8::Script_DestroyRef);
+reference!(Script, v8::v8_Script_CloneRef, v8::v8_Script_DestroyRef);
