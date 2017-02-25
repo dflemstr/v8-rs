@@ -1,4 +1,5 @@
 use v8_sys as v8;
+use std::os;
 use std::thread;
 use std::time;
 use num_cpus;
@@ -96,8 +97,8 @@ extern "C" fn destroy_platform() {
     // No-op
 }
 
-extern "C" fn number_of_available_background_threads() -> u64 {
-    num_cpus::get() as u64
+extern "C" fn number_of_available_background_threads() -> os::raw::c_ulong {
+    num_cpus::get() as os::raw::c_ulong
 }
 
 extern "C" fn call_on_background_thread(task: v8::TaskPtr,
