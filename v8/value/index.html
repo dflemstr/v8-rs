@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `value` mod in crate `v8`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, value">
+
+    <title>v8::value - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>v8</a></p><script>window.sidebarCurrent = {name: 'value', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>v8</a>::<wbr><a class='mod' href=''>value</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a class='srclink' href='../../src/v8/value.rs.html#1-1965' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>Javascript values that user code can interact with.</p>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Array.html'
+                                  title='v8::value::Array'>Array</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of the built-in array constructor (ECMA-262, 15.4.2).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ArrayBuffer.html'
+                                  title='v8::value::ArrayBuffer'>ArrayBuffer</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of the built-in ArrayBuffer constructor (ES6 draft 15.13.5).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ArrayBufferView.html'
+                                  title='v8::value::ArrayBufferView'>ArrayBufferView</a></td>
+                           <td class='docblock-short'>
+                                <p>A base class for an instance of one of &quot;views&quot; over ArrayBuffer, including TypedArrays and
+DataView (ES6 draft 15.13).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Boolean.html'
+                                  title='v8::value::Boolean'>Boolean</a></td>
+                           <td class='docblock-short'>
+                                <p>A primitive boolean value (ECMA-262, 4.3.14).  Either the true or false value.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.BooleanObject.html'
+                                  title='v8::value::BooleanObject'>BooleanObject</a></td>
+                           <td class='docblock-short'>
+                                <p>A Boolean object (ECMA-262, 4.3.15).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Data.html'
+                                  title='v8::value::Data'>Data</a></td>
+                           <td class='docblock-short'>
+                                <p>The superclass of values and API object templates.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.DataView.html'
+                                  title='v8::value::DataView'>DataView</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of DataView constructor (ES6 draft 15.13.7).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Date.html'
+                                  title='v8::value::Date'>Date</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of the built-in Date constructor (ECMA-262, 15.9).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Exception.html'
+                                  title='v8::value::Exception'>Exception</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.External.html'
+                                  title='v8::value::External'>External</a></td>
+                           <td class='docblock-short'>
+                                <p>A JavaScript value that wraps an external value. This type of value is mainly used to associate
+native data structures with JavaScript objects.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Float32Array.html'
+                                  title='v8::value::Float32Array'>Float32Array</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of Float32Array constructor (ES6 draft 15.13.6).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Float64Array.html'
+                                  title='v8::value::Float64Array'>Float64Array</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of Float64Array constructor (ES6 draft 15.13.6).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Function.html'
+                                  title='v8::value::Function'>Function</a></td>
+                           <td class='docblock-short'>
+                                <p>A JavaScript function object (ECMA-262, 15.3).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.FunctionCallbackInfo.html'
+                                  title='v8::value::FunctionCallbackInfo'>FunctionCallbackInfo</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Int16Array.html'
+                                  title='v8::value::Int16Array'>Int16Array</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of Int16Array constructor (ES6 draft 15.13.6).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Int32.html'
+                                  title='v8::value::Int32'>Int32</a></td>
+                           <td class='docblock-short'>
+                                <p>A JavaScript value representing a 32-bit signed integer.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Int32Array.html'
+                                  title='v8::value::Int32Array'>Int32Array</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of Int32Array constructor (ES6 draft 15.13.6).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Int8Array.html'
+                                  title='v8::value::Int8Array'>Int8Array</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of Int8Array constructor (ES6 draft 15.13.6).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Integer.html'
+                                  title='v8::value::Integer'>Integer</a></td>
+                           <td class='docblock-short'>
+                                <p>A JavaScript value representing a signed integer.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Map.html'
+                                  title='v8::value::Map'>Map</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of the built-in Map constructor (ECMA-262, 6th Edition, 23.1.1).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Name.html'
+                                  title='v8::value::Name'>Name</a></td>
+                           <td class='docblock-short'>
+                                <p>A superclass for symbols and strings.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Number.html'
+                                  title='v8::value::Number'>Number</a></td>
+                           <td class='docblock-short'>
+                                <p>A JavaScript number value (ECMA-262, 4.3.20)</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.NumberObject.html'
+                                  title='v8::value::NumberObject'>NumberObject</a></td>
+                           <td class='docblock-short'>
+                                <p>A Number object (ECMA-262, 4.3.21).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Object.html'
+                                  title='v8::value::Object'>Object</a></td>
+                           <td class='docblock-short'>
+                                <p>A JavaScript object (ECMA-262, 4.3.3)</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Primitive.html'
+                                  title='v8::value::Primitive'>Primitive</a></td>
+                           <td class='docblock-short'>
+                                <p>The superclass of primitive values.  See ECMA-262 4.3.2.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Private.html'
+                                  title='v8::value::Private'>Private</a></td>
+                           <td class='docblock-short'>
+                                <p>A private symbol</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Promise.html'
+                                  title='v8::value::Promise'>Promise</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of the built-in Promise constructor (ES6 draft).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.PropertyCallbackInfo.html'
+                                  title='v8::value::PropertyCallbackInfo'>PropertyCallbackInfo</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Proxy.html'
+                                  title='v8::value::Proxy'>Proxy</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of the built-in Proxy constructor (ECMA-262, 6th Edition, 26.2.1).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.RegExp.html'
+                                  title='v8::value::RegExp'>RegExp</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of the built-in RegExp constructor (ECMA-262, 15.10).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Set.html'
+                                  title='v8::value::Set'>Set</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of the built-in Set constructor (ECMA-262, 6th Edition, 23.2.1).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.SharedArrayBuffer.html'
+                                  title='v8::value::SharedArrayBuffer'>SharedArrayBuffer</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of the built-in SharedArrayBuffer constructor.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.String.html'
+                                  title='v8::value::String'>String</a></td>
+                           <td class='docblock-short'>
+                                <p>A JavaScript string value (ECMA-262, 4.3.17).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.StringObject.html'
+                                  title='v8::value::StringObject'>StringObject</a></td>
+                           <td class='docblock-short'>
+                                <p>A String object (ECMA-262, 4.3.18).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Symbol.html'
+                                  title='v8::value::Symbol'>Symbol</a></td>
+                           <td class='docblock-short'>
+                                <p>A JavaScript symbol (ECMA-262 edition 6)</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.SymbolObject.html'
+                                  title='v8::value::SymbolObject'>SymbolObject</a></td>
+                           <td class='docblock-short'>
+                                <p>A Symbol object (ECMA-262 edition 6).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.TypedArray.html'
+                                  title='v8::value::TypedArray'>TypedArray</a></td>
+                           <td class='docblock-short'>
+                                <p>A base class for an instance of TypedArray series of constructors (ES6 draft 15.13.6).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Uint16Array.html'
+                                  title='v8::value::Uint16Array'>Uint16Array</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of Uint16Array constructor (ES6 draft 15.13.6).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Uint32.html'
+                                  title='v8::value::Uint32'>Uint32</a></td>
+                           <td class='docblock-short'>
+                                <p>A JavaScript value representing a 32-bit unsigned integer.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Uint32Array.html'
+                                  title='v8::value::Uint32Array'>Uint32Array</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of Uint32Array constructor (ES6 draft 15.13.6).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Uint8Array.html'
+                                  title='v8::value::Uint8Array'>Uint8Array</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of Uint8Array constructor (ES6 draft 15.13.6).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Uint8ClampedArray.html'
+                                  title='v8::value::Uint8ClampedArray'>Uint8ClampedArray</a></td>
+                           <td class='docblock-short'>
+                                <p>An instance of Uint8ClampedArray constructor (ES6 draft 15.13.6).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Value.html'
+                                  title='v8::value::Value'>Value</a></td>
+                           <td class='docblock-short'>
+                                <p>The superclass of all JavaScript values and objects.</p>
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.false_.html'
+                                  title='v8::value::false_'>false_</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.null.html'
+                                  title='v8::value::null'>null</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.true_.html'
+                                  title='v8::value::true_'>true_</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.undefined.html'
+                                  title='v8::value::undefined'>undefined</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr></table><h2 id='types' class='section-header'><a href="#types">Type Definitions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.FunctionCallback.html'
+                                  title='v8::value::FunctionCallback'>FunctionCallback</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "v8";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

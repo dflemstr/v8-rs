@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `String` struct in crate `v8`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, String">
+
+    <title>v8::value::String - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>v8</a>::<wbr><a href='index.html'>value</a></p><script>window.sidebarCurrent = {name: 'String', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>v8</a>::<wbr><a href='index.html'>value</a>::<wbr><a class='struct' href=''>String</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a class='srclink' href='../../src/v8/value.rs.html#35' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct String(_, _);</pre><div class='docblock'><p>A JavaScript string value (ECMA-262, 4.3.17).</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../v8/value/struct.String.html' title='v8::value::String'>String</a></code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../../src/v8/value.rs.html#692-774' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.empty' class='method'><span id='empty.v' class='invisible'><code>fn <a href='#method.empty' class='fnname'>empty</a>(isolate: &amp;<a class='struct' href='../../v8/isolate/struct.Isolate.html' title='v8::isolate::Isolate'>Isolate</a>) -&gt; <a class='struct' href='../../v8/value/struct.String.html' title='v8::value::String'>String</a></code></span></h4>
+<h4 id='method.from_str' class='method'><span id='from_str.v' class='invisible'><code>fn <a href='#method.from_str' class='fnname'>from_str</a>(isolate: &amp;<a class='struct' href='../../v8/isolate/struct.Isolate.html' title='v8::isolate::Isolate'>Isolate</a>, str: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='../../v8/value/struct.String.html' title='v8::value::String'>String</a></code></span></h4>
+<div class='docblock'><p>Allocates a new string from UTF-8 data.</p>
+</div><h4 id='method.internalized_from_str' class='method'><span id='internalized_from_str.v' class='invisible'><code>fn <a href='#method.internalized_from_str' class='fnname'>internalized_from_str</a>(isolate: &amp;<a class='struct' href='../../v8/isolate/struct.Isolate.html' title='v8::isolate::Isolate'>Isolate</a>, str: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='../../v8/value/struct.String.html' title='v8::value::String'>String</a></code></span></h4>
+<div class='docblock'><p>Allocates a new internalized string from UTF-8 data.</p>
+</div><h4 id='method.length' class='method'><span id='length.v' class='invisible'><code>fn <a href='#method.length' class='fnname'>length</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a></code></span></h4>
+<div class='docblock'><p>Returns the number of characters in this string.</p>
+</div><h4 id='method.utf8_length' class='method'><span id='utf8_length.v' class='invisible'><code>fn <a href='#method.utf8_length' class='fnname'>utf8_length</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a></code></span></h4>
+<div class='docblock'><p>Returns the number of bytes in the UTF-8 encoded representation of this string.</p>
+</div><h4 id='method.is_one_byte' class='method'><span id='is_one_byte.v' class='invisible'><code>fn <a href='#method.is_one_byte' class='fnname'>is_one_byte</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></span></h4>
+<div class='docblock'><p>Returns whether this string is known to contain only one byte data.</p>
+
+<p>Does not read the string.</p>
+
+<p>False negatives are possible.</p>
+</div><h4 id='method.contains_only_one_byte' class='method'><span id='contains_only_one_byte.v' class='invisible'><code>fn <a href='#method.contains_only_one_byte' class='fnname'>contains_only_one_byte</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></span></h4>
+<div class='docblock'><p>Returns whether this string contain only one byte data.</p>
+
+<p>Will read the entire string in some cases.</p>
+</div><h4 id='method.value' class='method'><span id='value.v' class='invisible'><code>fn <a href='#method.value' class='fnname'>value</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></span></h4>
+<h4 id='method.from_raw' class='method'><span id='from_raw.v' class='invisible'><code>unsafe fn <a href='#method.from_raw' class='fnname'>from_raw</a>(isolate: &amp;<a class='struct' href='../../v8/isolate/struct.Isolate.html' title='v8::isolate::Isolate'>Isolate</a>, raw: <a class='type' href='../../v8_sys/ffi/type.StringRef.html' title='v8_sys::ffi::StringRef'>StringRef</a>) -&gt; <a class='struct' href='../../v8/value/struct.String.html' title='v8::value::String'>String</a></code></span></h4>
+<div class='docblock'><p>Creates a string from a set of raw pointers.</p>
+</div><h4 id='method.as_raw' class='method'><span id='as_raw.v' class='invisible'><code>fn <a href='#method.as_raw' class='fnname'>as_raw</a>(&amp;self) -&gt; <a class='type' href='../../v8_sys/ffi/type.StringRef.html' title='v8_sys::ffi::StringRef'>StringRef</a></code></span></h4>
+<div class='docblock'><p>Returns the underlying raw pointer behind this string.</p>
+</div></div><h2 id='deref-methods'>Methods from <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Deref.html' title='core::ops::Deref'>Deref</a>&lt;Target=<a class='struct' href='../../v8/value/struct.Name.html' title='v8::value::Name'>Name</a>&gt;</h2><div class='impl-items'><h4 id='method.get_identity_hash' class='method'><span id='get_identity_hash.v' class='invisible'><code>fn <a href='#method.get_identity_hash' class='fnname'>get_identity_hash</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a></code></span></h4>
+<div class='docblock'><p>Returns the identity hash for this object.</p>
+
+<p>The current implementation uses an inline property on the object to store the identity
+hash.</p>
+
+<p>The return value will never be 0.  Also, it is not guaranteed
+to be unique.</p>
+</div><h4 id='method.as_raw-1' class='method'><span id='as_raw.v-1' class='invisible'><code>fn <a href='#method.as_raw-1' class='fnname'>as_raw</a>(&amp;self) -&gt; <a class='type' href='../../v8_sys/ffi/type.NameRef.html' title='v8_sys::ffi::NameRef'>NameRef</a></code></span></h4>
+<div class='docblock'><p>Returns the underlying raw pointer behind this primitive.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../../v8/value/struct.String.html' title='v8::value::String'>String</a></code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../../src/v8/value.rs.html#34' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt' class='method'><span id='fmt.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></span></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Deref.html' title='core::ops::Deref'>Deref</a> for <a class='struct' href='../../v8/value/struct.String.html' title='v8::value::String'>String</a></code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../../src/v8/util.rs.html#184-190' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Target' class='type'><span id='Target.t' class='invisible'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Deref.html#associatedtype.Target' class='type'>Target</a> = <a class='struct' href='../../v8/value/struct.Name.html' title='v8::value::Name'>Name</a></code></span></h4>
+<div class='docblock'><p>The resulting type after dereferencing</p>
+</div><h4 id='method.deref' class='method'><span id='deref.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Deref.html#tymethod.deref' class='fnname'>deref</a>(&amp;self) -&gt; &amp;Self::<a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Deref.html' title='core::ops::Deref'>Target</a></code></span></h4>
+<div class='docblock'><p>The method called to dereference a value</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../../v8/value/struct.String.html' title='v8::value::String'>String</a></code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../../src/v8/util.rs.html#150-155' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><span id='clone.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../../v8/value/struct.String.html' title='v8::value::String'>String</a></code></span></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><span id='clone_from.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></span></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html' title='core::ops::Drop'>Drop</a> for <a class='struct' href='../../v8/value/struct.String.html' title='v8::value::String'>String</a></code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../../src/v8/util.rs.html#157-166' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.drop' class='method'><span id='drop.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#tymethod.drop' class='fnname'>drop</a>(&amp;mut self)</code></span></h4>
+<div class='docblock'><p>A method called when the value goes out of scope. <a href="https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#tymethod.drop">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "v8";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

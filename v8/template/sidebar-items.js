@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["FunctionTemplate","A FunctionTemplate is used to create functions at runtime."],["ObjectTemplate","An ObjectTemplate is used to create objects at runtime."],["Signature","A Signature specifies which receiver is valid for a function."],["Template","The superclass of object and function templates."]]});

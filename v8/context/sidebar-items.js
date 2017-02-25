@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Context","A sandboxed execution context with its own set of built-in objects and functions."],["ContextGuard","A guard that keeps a context bound while it is in scope."]]});

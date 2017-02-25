@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Script","A compiled JavaScript script, tied to a Context which was active when the script was compiled."]]});
