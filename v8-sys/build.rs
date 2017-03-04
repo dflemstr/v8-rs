@@ -57,7 +57,9 @@ fn main() {
 fn read_api() -> v8_api::Api {
     let mut extra_includes = vec![];
 
-    if let Some(dir_str) = env::var_os("V8_SOURCE") {
+    if path::Path::new("v8-build").exists() {
+        extra_includes.push(path::Path::new("v8-build/include").to_path_buf());
+    } else if let Some(dir_str) = env::var_os("V8_SOURCE") {
         extra_includes.push(path::PathBuf::from(dir_str).join("include"));
     }
 
@@ -70,7 +72,11 @@ fn read_api() -> v8_api::Api {
 }
 
 fn link_v8() {
-    if let Ok(libs_str) = env::var("V8_LIBS") {
+    if path::Path::new("v8-build").exists() {
+        // rq build hack
+        println!("cargo:rustc-link-search=native=v8-build");
+        println!("cargo:rustc-link-lib=static=v8-uber");
+    } else if let Ok(libs_str) = env::var("V8_LIBS") {
         println!("V8_LIBS={:?}", libs_str);
         for lib_str in libs_str.split(char::is_whitespace) {
             let path = path::Path::new(lib_str);
@@ -114,7 +120,8 @@ fn link_v8() {
         if result.is_ok() {
             println!("using pkg-config for library v8");
         } else {
-            println!("cargo:warning=pkg-config failed, falling back to naïve lib search: {:?}", result);
+            println!("cargo:warning=pkg-config failed, falling back to naïve lib search: {:?}",
+                     result);
 
             maybe_search("/usr/lib");
             maybe_search("/usr/local/lib");
@@ -147,13 +154,13 @@ fn blind_link_libraries() {
         println!("cargo:rustc-link-lib=static=icui18n");
         println!("cargo:rustc-link-lib=static=icuuc");
         if fs::metadata("/usr/lib/x86_64-linux-gnu/libicudata.a")
-               .map(|m| m.is_file())
-               .unwrap_or(false) {
+            .map(|m| m.is_file())
+            .unwrap_or(false) {
             println!("cargo:rustc-link-lib=static=icudata");
         }
         if fs::metadata("/usr/local/opt/icu4c/lib/libicudata.a")
-               .map(|m| m.is_file())
-               .unwrap_or(false) {
+            .map(|m| m.is_file())
+            .unwrap_or(false) {
             println!("cargo:rustc-link-lib=static=icudata");
         }
     }
@@ -313,7 +320,7 @@ fn write_cc_file<W>(api: &v8_api::Api, mut out: W) -> io::Result<()>
             try!(writeln!(out, "  v8::TryCatch __try_catch(c.isolate);"));
 
             let context_type = v8_api::Type::Ref(Box::new(v8_api::Type::Class("Context"
-                                                                                  .to_owned())));
+                .to_owned())));
             if let Some(arg) = method.args.iter().find(|ref a| a.arg_type == context_type) {
                 // There should only be one context but who knows
                 try!(writeln!(out,
