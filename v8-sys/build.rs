@@ -209,6 +209,10 @@ fn build_glue(out_dir_path: &path::Path) {
         config.include(dir.join("include"));
     }
 
+    if path::Path::new("v8-build").exists() {
+        config.include("v8-build/include");
+    }
+
     config.include("src");
     config.include(out_dir_path);
     config.cpp(true);
