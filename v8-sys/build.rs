@@ -433,6 +433,8 @@ impl DisplayAsC for v8_api::RetType {
             RetType::Maybe(Type::UInt) => write!(f, "MaybeUInt"),
             RetType::Maybe(Type::Long) => write!(f, "MaybeLong"),
             RetType::Maybe(Type::ULong) => write!(f, "MaybeULong"),
+            RetType::Maybe(Type::U32) => write!(f, "MaybeU32"),
+            RetType::Maybe(Type::I32) => write!(f, "MaybeI32"),
             RetType::Maybe(Type::F64) => write!(f, "MaybeF64"),
             RetType::Maybe(Type::U64) => write!(f, "MaybeU64"),
             RetType::Maybe(Type::I64) => write!(f, "MaybeI64"),
