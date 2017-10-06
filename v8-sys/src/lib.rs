@@ -1,11 +1,11 @@
+#![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
-#![allow(non_upper_case_globals)]
 
-#[cfg(test)]
-#[macro_use]
-extern crate lazy_static;
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
-include!(concat!(env!("OUT_DIR"), "/ffi.rs"));
+#[doc(inline)]
+pub use root::v8::*;
 
-pub use ffi::*;
+#[doc(inline)]
+pub use root::rust_v8_impls as impls;

@@ -19,5 +19,7 @@ path = "v8-sys"
 version = "0.14.0"
 
 [features]
-shared = ["v8-sys/shared"]
 unstable = []
+
+[workspace]
+members = ["v8-sys"]
