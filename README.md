@@ -1,8 +1,11 @@
 # `v8-rs` [![Build Status](https://travis-ci.org/dflemstr/v8-rs.svg?branch=master)](https://travis-ci.org/dflemstr/v8-rs) [![Crates.io](https://img.shields.io/crates/v/v8.svg?maxAge=3600)](https://crates.io/crates/v8) [![codecov](https://codecov.io/gh/dflemstr/v8-rs/branch/master/graph/badge.svg)](https://codecov.io/gh/dflemstr/v8-rs) [![Language (Rust)](https://img.shields.io/badge/powered_by-Rust-blue.svg)](http://www.rust-lang.org/)
 
-**Note:** This library is still in pre-release (`0.x.y`) state.
-It is usable but might still segfault and leak memory, and the API
-might change between every version.  Use at your own risk.
+**Note:** This library is not actively maintained.  I (dflemstr) have
+attempted keeping it up to date with the latest mainline V8 versions,
+but the maintenance burden is too high.  The path forward would be to
+more directly map the C++ API of V8 via `bindgen` and go forward from
+there to try to automate more of the API surface mapping, but several
+attempts at doing so by me have failed.  Pull requests welcome!
 
 This is a wrapper around the [V8](https://developers.google.com/v8/)
 Javascript engine, used for example in
