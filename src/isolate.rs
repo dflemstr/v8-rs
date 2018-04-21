@@ -25,16 +25,19 @@
 //! `Isolate::builder().supports_idle_tasks(true).build()`.  The user should then regularly call
 //! `isolate.run_idle_tasks(deadline)` to run any pending idle tasks.
 
-use std::cmp;
+use std::cell;
 use std::collections;
+use std::fmt;
 use std::mem;
 use std::os;
+use std::ptr;
+use std::rc;
 use std::sync;
 use std::time;
-use v8_sys as v8;
+use v8_sys;
 use allocator;
-use context;
 use platform;
+use priority_queue;
 
 static INITIALIZE: sync::Once = sync::ONCE_INIT;
 
@@ -44,24 +47,23 @@ static INITIALIZE: sync::Once = sync::ONCE_INIT;
 /// isolates.  The embedder can create multiple isolates and use them in parallel in multiple
 /// threads.  An isolate can be entered by at most one thread at any given time.  The
 /// Locker/Unlocker API must be used to synchronize.
-#[derive(Debug)]
-pub struct Isolate(v8::IsolatePtr);
+pub struct Isolate(ptr::Shared<v8_sys::Isolate>);
 
 /// A builder for isolates.  Can be converted into an isolate with the `build` method.
 pub struct Builder {
     supports_idle_tasks: bool,
 }
 
+#[must_use]
+pub struct Scope<'i>(&'i mut Isolate);
+
 #[derive(Debug)]
 struct Data {
-    count: usize,
+    count: cell::Cell<usize>,
     _allocator: allocator::Allocator,
-    task_queue: collections::BinaryHeap<ScheduledTask>,
-    idle_task_queue: Option<collections::VecDeque<platform::IdleTask>>,
+    task_queue: rc::Rc<cell::RefCell<priority_queue::PriorityQueue<platform::Task, time::Instant>>>,
+    idle_task_queue: Option<rc::Rc<cell::RefCell<collections::VecDeque<platform::IdleTask>>>>,
 }
-
-#[derive(Debug, Eq, PartialEq)]
-struct ScheduledTask(time::Instant, platform::Task);
 
 const DATA_PTR_SLOT: u32 = 0;
 
@@ -76,31 +78,38 @@ impl Isolate {
         Builder { supports_idle_tasks: false }
     }
 
-    /// Creates a data from a set of raw pointers.
+    /// Creates a data from a raw pointer.
     ///
     /// This isolate must at some point have been created by `Isolate::new`, since this library
     /// expects isolates to be configured a certain way and contain embedder information.
-    pub unsafe fn from_raw(raw: v8::IsolatePtr) -> Isolate {
-        let result = Isolate(raw);
-        result.get_data().count += 1;
+    pub unsafe fn from_ptr(raw: *mut v8_sys::Isolate) -> Isolate {
+        let mut result = Isolate(ptr::Shared::new(raw).unwrap());
+        *result.data_mut().count.get_mut() += 1;
         result
     }
 
     /// Returns the underlying raw pointer behind this isolate.
-    pub fn as_raw(&self) -> v8::IsolatePtr {
-        self.0
+    pub fn as_ptr(&self) -> *mut v8_sys::Isolate {
+        self.0.as_ptr()
     }
 
+    pub fn scope(&mut self) -> Scope {
+        unsafe { self.0.as_mut().Enter() };
+        Scope(self)
+    }
+
+    /*
     /// Returns the context bound to the current thread for this isolate.
     ///
     /// A context will be bound by for example `Context::make_current`, or while inside of a
     /// function callback.
     pub fn current_context(&self) -> Option<context::Context> {
         unsafe {
-            let raw = v8::v8_Isolate_GetCurrentContext(self.as_raw()).as_mut();
+            let raw = self.isolate(self.as_raw()).as_mut();
             raw.map(|r| context::Context::from_raw(self, r))
         }
     }
+    */
 
     /// Runs all enqueued tasks until there are no more tasks available.
     pub fn run_enqueued_tasks(&self) {
@@ -110,11 +119,16 @@ impl Isolate {
     /// Runs a single enqueued task, if there is one.  Returns `true` if a task was executed, and
     /// `false` if there are no pending tasks to run.
     pub fn run_enqueued_task(&self) -> bool {
-        let data = unsafe { self.get_data() };
+        let data = self.data();
         let now = time::Instant::now();
 
-        if data.task_queue.peek().map(|t| t.0 > now).unwrap_or(false) {
-            let task = data.task_queue.pop().unwrap().1;
+        if data.task_queue
+            .borrow()
+            .peek()
+            .map(|(_, p)| *p > now)
+            .unwrap_or(false)
+        {
+            let task = data.task_queue.borrow_mut().pop().unwrap().0;
             task.run();
             true
         } else {
@@ -142,12 +156,13 @@ impl Isolate {
     /// execution of the task will take less time than the specified deadline.  Returns `true` if a
     /// task was executed, and `false` if there are no pending tasks to run.
     pub fn run_idle_task(&self, deadline: time::Duration) -> bool {
-        let data = unsafe { self.get_data() };
+        let data = self.data();
 
         if let Some(idle_task) = data.idle_task_queue
-            .as_mut()
-            .map(|q| q.pop_front())
-            .unwrap_or(None) {
+            .as_ref()
+            .map(|q| q.borrow_mut().pop_front())
+            .unwrap_or(None)
+        {
             idle_task.run(deadline);
             true
         } else {
@@ -157,53 +172,81 @@ impl Isolate {
 
     /// Enqueues the specified task to run as soon as possible.
     pub fn enqueue_task(&self, task: platform::Task) {
-        let scheduled_task = ScheduledTask(time::Instant::now(), task);
-        unsafe { self.get_data() }.task_queue.push(scheduled_task);
+        self.data().task_queue.borrow_mut().push(
+            task,
+            time::Instant::now(),
+        );
     }
 
     /// Enqueues the specified task to run after the specified delay has passed.
     pub fn enqueue_delayed_task(&self, delay: time::Duration, task: platform::Task) {
-        let scheduled_task = ScheduledTask(time::Instant::now() + delay, task);
-        unsafe { self.get_data() }.task_queue.push(scheduled_task);
+        self.data().task_queue.borrow_mut().push(
+            task,
+            time::Instant::now() + delay,
+        );
     }
 
     /// Enqueues a task to be run when the isolate is considered to be "idle."
     pub fn enqueue_idle_task(&self, idle_task: platform::IdleTask) {
-        unsafe { self.get_data() }.idle_task_queue.as_mut().unwrap().push_back(idle_task);
+        self.data()
+            .idle_task_queue
+            .as_ref()
+            .unwrap()
+            .borrow_mut()
+            .push_back(idle_task);
     }
 
     /// Whether this isolate was configured to support idle tasks.
     pub fn supports_idle_tasks(&self) -> bool {
-        unsafe { self.get_data() }.idle_task_queue.is_some()
+        self.data().idle_task_queue.is_some()
     }
 
-    unsafe fn get_data_ptr(&self) -> *mut Data {
-        v8::v8_Isolate_GetData(self.0, DATA_PTR_SLOT) as *mut Data
+    fn data_ptr(&self) -> *mut Data {
+        unsafe { (*self.0.as_ptr()).GetData(DATA_PTR_SLOT) as *mut Data }
     }
 
-    unsafe fn get_data(&self) -> &mut Data {
-        self.get_data_ptr().as_mut().unwrap()
+    fn data(&self) -> &Data {
+        unsafe { self.data_ptr().as_ref().unwrap() }
+    }
+
+    fn data_mut(&mut self) -> &mut Data {
+        unsafe { self.data_ptr().as_mut().unwrap() }
     }
 }
 
 impl Clone for Isolate {
     fn clone(&self) -> Isolate {
-        unsafe {
-            self.get_data().count += 1;
-        }
+        let data = self.data();
+        let new_count = data.count.get() + 1;
+        data.count.set(new_count);
         Isolate(self.0)
+    }
+}
+
+impl fmt::Debug for Isolate {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Isolate({:?}, {:?})",
+            unsafe { self.0.as_ref() },
+            self.data()
+        )
     }
 }
 
 impl Drop for Isolate {
     fn drop(&mut self) {
-        unsafe {
-            let ref mut count = self.get_data().count;
-            *count -= 1;
+        let new_count = {
+            let data = self.data();
+            let new_count = data.count.get() - 1;
+            data.count.set(new_count);
+            new_count
+        };
 
-            if *count == 0 {
-                drop(Box::from_raw(self.get_data_ptr()));
-                v8::v8_Isolate_Dispose(self.0);
+        unsafe {
+            if new_count == 0 {
+                drop(Box::from_raw(self.data_ptr()));
+                self.0.as_mut().Dispose();
             }
         }
     }
@@ -223,61 +266,76 @@ impl Builder {
 
         let allocator = allocator::Allocator::new();
 
-        let raw = unsafe { v8::v8_Isolate_New(allocator.as_raw()) };
-        if raw.is_null() {
-            panic!("Could not create Isolate");
-        }
+        let mut raw = unsafe {
+            let mut params: v8_sys::Isolate_CreateParams = mem::zeroed();
+            params.allow_atomics_wait = true;
+            params.array_buffer_allocator = allocator.as_ptr();
+            ptr::Shared::new(v8_sys::Isolate::New(&params)).expect("Could not create Isolate")
+        };
 
         unsafe {
-            assert!(v8::v8_Isolate_GetNumberOfDataSlots(raw) > 0);
+            assert!(v8_sys::Isolate::GetNumberOfDataSlots() > 0);
         }
 
         let idle_task_queue = if self.supports_idle_tasks {
-            Some(collections::VecDeque::new())
+            Some(rc::Rc::new(
+                cell::RefCell::new(collections::VecDeque::new()),
+            ))
         } else {
             None
         };
 
         let data = Data {
-            count: 1,
+            count: cell::Cell::new(1),
             _allocator: allocator,
-            task_queue: collections::BinaryHeap::new(),
+            task_queue: rc::Rc::new(cell::RefCell::new(priority_queue::PriorityQueue::new())),
             idle_task_queue: idle_task_queue,
         };
         let data_ptr: *mut Data = Box::into_raw(Box::new(data));
 
         unsafe {
-            v8::v8_Isolate_SetData(raw, DATA_PTR_SLOT, data_ptr as *mut os::raw::c_void);
-            v8::v8_Isolate_SetCaptureStackTraceForUncaughtExceptions_Detailed(raw, true, 1024);
+            raw.as_mut().SetData(
+                DATA_PTR_SLOT,
+                data_ptr as *mut os::raw::c_void,
+            );
+            raw.as_mut().SetCaptureStackTraceForUncaughtExceptions(
+                true,
+                1024,
+                v8_sys::StackTrace_StackTraceOptions_kDetailed,
+            );
         }
 
         Isolate(raw)
     }
 }
 
-impl PartialOrd for ScheduledTask {
-    fn partial_cmp(&self, other: &ScheduledTask) -> Option<cmp::Ordering> {
-        Some(self.cmp(other))
+impl<'i> Scope<'i> {
+    pub fn isolate(&self) -> &Isolate {
+        &self.0
+    }
+
+    pub fn isolate_mut(&mut self) -> &mut Isolate {
+        &mut self.0
     }
 }
 
-impl Ord for ScheduledTask {
-    fn cmp(&self, other: &ScheduledTask) -> cmp::Ordering {
-        self.0.cmp(&other.0).reverse()
+impl<'i> Drop for Scope<'i> {
+    fn drop(&mut self) {
+        unsafe { (self.0).0.as_mut().Exit() }
     }
 }
 
 fn ensure_initialized() {
     INITIALIZE.call_once(|| {
         unsafe {
-            v8::v8_V8_InitializeICU();
+            v8_sys::V8_InitializeICU(ptr::null());
 
             let platform = platform::Platform::new();
-            v8::v8_V8_InitializePlatform(platform.as_raw());
+            v8_sys::V8_InitializePlatform(platform.as_ptr());
             // TODO: implement some form of cleanup
             mem::forget(platform);
 
-            v8::v8_V8_Initialize();
+            v8_sys::V8_Initialize();
         }
     });
 }

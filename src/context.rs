@@ -1,40 +1,46 @@
 //! Execution contexts and sandboxing.
-use v8_sys as v8;
+use v8_sys;
+use std::ptr;
 use isolate;
-use util;
+use handle;
 use value;
 
 /// A sandboxed execution context with its own set of built-in objects and functions.
 #[derive(Debug)]
-pub struct Context(isolate::Isolate, v8::ContextRef);
+pub struct Context(v8_sys::Context);
 
 /// A guard that keeps a context bound while it is in scope.
 #[must_use]
-pub struct ContextGuard<'a>(&'a Context);
+pub struct Scope<'c>(&'c mut Context);
 
 impl Context {
     /// Creates a new context and returns a handle to the newly allocated context.
-    pub fn new(isolate: &isolate::Isolate) -> Context {
+    pub fn new<'i, 's>(
+        scope: &'s handle::Scope,
+        isolate: &'i isolate::Isolate,
+    ) -> handle::Local<'i, 's, Context> {
         unsafe {
-            Context(isolate.clone(),
-                    util::invoke(isolate, |c| v8::v8_Context_New(c)).unwrap())
+            handle::Local::new(v8_sys::Context::New(
+                isolate.as_ptr(),
+                ptr::null_mut(),
+                handle::MaybeLocal::empty().into_raw(),
+                handle::MaybeLocal::empty().into_raw(),
+                v8_sys::DeserializeInternalFieldsCallback {
+                    callback: None,
+                    data: ptr::null_mut(),
+                },
+            ))
         }
     }
 
     /// Binds the context to the current scope.
     ///
     /// Within this scope, functionality that relies on implicit contexts will work.
-    pub fn make_current(&self) -> ContextGuard {
-        self.enter();
-        ContextGuard(self)
-    }
-
-    fn enter(&self) {
-        unsafe { util::invoke(&self.0, |c| v8::v8_Context_Enter(c, self.1)).unwrap() }
-    }
-
-    fn exit(&self) {
-        unsafe { util::invoke(&self.0, |c| v8::v8_Context_Exit(c, self.1)).unwrap() }
+    pub fn scope(&mut self) -> Scope {
+        unsafe {
+            self.0.Enter();
+        }
+        Scope(self)
     }
 
     /// Returns the global proxy object.
@@ -46,29 +52,25 @@ impl Context {
     /// Please note that changes to global proxy object prototype most probably would break VM---v8
     /// expects only global object as a prototype of global proxy object.
     ///
-    pub fn global(&self) -> value::Object {
+    pub fn global(&self) -> handle::Local<value::Object> {
         unsafe {
-            value::Object::from_raw(&self.0,
-                                    util::invoke(&self.0, |c| v8::v8_Context_Global(c, self.1))
-                                        .unwrap())
+            handle::Local::new(self.0.Global())
         }
-    }
-
-    /// Creates a context from a set of raw pointers.
-    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::ContextRef) -> Context {
-        Context(isolate.clone(), raw)
-    }
-
-    /// Returns the underlying raw pointer behind this context.
-    pub fn as_raw(&self) -> v8::ContextRef {
-        self.1
     }
 }
 
-reference!(Context, v8::v8_Context_CloneRef, v8::v8_Context_DestroyRef);
+impl<'c> Scope<'c> {
+    pub fn context(&self) -> &Context {
+        &self.0
+    }
 
-impl<'a> Drop for ContextGuard<'a> {
+    pub fn context_mut(&mut self) -> &mut Context {
+        &mut self.0
+    }
+}
+
+impl<'c> Drop for Scope<'c> {
     fn drop(&mut self) {
-        self.0.exit()
+        unsafe { (self.0).0.Exit() }
     }
 }
