@@ -1,4 +1,8 @@
-use v8_sys as v8;
+use v8_sys;
+use std::fmt;
+use std::hash;
+use std::os;
+use std::ptr;
 use std::thread;
 use std::time;
 use num_cpus;
@@ -14,37 +18,41 @@ lazy_static! {
 /// scheduling.
 // TODO: make this use some kind of main loop/work stealing queue
 // instead.
-#[derive(Debug)]
-pub struct Platform(v8::PlatformPtr);
+pub struct Platform(ptr::Unique<v8_sys::Platform>);
 
-#[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct Task(v8::TaskPtr);
+pub struct Task(ptr::Unique<v8_sys::Task>);
 
 unsafe impl Send for Task {}
 
-#[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct IdleTask(v8::IdleTaskPtr);
+pub struct IdleTask(ptr::Unique<v8_sys::IdleTask>);
 
 impl Platform {
     pub fn new() -> Platform {
-        let raw = unsafe { v8::v8_Platform_Create(PLATFORM_FUNCTIONS) };
-
-        if raw.is_null() {
-            panic!("Could not create Platform")
-        }
+        let raw = unsafe {
+            ptr::Unique::new(v8_sys::impls::CreatePlatform(
+                PLATFORM_FUNCTIONS,
+                ptr::null_mut(),
+            ))
+        }.expect("could not create Platform");
 
         Platform(raw)
     }
 
-    pub fn as_raw(&self) -> v8::PlatformPtr {
-        self.0
+    pub fn as_ptr(&self) -> *mut v8_sys::Platform {
+        self.0.as_ptr()
+    }
+}
+
+impl fmt::Debug for Platform {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Platform({:?})", unsafe { self.0.as_ref() })
     }
 }
 
 impl Drop for Platform {
     fn drop(&mut self) {
         unsafe {
-            v8::v8_Platform_Destroy(self.0);
+            v8_sys::Platform_Platform_destructor(self.0.as_ptr());
         }
     }
 }
@@ -52,15 +60,43 @@ impl Drop for Platform {
 impl Task {
     pub fn run(&self) {
         unsafe {
-            v8::v8_Task_Run(self.0);
+            v8_sys::Task_Run(self.0.as_ptr() as *mut os::raw::c_void);
         }
+    }
+
+    pub fn as_ptr(&self) -> *mut v8_sys::Task {
+        self.0.as_ptr()
+    }
+
+    pub unsafe fn from_ptr(ptr: *mut v8_sys::Task) -> Task {
+        Task(ptr::Unique::new(ptr).unwrap())
+    }
+}
+
+impl fmt::Debug for Task {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Task({:?})", unsafe { self.0.as_ref() })
+    }
+}
+
+impl PartialEq for Task {
+    fn eq(&self, other: &Task) -> bool {
+        self.as_ptr() == other.as_ptr()
+    }
+}
+
+impl Eq for Task {}
+
+impl hash::Hash for Task {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        self.as_ptr().hash(state)
     }
 }
 
 impl Drop for Task {
     fn drop(&mut self) {
         unsafe {
-            v8::v8_Task_Destroy(self.0);
+            v8_sys::Task_Task_destructor(self.0.as_ptr());
         }
     }
 }
@@ -68,20 +104,37 @@ impl Drop for Task {
 impl IdleTask {
     pub fn run(&self, deadline: time::Duration) {
         unsafe {
-            v8::v8_IdleTask_Run(self.0, duration_to_seconds(deadline));
+            v8_sys::IdleTask_Run(
+                self.0.as_ptr() as *mut os::raw::c_void,
+                duration_to_seconds(deadline),
+            );
         }
+    }
+
+    pub fn as_ptr(&self) -> *mut v8_sys::IdleTask {
+        self.0.as_ptr()
+    }
+
+    pub unsafe fn from_ptr(ptr: *mut v8_sys::IdleTask) -> IdleTask {
+        IdleTask(ptr::Unique::new(ptr).unwrap())
+    }
+}
+
+impl fmt::Debug for IdleTask {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "IdleTask({:?})", unsafe { self.0.as_ref() })
     }
 }
 
 impl Drop for IdleTask {
     fn drop(&mut self) {
         unsafe {
-            v8::v8_IdleTask_Destroy(self.0);
+            v8_sys::IdleTask_IdleTask_destructor(self.0.as_ptr());
         }
     }
 }
 
-const PLATFORM_FUNCTIONS: v8::v8_PlatformFunctions = v8::v8_PlatformFunctions {
+const PLATFORM_FUNCTIONS: v8_sys::impls::PlatformFunctions = v8_sys::impls::PlatformFunctions {
     Destroy: Some(destroy_platform),
     NumberOfAvailableBackgroundThreads: Some(number_of_available_background_threads),
     CallOnBackgroundThread: Some(call_on_background_thread),
@@ -92,55 +145,70 @@ const PLATFORM_FUNCTIONS: v8::v8_PlatformFunctions = v8::v8_PlatformFunctions {
     MonotonicallyIncreasingTime: Some(monotonically_increasing_time),
 };
 
-extern "C" fn destroy_platform() {
+extern "C" fn destroy_platform(_this: *mut os::raw::c_void) {
     // No-op
 }
 
-extern "C" fn number_of_available_background_threads() -> usize {
+extern "C" fn number_of_available_background_threads(_this: *mut os::raw::c_void) -> usize {
     num_cpus::get()
 }
 
-extern "C" fn call_on_background_thread(task: v8::TaskPtr,
-                                        _expected_runtime: v8::v8_ExpectedRuntime) {
-    let task = Task(task);
-    thread::spawn(move || {
-        unsafe {
-            v8::v8_Task_Run(task.0);
-        }
+extern "C" fn call_on_background_thread(
+    _this: *mut os::raw::c_void,
+    task: *mut v8_sys::Task,
+    _expected_runtime: v8_sys::Platform_ExpectedRuntime,
+) {
+    let task = unsafe { Task::from_ptr(task) };
+    thread::spawn(move || unsafe {
+        v8_sys::Task_Run(task.0.as_ptr() as *mut os::raw::c_void);
     });
 }
 
-extern "C" fn call_on_foreground_thread(isolate: v8::IsolatePtr, task: v8::TaskPtr) {
-    let task = Task(task);
-    let isolate = unsafe { isolate::Isolate::from_raw(isolate) };
+extern "C" fn call_on_foreground_thread(
+    _this: *mut os::raw::c_void,
+    isolate: *mut v8_sys::Isolate,
+    task: *mut v8_sys::Task,
+) {
+    let task = unsafe { Task::from_ptr(task) };
+    let isolate = unsafe { isolate::Isolate::from_ptr(isolate) };
 
     isolate.enqueue_task(task);
 }
 
-extern "C" fn call_delayed_on_foreground_thread(isolate: v8::IsolatePtr,
-                                                task: v8::TaskPtr,
-                                                delay_in_seconds: f64) {
-    let task = Task(task);
-    let isolate = unsafe { isolate::Isolate::from_raw(isolate) };
+extern "C" fn call_delayed_on_foreground_thread(
+    _this: *mut os::raw::c_void,
+    isolate: *mut v8_sys::Isolate,
+    task: *mut v8_sys::Task,
+    delay_in_seconds: f64,
+) {
+    let task = unsafe { Task::from_ptr(task) };
+    let isolate = unsafe { isolate::Isolate::from_ptr(isolate) };
     let duration = duration_from_seconds(delay_in_seconds);
 
     isolate.enqueue_delayed_task(duration, task);
 }
 
-extern "C" fn call_idle_on_foreground_thread(isolate: v8::IsolatePtr, idle_task: v8::IdleTaskPtr) {
-    let idle_task = IdleTask(idle_task);
-    let isolate = unsafe { isolate::Isolate::from_raw(isolate) };
+extern "C" fn call_idle_on_foreground_thread(
+    _this: *mut os::raw::c_void,
+    isolate: *mut v8_sys::Isolate,
+    idle_task: *mut v8_sys::IdleTask,
+) {
+    let idle_task = unsafe { IdleTask::from_ptr(idle_task) };
+    let isolate = unsafe { isolate::Isolate::from_ptr(isolate) };
 
     isolate.enqueue_idle_task(idle_task);
 }
 
-extern "C" fn idle_tasks_enabled(isolate: v8::IsolatePtr) -> bool {
-    let isolate = unsafe { isolate::Isolate::from_raw(isolate) };
+extern "C" fn idle_tasks_enabled(
+    _this: *mut os::raw::c_void,
+    isolate: *mut v8_sys::Isolate,
+) -> bool {
+    let isolate = unsafe { isolate::Isolate::from_ptr(isolate) };
 
     isolate.supports_idle_tasks()
 }
 
-extern "C" fn monotonically_increasing_time() -> f64 {
+extern "C" fn monotonically_increasing_time(_this: *mut os::raw::c_void) -> f64 {
     let start = *START_TIME;
     let d = time::Instant::now().duration_since(start);
     duration_to_seconds(d)

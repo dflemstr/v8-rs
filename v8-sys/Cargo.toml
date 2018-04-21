@@ -12,24 +12,7 @@ repository = "https://github.com/dflemstr/v8-rs/tree/master/v8-sys"
 version = "0.14.7"
 
 [build-dependencies]
-bindgen = "0.22.0"
-gcc = "0.3.38"
-pkg-config = "0.3.8"
-
-[build-dependencies.clang]
-features = ["runtime"]
-version = "0.15.0"
-
-[build-dependencies.clang-sys]
-features = ["runtime"]
-version = "0.14.0"
-
-[build-dependencies.v8-api]
-path = "../v8-api"
-version = "0.7.0"
-
-[dev-dependencies]
-lazy_static = "0.2.1"
-
-[features]
-shared = []
+bindgen = "0.32.1"
+cc = "1.0.4"
+env_logger = "0.4.3"
+pkg-config = "0.3.9"

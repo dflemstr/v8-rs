@@ -1,8 +1,10 @@
 //! Error types and utilities.
 
 use std::fmt;
-use v8_sys as v8;
+use std::ptr;
+use v8_sys;
 use context;
+use handle;
 use isolate;
 use util;
 use value;
@@ -35,60 +37,45 @@ pub struct CapturedStackFrame {
 
 /// An error message.
 #[derive(Debug)]
-pub struct Message(isolate::Isolate, v8::MessageRef);
+pub struct Message(v8_sys::Message);
 
 /// A stack trace, that is bound to an isolate.
 #[derive(Debug)]
-pub struct StackTrace(isolate::Isolate, v8::StackTraceRef);
+pub struct StackTrace(v8_sys::StackTrace);
 
 /// A stack frame, that is bound to an isolate.
 #[derive(Debug)]
-pub struct StackFrame(isolate::Isolate, v8::StackFrameRef);
+pub struct StackFrame(v8_sys::StackFrame);
 
 impl Message {
     // TODO: pub fn get_script_origin(&self)
 
     /// The error message string.
-    pub fn get(&self, context: &context::Context) -> value::String {
-        let _g = context.make_current();
-        unsafe {
-            value::String::from_raw(&self.0,
-                                    util::invoke_ctx(&self.0,
-                                                     context,
-                                                     |c| v8::v8_Message_Get(c, self.1))
-                                        .unwrap())
-        }
+    pub fn get(&self) -> handle::Local<value::String> {
+        unsafe { handle::Local::new(self.0.Get()) }
     }
 
     /// The stack trace to the point where the error was generated.
-    pub fn get_stack_trace(&self) -> StackTrace {
-        let raw =
-            unsafe { util::invoke(&self.0, |c| v8::v8_Message_GetStackTrace(c, self.1)).unwrap() };
-
-        StackTrace(self.0.clone(), raw)
+    pub fn get_stack_trace(&self) -> handle::Local<StackTrace> {
+        unsafe { handle::Local::new(self.0.GetStackTrace()) }
     }
 
-    pub unsafe fn from_raw(isolate: &isolate::Isolate, raw: v8::MessageRef) -> Message {
-        Message(isolate.clone(), raw)
+    pub unsafe fn from_raw(raw: v8_sys::Message) -> Message {
+        Message(raw)
     }
 }
 
 impl StackTrace {
     /// The stack frames that this stack trace consists of.
-    pub fn get_frames(&self) -> Vec<StackFrame> {
-        let count =
-            unsafe { util::invoke(&self.0, |c| v8::v8_StackTrace_GetFrameCount(c, self.1)).unwrap() };
+    pub fn get_frames(&self) -> Vec<handle::Local<StackFrame>> {
+        let count = unsafe { self.0.GetFrameCount() };
         let mut result = Vec::with_capacity(count as usize);
 
         for i in 0..count {
-            let raw_frame = unsafe {
-                util::invoke(&self.0, |c| v8::v8_StackTrace_GetFrame(c, self.1, i as u32)).unwrap()
-            };
-            let frame = StackFrame(self.0.clone(), raw_frame);
-            result.push(frame);
+            result.push(unsafe { self.0.GetFrame(i) });
         }
 
-        result
+        unsafe { result }
     }
 
     /// Creates a captured version of this stack trace, that doesn't retain a reference to its
@@ -107,43 +94,42 @@ impl StackFrame {
     /// The line number at which this stack frame was pushed.
     pub fn get_line_number(&self) -> u32 {
         unsafe {
-            util::invoke(&self.0, |c| v8::v8_StackFrame_GetLineNumber(c, self.1)).unwrap() as u32
+            self.0.GetLineNumber() as u32
         }
     }
 
     /// The column number at which this stack frame was pushed.
     pub fn get_column(&self) -> u32 {
-        unsafe { util::invoke(&self.0, |c| v8::v8_StackFrame_GetColumn(c, self.1)).unwrap() as u32 }
+        unsafe { self.0.GetColumn() as u32 }
     }
 
     /// The script file name in which this stack frame was pushed.
-    pub fn get_script_name(&self) -> Option<value::String> {
+    pub fn get_script_name(&self) -> Option<handle::Local<value::String>> {
         unsafe {
-            let raw = util::invoke(&self.0, |c| v8::v8_StackFrame_GetScriptName(c, self.1)).unwrap();
+            let raw = self.0.GetScriptName();
             if raw.is_null() {
                 None
             } else {
-                Some(value::String::from_raw(&self.0, raw))
+                Some(handle::Local::new(raw))
             }
         }
     }
 
     /// The function name in which this stack frame was pushed.
-    pub fn get_function_name(&self) -> value::String {
+    pub fn get_function_name(&self) -> handle::Local<value::String> {
         unsafe {
-            let raw = util::invoke(&self.0, |c| v8::v8_StackFrame_GetFunctionName(c, self.1)).unwrap();
-            value::String::from_raw(&self.0, raw)
+            handle::Local::new(self.0.GetFunctionName())
         }
     }
 
     /// Whether this stack frame is part of an eval call.
     pub fn is_eval(&self) -> bool {
-        unsafe { util::invoke(&self.0, |c| v8::v8_StackFrame_IsEval(c, self.1)).unwrap() }
+        unsafe { self.0.IsEval() }
     }
 
     /// Whether this stack frame is part of a constructor call.
     pub fn is_constructor(&self) -> bool {
-        unsafe { util::invoke(&self.0, |c| v8::v8_StackFrame_IsConstructor(c, self.1)).unwrap() }
+        unsafe { self.0.IsConstructor() }
     }
 
     /// Creates a captured version of this stack frame, that doesn't retain a reference to its
@@ -168,7 +154,7 @@ impl StackFrame {
 impl fmt::Display for CapturedStackTrace {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for frame in self.frames.iter() {
-            try!(writeln!(f, "{}", frame));
+            writeln!(f, "{}", frame)?;
         }
         Ok(())
     }
@@ -176,43 +162,35 @@ impl fmt::Display for CapturedStackTrace {
 
 impl fmt::Display for CapturedStackFrame {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "    at "));
+        write!(f, "    at ")?;
 
         if self.is_constructor {
-            try!(write!(f, "new "));
+            write!(f, "new ")?;
         }
 
         if let Some(ref function_name) = self.function_name {
-            try!(write!(f, "{} (", function_name));
+            write!(f, "{} (", function_name)?;
 
             if self.is_eval {
-                try!(write!(f, "eval "));
+                write!(f, "eval ")?;
             }
 
-            try!(write!(f,
-                        "{}:{}:{})",
-                        self.script_name.as_ref().map(|n| n.as_str()).unwrap_or("<anon>"),
-                        self.line,
-                        self.column));
+            write!(f,
+                   "{}:{}:{})",
+                   self.script_name.as_ref().map(|n| n.as_str()).unwrap_or("<anon>"),
+                   self.line,
+                   self.column)?;
         } else {
             if self.is_eval {
-                try!(write!(f, "eval "));
+                write!(f, "eval ")?;
             }
-            try!(write!(f,
-                        "{}:{}:{}",
-                        self.script_name.as_ref().map(|n| n.as_str()).unwrap_or("<anon>"),
-                        self.line,
-                        self.column));
+            write!(f,
+                   "{}:{}:{}",
+                   self.script_name.as_ref().map(|n| n.as_str()).unwrap_or("<anon>"),
+                   self.line,
+                   self.column)?;
         }
 
         Ok(())
     }
 }
-
-reference!(Message, v8::v8_Message_CloneRef, v8::v8_Message_DestroyRef);
-reference!(StackTrace,
-           v8::v8_StackTrace_CloneRef,
-           v8::v8_StackTrace_DestroyRef);
-reference!(StackFrame,
-           v8::v8_StackFrame_CloneRef,
-           v8::v8_StackFrame_DestroyRef);
